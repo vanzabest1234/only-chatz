@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Only Chatz</title>
+    <meta name="description" content="A floaty little chatroom for everyone." />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 24px;
+        background: #07070e;
+        color: #eef0ff;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        width: 60vmax;
+        height: 60vmax;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      body::before {
+        background: #7dd3fc;
+        top: -20vmax;
+        left: -15vmax;
+      }
+
+      body::after {
+        background: #a78bfa;
+        bottom: -25vmax;
+        right: -15vmax;
+      }
+
+      main {
+        position: relative;
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        padding: 32px 28px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(238, 240, 255, 0.6);
+      }
+
+      a {
+        color: #7dd3fc;
+        font-size: 14px;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(125, 211, 252, 0.4);
+        padding-bottom: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Only Chatz</h1>
+      <p id="status">Taking you to the chat…</p>
+      <a id="fallback" href="./" hidden>Tap here if nothing happens</a>
+    </main>
+
+    <script>
+      // Where the launcher sends people. Leave empty when this file sits on the
+      // same site as the chat (it then opens `/`); otherwise put the full URL in,
+      // e.g. 'https://only-chatz.onrender.com'.
+      var APP_URL = '';
+
+      var requested = new URLSearchParams(location.search).get('to');
+      var target = requested || APP_URL || './';
+      var hosted = location.protocol === 'http:' || location.protocol === 'https:';
+
+      if (hosted) {
+        location.replace(target);
+      } else {
+        // Opened straight off disk: a relative target would just reload this file.
+        document.getElementById('status').textContent =
+          'Set APP_URL at the top of this file to your chatroom link.';
+        if (requested || APP_URL) {
+          var link = document.getElementById('fallback');
+          link.href = target;
+          link.hidden = false;
+        }
+      }
+    </script>
+  </body>
+</html>
