@@ -50,6 +50,7 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                           color={member.color}
                           size={30}
                           online={isOnline(member.id)}
+                          src={member.avatarUrl}
                         />
                         <span className="member-text">
                           <span className="member-name">{member.displayName}</span>

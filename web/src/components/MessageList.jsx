@@ -13,7 +13,7 @@ function ChannelMessage({ message }) {
   }
   return (
     <div className="msg">
-      <Avatar name={message.authorName} color={message.authorColor} />
+      <Avatar name={message.authorName} color={message.authorColor} src={message.authorAvatar} />
       <div className="msg-body">
         <div className="msg-head">
           <span className="msg-name">{message.authorName}</span>
@@ -30,7 +30,14 @@ function DmMessage({ message, me }) {
   const own = message.authorId === me.user.id
   return (
     <div className={`msg dm ${own ? 'own' : ''}`}>
-      {!own && <Avatar name={message.authorName} color={message.authorColor} size={32} />}
+      {!own && (
+        <Avatar
+          name={message.authorName}
+          color={message.authorColor}
+          size={32}
+          src={message.authorAvatar}
+        />
+      )}
       <div className="dm-stack">
         {!own && (
           <div className="msg-head">

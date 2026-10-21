@@ -6,6 +6,7 @@ import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
 import ChatPane from './components/ChatPane'
 import MembersPanel from './components/MembersPanel'
+import SettingsModal from './components/SettingsModal'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -15,6 +16,7 @@ export default function App() {
   const [notice, setNotice] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -213,6 +215,10 @@ export default function App() {
             setMembersOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenSettings={() => {
+            setSettingsOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -242,6 +248,26 @@ export default function App() {
           onOpenDm={openDm}
           onToggleFriend={toggleFriend}
         />
+
+        {settingsOpen && (
+          <SettingsModal
+            user={me.user}
+            onClose={() => setSettingsOpen(false)}
+            onSaved={user =>
+              setMe(previous =>
+                previous
+                  ? {
+                      ...previous,
+                      user,
+                      members: previous.members.map(member =>
+                        member.id === user.id ? user : member,
+                      ),
+                    }
+                  : previous,
+              )
+            }
+          />
+        )}
       </div>
     </>
   )

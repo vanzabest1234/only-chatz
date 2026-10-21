@@ -17,6 +17,7 @@ async function loadSnapshot(user) {
       `SELECT t.id AS thread_id,
               peer.id AS peer_id, peer.display_name AS peer_name,
               peer.role AS peer_role, peer.color AS peer_color,
+              peer.avatar_url AS peer_avatar,
               lm.id AS last_id, lm.content AS last_content,
               lm.created_at AS last_at, lm.author_id AS last_author
          FROM dm_threads t
@@ -51,6 +52,7 @@ async function loadSnapshot(user) {
         displayName: row.peer_name,
         role: row.peer_role,
         color: row.peer_color,
+        avatarUrl: row.peer_avatar ?? null,
       },
       lastMessage: row.last_id
         ? {
@@ -68,7 +70,7 @@ async function loadSnapshot(user) {
 
 async function hydrateMessage(id) {
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.id = $1`,
     [id],
@@ -78,7 +80,7 @@ async function hydrateMessage(id) {
 
 async function listMessages(column, id) {
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.${column} = $1
       ORDER BY m.id DESC

@@ -202,6 +202,14 @@ p {
     0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .avatar-dot {
   position: absolute;
   right: -1px;

@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'member',
   color TEXT NOT NULL DEFAULT '#93c5fd',
+  avatar_url TEXT,
+  bio TEXT NOT NULL DEFAULT '',
   muted_until TIMESTAMPTZ,
   banned BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -53,6 +55,10 @@ CREATE TABLE IF NOT EXISTS messages (
   system BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- profile customisation (added after the first schema; keeps older databases in step)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS messages_channel_idx ON messages (channel_id, id DESC);
 CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);

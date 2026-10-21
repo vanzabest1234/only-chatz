@@ -34,7 +34,15 @@ export default function ChatPane({
           {channel ? (
             <span className="hash-big">#</span>
           ) : (
-            peer && <Avatar name={peer.displayName} color={peer.color} size={32} online={peerOnline} />
+            peer && (
+              <Avatar
+                name={peer.displayName}
+                color={peer.color}
+                size={32}
+                online={peerOnline}
+                src={peer.avatarUrl}
+              />
+            )
           )}
           <div className="chat-title-text">
             <h2>{title}</h2>

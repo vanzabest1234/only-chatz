@@ -12,6 +12,7 @@ export default function Sidebar({
   onPickChannel,
   onOpenDm,
   onOpenMembers,
+  onOpenSettings,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -69,6 +70,7 @@ export default function Sidebar({
                   color={friend.color}
                   size={28}
                   online={isOnline(friend.id)}
+                  src={friend.avatarUrl}
                 />
                 <span className="nav-label">{friend.displayName}</span>
                 <RoleBadge role={friend.role} />
@@ -87,6 +89,7 @@ export default function Sidebar({
                   color={thread.peer.color}
                   size={28}
                   online={isOnline(thread.peer.id)}
+                  src={thread.peer.avatarUrl}
                 />
                 <span className="dm-text">
                   <span className="nav-label">{thread.peer.displayName}</span>
@@ -106,11 +109,25 @@ export default function Sidebar({
         </div>
 
         <div className="me-card">
-          <Avatar name={me.user.displayName} color={me.user.color} size={34} online />
+          <Avatar
+            name={me.user.displayName}
+            color={me.user.color}
+            size={34}
+            online
+            src={me.user.avatarUrl}
+          />
           <div className="meta">
             <span className="name">{me.user.displayName}</span>
             <RoleBadge role={me.user.role} />
           </div>
+          <button
+            className="icon-btn"
+            onClick={onOpenSettings}
+            aria-label="Profile settings"
+            title="Profile settings"
+          >
+            <Icon name="profile" />
+          </button>
           <button className="icon-btn" onClick={onSignOut} aria-label="Sign out" title="Sign out">
             <Icon name="logout" />
           </button>
