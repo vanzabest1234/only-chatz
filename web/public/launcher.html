@@ -210,59 +210,6 @@
       }
 
       /* Embedded mode: the chat takes the whole window. */
-      .stage {
-        position: fixed;
-        inset: 0;
-        z-index: 2;
-        display: grid;
-        grid-template-rows: auto 1fr;
-        background: #07070e;
-      }
-
-      .stage[hidden] {
-        display: none;
-      }
-
-      .stage-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 13px;
-        color: rgba(238, 240, 255, 0.7);
-      }
-
-      .stage-bar button {
-        padding: 6px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        font: inherit;
-        cursor: pointer;
-      }
-
-      .stage-bar button:hover {
-        background: rgba(255, 255, 255, 0.12);
-      }
-
-      iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
-        background: #07070e;
-      }
-
-      body.embedded {
-        padding: 0;
-        display: block;
-      }
-
-      body.embedded .card {
-        display: none;
-      }
     </style>
   </head>
   <body>
@@ -309,21 +256,13 @@
       </section>
 
       <div class="actions">
-        <a class="btn btn-primary" id="open-new" href="#">Open in a new tab</a>
-        <button class="btn" id="open-here" type="button">Load it here</button>
+        <a class="btn btn-primary" id="open-new" href="#" target="_blank" rel="noopener">Open in a new tab</a>
+        <a class="btn" id="open-here" href="#">Load it here</a>
       </div>
 
       <p class="hint" id="hint" hidden></p>
       <p class="foot"><a id="direct" href="#">/chat</a></p>
     </main>
-
-    <section class="stage" id="stage" hidden>
-      <div class="stage-bar">
-        <span id="stage-label">Only Chatz</span>
-        <button id="close" type="button">Close</button>
-      </div>
-      <iframe id="frame" title="Only Chatz"></iframe>
-    </section>
 
     <script>
       // The room address. Left empty, the launcher opens /chat on whatever site
@@ -334,38 +273,28 @@
 
       var params = new URLSearchParams(location.search);
       var requested = params.get('chat');
-      var hosted = location.protocol === 'http:' || location.protocol === 'https:';
-      var target = '';
-      var display = '';
-
-      if (requested) {
-        target = requested;
-      } else if (APP_URL) {
-        target = APP_URL.replace(/\/+$/, '') + '/chat';
-      } else if (hosted) {
-        // Same site: /chat on this origin, keeping the current query string so a
-        // hosted preview's access token travels with the new tab as well.
-        var sameSite = new URL('/chat', location.href);
-        sameSite.search = location.search;
-        target = sameSite.href;
-      }
-
       var openNew = document.getElementById('open-new');
       var openHere = document.getElementById('open-here');
       var hint = document.getElementById('hint');
       var direct = document.getElementById('direct');
-      var stage = document.getElementById('stage');
-      var frame = document.getElementById('frame');
-      var label = document.getElementById('stage-label');
-      var closeBtn = document.getElementById('close');
 
-      function loadHere() {
-        label.textContent = 'Only Chatz — ' + display;
-        if (frame.getAttribute('src') !== target) frame.src = target;
-        stage.hidden = false;
-        document.body.classList.add('embedded');
-        closeBtn.focus();
+      // Resolve the room against the document's base so this works however the
+      // page arrives (http, an inlined srcdoc pane, a blob). The query string
+      // rides along so a hosted preview's access token reaches the room too.
+      function roomUrl() {
+        if (requested) return requested;
+        if (APP_URL) return APP_URL.replace(/\/+$/, '') + '/chat';
+        try {
+          var base = new URL(document.baseURI);
+          var room = new URL('/chat', base);
+          room.search = base.search;
+          return room.href;
+        } catch (error) {
+          return '';
+        }
       }
+
+      var target = roomUrl();
 
       if (!target) {
         // Opened straight off disk with nothing configured: nothing to open.
@@ -373,34 +302,24 @@
         hint.hidden = false;
         direct.parentElement.hidden = true;
         openNew.removeAttribute('href');
-        openNew.style.pointerEvents = 'none';
         openNew.style.opacity = '0.5';
-        openHere.disabled = true;
+        openHere.removeAttribute('href');
         openHere.style.opacity = '0.5';
       } else {
+        // Both controls are ordinary links, so the room loads even where
+        // scripted window handling is blocked.
         openNew.href = target;
-        openNew.target = '_blank';
-        openNew.rel = 'noopener';
+        openHere.href = target;
         var shown = new URL(target);
-        display = shown.origin === location.origin ? shown.pathname : target;
         direct.href = target;
-        direct.textContent = display;
+        direct.textContent = shown.origin === location.origin ? shown.pathname : target;
 
-        // A sandboxed iframe (the preview pane is one) can swallow the new tab,
-        // so fall back to loading the room in place when the popup is refused.
+        // A sandboxed pane swallows the new tab, so navigate this window when
+        // the popup is refused.
         openNew.addEventListener('click', function (event) {
           event.preventDefault();
-          var opened = window.open(target, '_blank', 'noopener');
-          if (!opened) loadHere();
-        });
-
-        openHere.addEventListener('click', loadHere);
-
-        closeBtn.addEventListener('click', function () {
-          frame.src = 'about:blank';
-          stage.hidden = true;
-          document.body.classList.remove('embedded');
-          openHere.focus();
+          var opened = window.open(target, '_blank');
+          if (!opened) location.assign(target);
         });
       }
     </script>

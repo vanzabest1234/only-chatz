@@ -51,8 +51,11 @@ Non-obvious things worth knowing before changing something:
   and `/launcher.html` would silently fall through to the chat app. It resolves its target as
   `?chat=` → `APP_URL` → `/chat` on its own origin, keeping the current query string so a hosted
   preview's token reaches the new tab, and its script must stay `if/else` (a top-level `return` is a
-  syntax error in a classic script and silently kills every handler). A sandboxed pane refuses
-  `window.open`, so "Open in a new tab" falls back to loading the room in place. Leave `APP_URL`
+  syntax error in a classic script and silently kills every handler). Both buttons are plain links
+  to the room, so they work where scripted navigation is blocked; a sandboxed pane refuses
+  `window.open`, so "Open in a new tab" falls back to navigating the pane itself. Resolve the room
+  from `document.baseURI`, not `location.protocol`: the preview can inline this page as `srcdoc`,
+  where a protocol check finds no http(s) and used to leave both buttons disabled. Leave `APP_URL`
   empty: the file then always points at whatever site serves it — never hardcode a sandbox host.
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
