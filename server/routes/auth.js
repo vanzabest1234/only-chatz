@@ -24,10 +24,13 @@ router.post('/register', async (req, res) => {
   if (existing.rows.length) return res.status(409).json({ error: 'That username is already taken.' })
 
   const color = COLORS[Math.floor(Math.random() * COLORS.length)]
+  // The first account on a fresh server owns it; everyone after that starts as a member.
+  const owners = await q("SELECT 1 FROM users WHERE role = 'owner' LIMIT 1")
+  const role = owners.rows.length ? 'member' : 'owner'
   const { rows } = await q(
-    `INSERT INTO users (username, display_name, password_hash, color)
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [username, displayName, hashPassword(password), color],
+    `INSERT INTO users (username, display_name, password_hash, role, color)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [username, displayName, hashPassword(password), role, color],
   )
   const token = await createSession(rows[0].id)
   emitAll('members:refresh')

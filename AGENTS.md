@@ -56,8 +56,12 @@ production build instead of the dev server.
 There is no test suite; verification is done by driving the UI (sign in, post, run a slash command,
 open a DM) and checking `docker compose logs api`.
 
-## Demo accounts
+## Accounts and seed data
 
-`zara` (owner), `milo` (co-owner), `ada` (admin), `kai` (mod), `juno` and `remy` (members).
-Every password is the username plus `123` (e.g. `zara123`). Seeded channels: `#general`,
-`#design`, `#random`, plus one DM between kai and juno.
+There are no demo accounts and no pre-made conversations. The seed creates only the empty channels
+(`#general`, `#design`, `#random`) and only when the `channels` table is empty.
+
+The **first account to register becomes the owner** (`server/routes/auth.js`); every later signup is
+a member and has to be promoted with `/role`. Consequence for testing: if you delete the last owner,
+register a fresh account to take the role back rather than editing rows by hand. Never seed
+predictable passwords again — that is what made the old demo accounts a security hole.

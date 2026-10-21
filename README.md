@@ -17,7 +17,8 @@ docker compose -f docker-compose.base44.yml up -d
 The app is served on **http://localhost:3000** (Vite dev server, live reload; the API and Postgres
 run alongside it).
 
-Sign in with an account an owner has given you, or register a new one from the sign-in screen.
+Rooms start empty. Register from the sign-in screen — the first account created becomes the **Owner**,
+and everyone after that joins as a Member until an admin or owner promotes them.
 
 ## Commands
 
