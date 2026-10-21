@@ -4,6 +4,12 @@ import { sessionUser } from './auth.js'
 
 let io = null
 const online = new Map()
+// Which room each person is looking at — in memory, rebuilt as clients report in.
+const where = new Map()
+
+function whereSnapshot() {
+  return Object.fromEntries(where)
+}
 
 export function initRealtime(httpServer) {
   io = new Server(httpServer)
@@ -28,12 +34,26 @@ export function initRealtime(httpServer) {
 
     online.set(user.id, (online.get(user.id) ?? 0) + 1)
     io.emit('presence:update', onlineIds())
+    io.emit('presence:where', whereSnapshot())
+
+    socket.on('presence:where', payload => {
+      const kind = payload?.kind === 'dm' ? 'dm' : 'channel'
+      const id = Number(payload?.id)
+      if (!Number.isFinite(id)) return
+      where.set(user.id, { kind, id })
+      io.emit('presence:where', whereSnapshot())
+    })
 
     socket.on('disconnect', () => {
       const remaining = (online.get(user.id) ?? 1) - 1
-      if (remaining <= 0) online.delete(user.id)
-      else online.set(user.id, remaining)
+      if (remaining <= 0) {
+        online.delete(user.id)
+        where.delete(user.id)
+      } else {
+        online.set(user.id, remaining)
+      }
       io.emit('presence:update', onlineIds())
+      io.emit('presence:where', whereSnapshot())
     })
   })
 
@@ -54,4 +74,8 @@ export function joinThread(userId, threadId) {
 
 export function onlineIds() {
   return [...online.keys()]
+}
+
+export function onlineWhere() {
+  return whereSnapshot()
 }

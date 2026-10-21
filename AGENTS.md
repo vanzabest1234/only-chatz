@@ -30,6 +30,13 @@ Non-obvious things worth knowing before changing something:
   act on someone at or above your own rank, and `/role` can only hand out ranks below your own.
   The UI merely filters the command list it is given (`GET /api/me` → `commands`).
 - **Muting blocks channel and DM posting**; bans revoke sessions and refuse future logins.
+- **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
+  `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
+  `presence:where` socket event whenever their view changes; the snapshot rides along in
+  `GET /api/me`. Both maps are cleared by an API restart, and the rooms are re-learned as clients
+  reconnect. The "Who's online" board (`web/src/components/OnlineBoard.jsx`) renders from that data.
+- **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
+  `SettingsModal.jsx`; `express.json` is limited to 1mb for that payload. No file storage involved.
 - **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds
   `.<BASE44_SANDBOX_HOST_DOMAIN>` to Vite's `allowedHosts` (the preview host rotates). With the flag
   unset the allowlist is untouched. `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` is passed through from

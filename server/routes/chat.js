@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { q } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { emitTo, joinThread, onlineIds } from '../realtime.js'
+import { emitTo, joinThread, onlineIds, onlineWhere } from '../realtime.js'
 import { publicMessage, publicUser } from '../serializers.js'
 import { rankOf } from '../roles.js'
 import { commandCatalog, runCommand } from '../commands.js'
@@ -64,6 +64,7 @@ async function loadSnapshot(user) {
         : null,
     })),
     online: onlineIds(),
+    where: onlineWhere(),
     commands: commandCatalog(rankOf(user.role)),
   }
 }

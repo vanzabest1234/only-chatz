@@ -13,6 +13,7 @@ export default function Sidebar({
   onOpenDm,
   onOpenMembers,
   onOpenSettings,
+  onOpenBoard,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -37,6 +38,14 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-scroll">
+          <section className="section">
+            <button className="nav-row board-link" onClick={onOpenBoard}>
+              <span className="live-dot" />
+              <span className="nav-label">Who&apos;s online</span>
+              <span className="chip">{me.online.length}</span>
+            </button>
+          </section>
+
           <section className="section">
             <h2 className="section-title">Text Channels</h2>
             {me.channels.map(channel => (

@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar'
 import ChatPane from './components/ChatPane'
 import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
+import OnlineBoard from './components/OnlineBoard'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -17,6 +18,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [boardOpen, setBoardOpen] = useState(false)
+  const [where, setWhere] = useState({})
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -24,6 +27,7 @@ export default function App() {
   const load = useCallback(async () => {
     const data = await api('/api/me')
     setMe(data)
+    setWhere(data.where ?? {})
     return data
   }, [])
 
@@ -44,6 +48,14 @@ export default function App() {
     setMe(null)
     setMessages([])
     setView(null)
+    setWhere({})
+  }, [])
+
+  // Tell the server which room we are looking at, so the online board can show it.
+  const shareRoom = useCallback(() => {
+    const target = viewRef.current
+    if (!target || !socket.connected) return
+    socket.emit('presence:where', { kind: target.type, id: target.id })
   }, [])
 
   const finishAuth = useCallback(async () => {
@@ -112,6 +124,8 @@ export default function App() {
         setMe(previous => (previous ? { ...previous, friends: ids } : previous)),
       'presence:update': ids =>
         setMe(previous => (previous ? { ...previous, online: ids } : previous)),
+      'presence:where': payload => setWhere(payload ?? {}),
+      connect: shareRoom,
       'session:revoke': payload => {
         setNotice(payload?.message || 'You were removed from this server.')
         signOut()
@@ -122,7 +136,11 @@ export default function App() {
     return () => {
       Object.entries(handlers).forEach(([event, handler]) => socket.off(event, handler))
     }
-  }, [me?.user?.id, load, loadMessages, signOut])
+  }, [me?.user?.id, load, loadMessages, signOut, shareRoom])
+
+  useEffect(() => {
+    shareRoom()
+  }, [view?.type, view?.id, shareRoom])
 
   useEffect(() => {
     if (!view) {
@@ -219,6 +237,10 @@ export default function App() {
             setSettingsOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenBoard={() => {
+            setBoardOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -248,6 +270,15 @@ export default function App() {
           onOpenDm={openDm}
           onToggleFriend={toggleFriend}
         />
+
+        {boardOpen && (
+          <OnlineBoard
+            me={me}
+            where={where}
+            onClose={() => setBoardOpen(false)}
+            onOpenDm={openDm}
+          />
+        )}
 
         {settingsOpen && (
           <SettingsModal
