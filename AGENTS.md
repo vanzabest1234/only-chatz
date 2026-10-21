@@ -86,6 +86,13 @@ open a DM) and checking `docker compose logs api`.
 (`Caddyfile`) for Let's Encrypt certificates and the WebSocket upgrade;
 `deploy.env.example` lists the variables.
 
+To run the release beside the preview in the sandbox (it must not take host port 3000):
+
+```bash
+printf 'POSTGRES_PASSWORD=%s\nAPP_PORT=8080\n' "$(openssl rand -hex 16)" > /tmp/prod.env
+docker compose -f docker-compose.prod.yml --env-file /tmp/prod.env up -d --build   # → :8080
+```
+
 `render.yaml` is the zero-input hosted path: a Render Blueprint (`runtime: docker`, free plan) plus a
 free Postgres, with `DATABASE_URL` injected by `fromDatabase`. Render supplies `PORT` itself, so the
 blueprint sets no port. Free plan sleeps when idle and the free database expires 30 days after
