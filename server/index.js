@@ -26,7 +26,8 @@ if (process.env.SERVE_WEB === '1') {
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()
-    res.sendFile(path.join(WEB_DIR, 'index.html'))
+    // `/` is the launcher; every other path (including /chat) is the room.
+    res.sendFile(path.join(WEB_DIR, req.path === '/' ? 'launcher.html' : 'index.html'))
   })
 }
 

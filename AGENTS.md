@@ -44,10 +44,15 @@ Non-obvious things worth knowing before changing something:
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
-- **`launcher.html` is standalone and deliberately outside the app.** The server never serves it, and
-  it resolves its target as `?chat=` → `APP_URL` → `/chat` on its own origin. Its script must not use
-  a top-level `return` (that is a syntax error in a classic script and silently kills every handler);
-  the "nothing configured" early exit is an `if/else`.
+- **The launcher is the landing page and is part of the built site.** `web/public/launcher.html` is
+  served statically at `/launcher.html` (Vite `publicDir` in dev, `web/dist` in releases) and is
+  mapped to `/` by the `launcherAtRoot` plugin in `web/vite.config.js` and by the fallback in
+  `server/index.js`. Do not move it back to the repo root: nothing outside `web/` is served, so `/`
+  and `/launcher.html` would silently fall through to the chat app. It resolves its target as
+  `?chat=` → `APP_URL` → `/chat` on its own origin, and its script must stay `if/else` (a top-level
+  `return` is a syntax error in a classic script and silently kills every handler).
+- **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
+  link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
   the check treats anything under 500 as alive; the web check fetches `/` plus the proxied `/api/me`
   so a dead backend fails the frontend's health too.

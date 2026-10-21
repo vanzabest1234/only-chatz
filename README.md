@@ -61,14 +61,16 @@ change their limits, so check the current offering before relying on one.
 
 ### Launcher page and `/chat`
 
-`launcher.html` is a standalone page (not served by the app): an About card with two ways in —
-**Open in a new tab** and **Load it here**, which embeds the room in an iframe. It points at `/chat`
-on whatever site serves it; drop the file next to the app and it needs no configuration. Hosting it
-somewhere else? Set `APP_URL` at the top of the file, or pass `?chat=https://your-app-url`.
+`web/public/launcher.html` is the landing page: `/` serves it, and it has two ways in —
+**Open in a new tab** and **Load it here**, which embeds the room in an iframe. If the browser (or a
+sandboxed iframe) refuses the new tab, it loads the room in place instead. It points at `/chat` on
+whatever site serves it, so it needs no configuration. Hosting it somewhere else? Set `APP_URL` at
+the top of the file, or pass `?chat=https://your-app-url`.
 
-`/chat` needs no route of its own: there is no client-side router, and both the Vite dev server and
-the release server fall back to `index.html`, so any path serves the room. Both are verified working
-on the release image.
+The room lives on `/chat`: there is no client-side router, and both the Vite dev server and the
+release server fall back to `index.html` for every path except `/`, so `/chat` (and anything else)
+serves the room. The launcher is the only exception, mapped to `/` in `web/vite.config.js` for dev
+and in `server/index.js` for releases.
 
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.

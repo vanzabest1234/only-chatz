@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Only Chatz</title>
     <meta name="description" content="A floaty little chatroom for everyone." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
       html,
       body {
@@ -268,9 +269,9 @@
 
     <script>
       // The room address. Left empty, the launcher opens /chat on whatever site
-      // it is served from. Hosting this file somewhere else (or sending it as a
-      // link)? Put the full URL in, e.g. 'https://only-chatz.onrender.com',
-      // or pass it as ?chat=https://only-chatz.onrender.com.
+      // it is served from. Hosting this file somewhere else? Put the full URL
+      // in, e.g. 'https://only-chatz.onrender.com', or pass it as
+      // ?chat=https://only-chatz.onrender.com.
       var APP_URL = '';
 
       var params = new URLSearchParams(location.search);
@@ -295,6 +296,14 @@
       var label = document.getElementById('stage-label');
       var closeBtn = document.getElementById('close');
 
+      function loadHere() {
+        label.textContent = 'Only Chatz — ' + target;
+        if (frame.getAttribute('src') !== target) frame.src = target;
+        stage.hidden = false;
+        document.body.classList.add('embedded');
+        closeBtn.focus();
+      }
+
       if (!target) {
         // Opened straight off disk with nothing configured: nothing to open.
         hint.textContent = 'Set APP_URL at the top of this file to your chatroom link.';
@@ -312,13 +321,15 @@
         direct.href = target;
         direct.textContent = target.replace(location.origin, '') || '/chat';
 
-        openHere.addEventListener('click', function () {
-          label.textContent = 'Only Chatz — ' + target;
-          frame.src = target;
-          stage.hidden = false;
-          document.body.classList.add('embedded');
-          closeBtn.focus();
+        // A sandboxed iframe (the preview pane is one) can swallow the new tab,
+        // so fall back to loading the room in place when the popup is refused.
+        openNew.addEventListener('click', function (event) {
+          event.preventDefault();
+          var opened = window.open(target, '_blank', 'noopener');
+          if (!opened) loadHere();
         });
+
+        openHere.addEventListener('click', loadHere);
 
         closeBtn.addEventListener('click', function () {
           frame.src = 'about:blank';
