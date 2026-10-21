@@ -4,21 +4,23 @@ import { api, setToken } from '../api'
 export default function AuthScreen({ onAuthed, notice }) {
   const [mode, setMode] = useState('login')
   const [username, setUsername] = useState('')
-  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   async function submit(event) {
     event.preventDefault()
     if (busy) return
+    if (mode === 'join' && password !== confirm) {
+      setError('Those passwords do not match.')
+      return
+    }
     setBusy(true)
     setError('')
     try {
       const path = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
-      const body =
-        mode === 'login' ? { username, password } : { username, password, displayName }
-      const data = await api(path, { method: 'POST', body: JSON.stringify(body) })
+      const data = await api(path, { method: 'POST', body: JSON.stringify({ username, password }) })
       setToken(data.token)
       await onAuthed()
     } catch (problem) {
@@ -72,17 +74,6 @@ export default function AuthScreen({ onAuthed, notice }) {
             />
           </label>
 
-          {mode === 'join' && (
-            <label className="field">
-              <span>Display name</span>
-              <input
-                value={displayName}
-                onChange={event => setDisplayName(event.target.value)}
-                placeholder="Your Name"
-              />
-            </label>
-          )}
-
           <label className="field">
             <span>Password</span>
             <input
@@ -94,6 +85,20 @@ export default function AuthScreen({ onAuthed, notice }) {
               required
             />
           </label>
+
+          {mode === 'join' && (
+            <label className="field">
+              <span>Confirm password</span>
+              <input
+                type="password"
+                value={confirm}
+                onChange={event => setConfirm(event.target.value)}
+                autoComplete="new-password"
+                placeholder="••••••"
+                required
+              />
+            </label>
+          )}
 
           {notice && <p className="auth-note">{notice}</p>}
           {error && <p className="auth-error">{error}</p>}

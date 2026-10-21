@@ -8,18 +8,19 @@
     <style>
       html,
       body {
-        height: 100%;
+        min-height: 100%;
       }
 
       body {
         margin: 0;
         display: grid;
         place-items: center;
-        text-align: center;
         padding: 24px;
         background: #07070e;
         color: #eef0ff;
         font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
         -webkit-font-smoothing: antialiased;
       }
 
@@ -33,6 +34,7 @@
         filter: blur(120px);
         opacity: 0.35;
         pointer-events: none;
+        z-index: 0;
       }
 
       body::before {
@@ -47,17 +49,36 @@
         right: -15vmax;
       }
 
-      main {
+      .card {
         position: relative;
+        z-index: 1;
+        width: min(460px, 100%);
         display: grid;
-        gap: 10px;
-        justify-items: center;
-        padding: 32px 28px;
+        gap: 20px;
+        padding: 30px 28px;
         border-radius: 24px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.06);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .glyph {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: rgba(125, 211, 252, 0.16);
+        color: #7dd3fc;
+        font-size: 22px;
       }
 
       h1 {
@@ -67,49 +88,244 @@
         letter-spacing: -0.01em;
       }
 
-      p {
+      .tagline {
         margin: 0;
+        font-size: 13px;
+        color: rgba(238, 240, 255, 0.55);
+      }
+
+      .about {
+        display: grid;
+        gap: 10px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         font-size: 14px;
+        color: rgba(238, 240, 255, 0.72);
+      }
+
+      .about p {
+        margin: 0;
+      }
+
+      .about strong {
+        color: #eef0ff;
+        font-weight: 600;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        flex: 1 1 160px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: #eef0ff;
+        font: inherit;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 140ms ease, border-color 140ms ease;
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.22);
+      }
+
+      .btn-primary {
+        background: #7dd3fc;
+        border-color: #7dd3fc;
+        color: #06121b;
+      }
+
+      .btn-primary:hover {
+        background: #a5e2fd;
+        border-color: #a5e2fd;
+      }
+
+      .hint {
+        margin: 0;
+        font-size: 13px;
         color: rgba(238, 240, 255, 0.6);
       }
 
-      a {
-        color: #7dd3fc;
-        font-size: 14px;
+      .foot {
+        margin: 0;
+        font-size: 13px;
+        color: rgba(238, 240, 255, 0.45);
+        text-align: center;
+      }
+
+      .foot a {
+        color: rgba(125, 211, 252, 0.9);
         text-decoration: none;
-        border-bottom: 1px solid rgba(125, 211, 252, 0.4);
-        padding-bottom: 1px;
+        border-bottom: 1px solid rgba(125, 211, 252, 0.35);
+      }
+
+      /* Embedded mode: the chat takes the whole window. */
+      .stage {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        background: #07070e;
+      }
+
+      .stage[hidden] {
+        display: none;
+      }
+
+      .stage-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 13px;
+        color: rgba(238, 240, 255, 0.7);
+      }
+
+      .stage-bar button {
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .stage-bar button:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #07070e;
+      }
+
+      body.embedded {
+        padding: 0;
+        display: block;
+      }
+
+      body.embedded .card {
+        display: none;
       }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Only Chatz</h1>
-      <p id="status">Taking you to the chat…</p>
-      <a id="fallback" href="./" hidden>Tap here if nothing happens</a>
+    <main class="card">
+      <div class="brand">
+        <div class="glyph">◍</div>
+        <div>
+          <h1>Only Chatz</h1>
+          <p class="tagline">everyone, floating together</p>
+        </div>
+      </div>
+
+      <section class="about">
+        <p>
+          <strong>Channels</strong> with live messages, <strong>roles with real power</strong> —
+          Owner, Co-Owner, Admin, Mod, Member — and <strong>direct messages</strong> that keep your
+          friends at the top.
+        </p>
+        <p>
+          No email, no verification: pick a username and a password. The first account created
+          becomes the Owner.
+        </p>
+      </section>
+
+      <div class="actions">
+        <a class="btn btn-primary" id="open-new" href="#">Open in a new tab</a>
+        <button class="btn" id="open-here" type="button">Load it here</button>
+      </div>
+
+      <p class="hint" id="hint" hidden></p>
+      <p class="foot"><a id="direct" href="#">/chat</a></p>
     </main>
 
+    <section class="stage" id="stage" hidden>
+      <div class="stage-bar">
+        <span id="stage-label">Only Chatz</span>
+        <button id="close" type="button">Close</button>
+      </div>
+      <iframe id="frame" title="Only Chatz"></iframe>
+    </section>
+
     <script>
-      // Where the launcher sends people. Leave empty when this file sits on the
-      // same site as the chat (it then opens `/`); otherwise put the full URL in,
-      // e.g. 'https://only-chatz.onrender.com'.
+      // The room address. Left empty, the launcher opens /chat on whatever site
+      // it is served from. Hosting this file somewhere else (or sending it as a
+      // link)? Put the full URL in, e.g. 'https://only-chatz.onrender.com',
+      // or pass it as ?chat=https://only-chatz.onrender.com.
       var APP_URL = '';
 
-      var requested = new URLSearchParams(location.search).get('to');
-      var target = requested || APP_URL || './';
+      var params = new URLSearchParams(location.search);
+      var requested = params.get('chat');
       var hosted = location.protocol === 'http:' || location.protocol === 'https:';
+      var target = '';
 
-      if (hosted) {
-        location.replace(target);
+      if (requested) {
+        target = requested;
+      } else if (APP_URL) {
+        target = APP_URL.replace(/\/+$/, '') + '/chat';
+      } else if (hosted) {
+        target = new URL('/chat', location.href).href;
+      }
+
+      var openNew = document.getElementById('open-new');
+      var openHere = document.getElementById('open-here');
+      var hint = document.getElementById('hint');
+      var direct = document.getElementById('direct');
+      var stage = document.getElementById('stage');
+      var frame = document.getElementById('frame');
+      var label = document.getElementById('stage-label');
+      var closeBtn = document.getElementById('close');
+
+      if (!target) {
+        // Opened straight off disk with nothing configured: nothing to open.
+        hint.textContent = 'Set APP_URL at the top of this file to your chatroom link.';
+        hint.hidden = false;
+        direct.parentElement.hidden = true;
+        openNew.removeAttribute('href');
+        openNew.style.pointerEvents = 'none';
+        openNew.style.opacity = '0.5';
+        openHere.disabled = true;
+        openHere.style.opacity = '0.5';
       } else {
-        // Opened straight off disk: a relative target would just reload this file.
-        document.getElementById('status').textContent =
-          'Set APP_URL at the top of this file to your chatroom link.';
-        if (requested || APP_URL) {
-          var link = document.getElementById('fallback');
-          link.href = target;
-          link.hidden = false;
-        }
+        openNew.href = target;
+        openNew.target = '_blank';
+        openNew.rel = 'noopener';
+        direct.href = target;
+        direct.textContent = target.replace(location.origin, '') || '/chat';
+
+        openHere.addEventListener('click', function () {
+          label.textContent = 'Only Chatz — ' + target;
+          frame.src = target;
+          stage.hidden = false;
+          document.body.classList.add('embedded');
+          closeBtn.focus();
+        });
+
+        closeBtn.addEventListener('click', function () {
+          frame.src = 'about:blank';
+          stage.hidden = true;
+          document.body.classList.remove('embedded');
+          openHere.focus();
+        });
       }
     </script>
   </body>

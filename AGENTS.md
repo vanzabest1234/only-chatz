@@ -41,6 +41,13 @@ Non-obvious things worth knowing before changing something:
   `.<BASE44_SANDBOX_HOST_DOMAIN>` to Vite's `allowedHosts` (the preview host rotates). With the flag
   unset the allowlist is untouched. `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` is passed through from
   the platform. Never hardcode resolved `BASE44_*` hostnames anywhere.
+- **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
+  the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
+  `server/index.js`. Do not add a router just to give the room a URL.
+- **`launcher.html` is standalone and deliberately outside the app.** The server never serves it, and
+  it resolves its target as `?chat=` → `APP_URL` → `/chat` on its own origin. Its script must not use
+  a top-level `return` (that is a syntax error in a classic script and silently kills every handler);
+  the "nothing configured" early exit is an `if/else`.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
   the check treats anything under 500 as alive; the web check fetches `/` plus the proxied `/api/me`
   so a dead backend fails the frontend's health too.

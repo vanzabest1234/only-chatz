@@ -59,6 +59,20 @@ The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can
 `DATABASE_URL`, leave the port alone (the app reads `PORT`), and that is the whole setup. Free tiers
 change their limits, so check the current offering before relying on one.
 
+### Launcher page and `/chat`
+
+`launcher.html` is a standalone page (not served by the app): an About card with two ways in —
+**Open in a new tab** and **Load it here**, which embeds the room in an iframe. It points at `/chat`
+on whatever site serves it; drop the file next to the app and it needs no configuration. Hosting it
+somewhere else? Set `APP_URL` at the top of the file, or pass `?chat=https://your-app-url`.
+
+`/chat` needs no route of its own: there is no client-side router, and both the Vite dev server and
+the release server fall back to `index.html`, so any path serves the room. Both are verified working
+on the release image.
+
+Accounts are **username + password** only — no email anywhere. Signing up asks for the password
+twice and refuses a mismatch.
+
 ### Before you invite people
 
 - Registration is open to anyone with the URL; promote with `/role` and use `/ban` if a room turns
