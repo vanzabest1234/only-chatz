@@ -56,6 +56,8 @@ Non-obvious things worth knowing before changing something:
   left the buttons dead inside the preview pane). The only script copies the current query string — a
   hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
   works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
+  The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
+  remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
