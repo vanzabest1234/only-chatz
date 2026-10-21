@@ -48,15 +48,12 @@ Non-obvious things worth knowing before changing something:
   served statically at `/launcher.html` (Vite `publicDir` in dev, `web/dist` in releases) and is
   mapped to `/` by the `launcherAtRoot` plugin in `web/vite.config.js` and by the fallback in
   `server/index.js`. Do not move it back to the repo root: nothing outside `web/` is served, so `/`
-  and `/launcher.html` would silently fall through to the chat app. It resolves its target as
-  `?chat=` → `APP_URL` → `/chat` on its own origin, keeping the current query string so a hosted
-  preview's token reaches the new tab, and its script must stay `if/else` (a top-level `return` is a
-  syntax error in a classic script and silently kills every handler). Both buttons are plain links
-  to the room, so they work where scripted navigation is blocked; a sandboxed pane refuses
-  `window.open`, so "Open in a new tab" falls back to navigating the pane itself. Resolve the room
-  from `document.baseURI`, not `location.protocol`: the preview can inline this page as `srcdoc`,
-  where a protocol check finds no http(s) and used to leave both buttons disabled. Leave `APP_URL`
-  empty: the file then always points at whatever site serves it — never hardcode a sandbox host.
+  and `/launcher.html` would silently fall through to the chat app. It is deliberately dependency-free:
+  both buttons are plain `<a href="/chat">` anchors, so the room opens even where scripted
+  `window.open` / iframe handling is blocked (the old embedded-iframe and `APP_URL`-detection versions
+  left the buttons dead inside the preview pane). The only script copies the current query string — a
+  hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
+  works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so

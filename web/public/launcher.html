@@ -3,14 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Only Chatz</title>
-    <meta name="description" content="A floaty little chatroom for everyone." />
+    <meta name="color-scheme" content="dark" />
+    <title>Only Chatz — everyone, floating together</title>
+    <meta
+      name="description"
+      content="A small real-time chatroom: channels, direct messages, real roles and a live who's-online board."
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
       html,
       body {
-        min-height: 100%;
-        /* The blurred corner blobs reach past the edges; keep the page from scrolling sideways. */
+        height: 100%;
         overflow-x: hidden;
       }
 
@@ -18,8 +27,8 @@
         margin: 0;
         display: grid;
         place-items: center;
-        padding: 24px;
-        background: #07070e;
+        padding: 28px 20px;
+        background: #06070f;
         color: #eef0ff;
         font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
@@ -27,46 +36,48 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      body::before,
-      body::after {
-        content: '';
+      /* Ambient glow. Decorative only, never in the layout's way. */
+      .glow {
         position: fixed;
-        width: 60vmax;
-        height: 60vmax;
-        border-radius: 50%;
-        filter: blur(120px);
-        opacity: 0.35;
-        pointer-events: none;
         z-index: 0;
+        border-radius: 50%;
+        filter: blur(110px);
+        pointer-events: none;
       }
 
-      body::before {
+      .glow-a {
+        width: 46vmax;
+        height: 46vmax;
+        top: -18vmax;
+        left: -14vmax;
         background: #7dd3fc;
-        top: -20vmax;
-        left: -15vmax;
+        opacity: 0.22;
       }
 
-      body::after {
+      .glow-b {
+        width: 44vmax;
+        height: 44vmax;
+        right: -16vmax;
+        bottom: -20vmax;
         background: #a78bfa;
-        bottom: -25vmax;
-        right: -15vmax;
+        opacity: 0.24;
       }
 
-      .card {
+      .shell {
         position: relative;
         z-index: 1;
-        width: min(520px, 100%);
-        max-height: calc(100dvh - 48px);
+        width: min(560px, 100%);
+        max-height: calc(100dvh - 56px);
         overflow-y: auto;
-        display: grid;
-        gap: 20px;
-        padding: 30px 28px;
-        border-radius: 24px;
+        padding: 34px 30px 30px;
+        border-radius: 26px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.06);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        box-shadow:
+          0 30px 70px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.09);
       }
 
       .brand {
@@ -75,253 +86,229 @@
         gap: 14px;
       }
 
-      .glyph {
+      .mark {
         display: grid;
         place-items: center;
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        background: rgba(125, 211, 252, 0.16);
-        color: #7dd3fc;
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+        background: linear-gradient(145deg, #7dd3fc, #a78bfa);
+        color: #0a1622;
         font-size: 22px;
+        line-height: 1;
+        box-shadow: 0 8px 22px rgba(125, 211, 252, 0.22);
       }
 
       h1 {
         margin: 0;
-        font-size: 20px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
+        font-size: 21px;
+        font-weight: 650;
+        letter-spacing: -0.015em;
       }
 
       .tagline {
-        margin: 0;
+        margin: 1px 0 0;
         font-size: 13px;
-        color: rgba(238, 240, 255, 0.55);
+        color: rgba(238, 240, 255, 0.52);
       }
 
-      .about {
-        display: grid;
-        gap: 10px;
-        padding-top: 18px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 14px;
-        color: rgba(238, 240, 255, 0.72);
-      }
-
-      .about p {
-        margin: 0;
-      }
-
-      .about strong {
-        color: #eef0ff;
-        font-weight: 600;
+      .lede {
+        margin: 22px 0 0;
+        font-size: 14.5px;
+        color: rgba(238, 240, 255, 0.7);
       }
 
       .features {
+        margin: 22px 0 0;
+        padding: 20px 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        gap: 15px;
+      }
+
+      .feature {
         margin: 0;
-        padding: 0;
-        list-style: none;
-        display: grid;
-        gap: 8px;
       }
 
-      .features li {
-        display: grid;
-        grid-template-columns: 128px 1fr;
-        gap: 10px;
-        align-items: baseline;
-      }
-
-      .features strong {
-        color: #7dd3fc;
+      .feature dt {
+        margin: 0;
+        font-size: 11px;
         font-weight: 600;
-        font-size: 13px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: rgba(125, 211, 252, 0.92);
       }
 
-      .features span {
-        color: rgba(238, 240, 255, 0.68);
-        font-size: 13px;
-      }
-
-      @media (max-width: 420px) {
-        .features li {
-          grid-template-columns: 1fr;
-          gap: 2px;
-        }
+      .feature dd {
+        margin: 2px 0 0;
+        font-size: 13.5px;
+        color: rgba(238, 240, 255, 0.72);
       }
 
       .actions {
+        margin: 26px 0 0;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
 
       .btn {
-        flex: 1 1 160px;
+        flex: 1 1 170px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 11px 18px;
+        min-height: 46px;
+        padding: 0 22px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.06);
-        color: #eef0ff;
+        border: 1px solid transparent;
         font: inherit;
-        font-weight: 500;
+        font-weight: 600;
         text-decoration: none;
         cursor: pointer;
-        transition: background 140ms ease, border-color 140ms ease;
+        transition:
+          transform 140ms ease,
+          background 140ms ease,
+          border-color 140ms ease;
       }
 
-      .btn:hover {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.22);
+      .btn:active {
+        transform: translateY(1px);
       }
 
       .btn-primary {
         background: #7dd3fc;
-        border-color: #7dd3fc;
         color: #06121b;
+        box-shadow: 0 10px 26px rgba(125, 211, 252, 0.24);
       }
 
       .btn-primary:hover {
         background: #a5e2fd;
-        border-color: #a5e2fd;
       }
 
-      .hint {
-        margin: 0;
-        font-size: 13px;
-        color: rgba(238, 240, 255, 0.6);
+      .btn-ghost {
+        border-color: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.05);
+        color: #eef0ff;
       }
 
-      .foot {
-        margin: 0;
-        font-size: 13px;
-        color: rgba(238, 240, 255, 0.45);
-        text-align: center;
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.11);
+        border-color: rgba(255, 255, 255, 0.26);
       }
 
-      .foot a {
-        color: rgba(125, 211, 252, 0.9);
-        text-decoration: none;
-        border-bottom: 1px solid rgba(125, 211, 252, 0.35);
+      .btn:focus-visible {
+        outline: 2px solid #7dd3fc;
+        outline-offset: 3px;
       }
 
-      /* Embedded mode: the chat takes the whole window. */
+      .note {
+        margin: 20px 0 0;
+        font-size: 12.5px;
+        color: rgba(238, 240, 255, 0.46);
+      }
+
+      @media (max-width: 460px) {
+        .shell {
+          padding: 24px 20px 22px;
+          border-radius: 22px;
+        }
+
+        .lede {
+          margin-top: 18px;
+        }
+
+        .features {
+          margin-top: 18px;
+          padding-top: 16px;
+          gap: 12px;
+        }
+
+        .actions {
+          margin-top: 20px;
+          flex-direction: column;
+        }
+
+        .btn {
+          flex: 0 0 auto;
+        }
+
+        .note {
+          margin-top: 16px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn {
+          transition: none;
+        }
+      }
     </style>
   </head>
   <body>
-    <main class="card">
-      <div class="brand">
-        <div class="glyph">◍</div>
+    <div class="glow glow-a" aria-hidden="true"></div>
+    <div class="glow glow-b" aria-hidden="true"></div>
+
+    <main class="shell">
+      <header class="brand">
+        <span class="mark" aria-hidden="true">◍</span>
         <div>
           <h1>Only Chatz</h1>
           <p class="tagline">everyone, floating together</p>
         </div>
-      </div>
+      </header>
 
-      <section class="about">
-        <ul class="features">
-          <li>
-            <strong>Channels</strong>
-            <span>#general, #design, #random — live messages, topics and slow mode.</span>
-          </li>
-          <li>
-            <strong>Direct messages</strong>
-            <span>Friends stay pinned at the top of your sidebar.</span>
-          </li>
-          <li>
-            <strong>Real roles</strong>
-            <span>Owner, Co-Owner, Admin, Mod, Member — enforced by the server, not the buttons.</span>
-          </li>
-          <li>
-            <strong>Your profile</strong>
-            <span>Display name, bio, accent colour and a cropped avatar.</span>
-          </li>
-          <li>
-            <strong>Who&apos;s online</strong>
-            <span>A live board showing everyone and which room they are floating in.</span>
-          </li>
-          <li>
-            <strong>Commands</strong>
-            <span>/help · /nick · /topic · /slowmode · /clear · /mute · /kick · /ban · /role</span>
-          </li>
-        </ul>
-        <p>
-          No email, no verification: pick a username and a password. The first account created
-          becomes the Owner.
-        </p>
-      </section>
+      <p class="lede">
+        A small real-time chatroom. Pick a name, step inside, and float around with everyone else.
+      </p>
+
+      <dl class="features">
+        <div class="feature">
+          <dt>Channels</dt>
+          <dd>#general, #design, #random — live messages, topics and slow mode.</dd>
+        </div>
+        <div class="feature">
+          <dt>Direct messages</dt>
+          <dd>Friends stay pinned at the top of your sidebar.</dd>
+        </div>
+        <div class="feature">
+          <dt>Real roles</dt>
+          <dd>Owner, Co-Owner, Admin, Mod, Member — enforced by the server, not the buttons.</dd>
+        </div>
+        <div class="feature">
+          <dt>Your profile</dt>
+          <dd>Display name, bio, accent colour and a cropped avatar.</dd>
+        </div>
+        <div class="feature">
+          <dt>Who&rsquo;s online</dt>
+          <dd>A live board showing everyone and which room they are floating in.</dd>
+        </div>
+        <div class="feature">
+          <dt>Commands</dt>
+          <dd>/help · /nick · /topic · /slowmode · /clear · /mute · /kick · /ban · /role</dd>
+        </div>
+      </dl>
 
       <div class="actions">
-        <a class="btn btn-primary" id="open-new" href="#" target="_blank" rel="noopener">Open in a new tab</a>
-        <a class="btn" id="open-here" href="#">Load it here</a>
+        <a class="btn btn-primary" href="/chat" data-room>Enter the room</a>
+        <a class="btn btn-ghost" href="/chat" data-room target="_blank" rel="noopener">Open in a new tab</a>
       </div>
 
-      <p class="hint" id="hint" hidden></p>
-      <p class="foot"><a id="direct" href="#">/chat</a></p>
+      <p class="note">
+        No email, no verification — a username and a password. The first account created becomes the
+        Owner.
+      </p>
     </main>
 
     <script>
-      // The room address. Left empty, the launcher opens /chat on whatever site
-      // it is served from. Hosting this file somewhere else? Put the full URL
-      // in, e.g. 'https://only-chatz.onrender.com', or pass it as
-      // ?chat=https://only-chatz.onrender.com.
-      var APP_URL = '';
-
-      var params = new URLSearchParams(location.search);
-      var requested = params.get('chat');
-      var openNew = document.getElementById('open-new');
-      var openHere = document.getElementById('open-here');
-      var hint = document.getElementById('hint');
-      var direct = document.getElementById('direct');
-
-      // Resolve the room against the document's base so this works however the
-      // page arrives (http, an inlined srcdoc pane, a blob). The query string
-      // rides along so a hosted preview's access token reaches the room too.
-      function roomUrl() {
-        if (requested) return requested;
-        if (APP_URL) return APP_URL.replace(/\/+$/, '') + '/chat';
-        try {
-          var base = new URL(document.baseURI);
-          var room = new URL('/chat', base);
-          room.search = base.search;
-          return room.href;
-        } catch (error) {
-          return '';
+      // Carry the current query string (a hosted preview's access token) onto the
+      // room links. Without it the plain /chat href still loads the room.
+      (function () {
+        if (!location.search) return;
+        var links = document.querySelectorAll('[data-room]');
+        for (var i = 0; i < links.length; i++) {
+          links[i].setAttribute('href', '/chat' + location.search);
         }
-      }
-
-      var target = roomUrl();
-
-      if (!target) {
-        // Opened straight off disk with nothing configured: nothing to open.
-        hint.textContent = 'Set APP_URL at the top of this file to your chatroom link.';
-        hint.hidden = false;
-        direct.parentElement.hidden = true;
-        openNew.removeAttribute('href');
-        openNew.style.opacity = '0.5';
-        openHere.removeAttribute('href');
-        openHere.style.opacity = '0.5';
-      } else {
-        // Both controls are ordinary links, so the room loads even where
-        // scripted window handling is blocked.
-        openNew.href = target;
-        openHere.href = target;
-        var shown = new URL(target);
-        direct.href = target;
-        direct.textContent = shown.origin === location.origin ? shown.pathname : target;
-
-        // A sandboxed pane swallows the new tab, so navigate this window when
-        // the popup is refused.
-        openNew.addEventListener('click', function (event) {
-          event.preventDefault();
-          var opened = window.open(target, '_blank');
-          if (!opened) location.assign(target);
-        });
-      }
+      })();
     </script>
   </body>
 </html>
