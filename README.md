@@ -17,17 +17,7 @@ docker compose -f docker-compose.base44.yml up -d
 The app is served on **http://localhost:3000** (Vite dev server, live reload; the API and Postgres
 run alongside it).
 
-### Demo accounts
-
-| account | role | password |
-| --- | --- | --- |
-| `zara` | Owner | `zara123` |
-| `milo` | Co-Owner | `milo123` |
-| `ada` | Admin | `ada123` |
-| `kai` | Mod | `kai123` |
-| `juno`, `remy` | Member | `juno123`, `remy123` |
-
-Or register your own account from the sign-in screen.
+Sign in with an account an owner has given you, or register a new one from the sign-in screen.
 
 ## Commands
 

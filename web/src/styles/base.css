@@ -391,21 +391,6 @@ p {
   margin-top: 4px;
 }
 
-.auth-demo {
-  margin-top: 16px;
-  font-size: 12px;
-  line-height: 1.65;
-  color: #8f96bb;
-}
-
-.auth-demo button {
-  color: #cfd4ff;
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: rgba(207, 212, 255, 0.35);
-  text-underline-offset: 2px;
-}
-
 @keyframes rise {
   from {
     opacity: 0;

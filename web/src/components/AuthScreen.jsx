@@ -28,13 +28,6 @@ export default function AuthScreen({ onAuthed, notice }) {
     }
   }
 
-  function fillDemo(user) {
-    setMode('login')
-    setUsername(user)
-    setPassword(`${user}123`)
-    setError('')
-  }
-
   return (
     <div className="auth-wrap">
       <div className="auth-card glass">
@@ -109,13 +102,6 @@ export default function AuthScreen({ onAuthed, notice }) {
             {busy ? 'One moment…' : mode === 'login' ? 'Step inside' : 'Create my account'}
           </button>
         </form>
-
-        <p className="auth-demo">
-          Try a demo account — <button type="button" onClick={() => fillDemo('zara')}>zara</button> (Owner),{' '}
-          <button type="button" onClick={() => fillDemo('milo')}>milo</button> (Co-Owner),{' '}
-          <button type="button" onClick={() => fillDemo('kai')}>kai</button> (Mod). Password is the username
-          plus 123.
-        </p>
       </div>
     </div>
   )
