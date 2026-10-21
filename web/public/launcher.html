@@ -278,13 +278,18 @@
       var requested = params.get('chat');
       var hosted = location.protocol === 'http:' || location.protocol === 'https:';
       var target = '';
+      var display = '';
 
       if (requested) {
         target = requested;
       } else if (APP_URL) {
         target = APP_URL.replace(/\/+$/, '') + '/chat';
       } else if (hosted) {
-        target = new URL('/chat', location.href).href;
+        // Same site: /chat on this origin, keeping the current query string so a
+        // hosted preview's access token travels with the new tab as well.
+        var sameSite = new URL('/chat', location.href);
+        sameSite.search = location.search;
+        target = sameSite.href;
       }
 
       var openNew = document.getElementById('open-new');
@@ -297,7 +302,7 @@
       var closeBtn = document.getElementById('close');
 
       function loadHere() {
-        label.textContent = 'Only Chatz — ' + target;
+        label.textContent = 'Only Chatz — ' + display;
         if (frame.getAttribute('src') !== target) frame.src = target;
         stage.hidden = false;
         document.body.classList.add('embedded');
@@ -318,8 +323,10 @@
         openNew.href = target;
         openNew.target = '_blank';
         openNew.rel = 'noopener';
+        var shown = new URL(target);
+        display = shown.origin === location.origin ? shown.pathname : target;
         direct.href = target;
-        direct.textContent = target.replace(location.origin, '') || '/chat';
+        direct.textContent = display;
 
         // A sandboxed iframe (the preview pane is one) can swallow the new tab,
         // so fall back to loading the room in place when the popup is refused.
