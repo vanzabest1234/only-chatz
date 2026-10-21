@@ -71,6 +71,11 @@ open a DM) and checking `docker compose logs api`.
 (`Caddyfile`) for Let's Encrypt certificates and the WebSocket upgrade;
 `deploy.env.example` lists the variables.
 
+`render.yaml` is the zero-input hosted path: a Render Blueprint (`runtime: docker`, free plan) plus a
+free Postgres, with `DATABASE_URL` injected by `fromDatabase`. Render supplies `PORT` itself, so the
+blueprint sets no port. Free plan sleeps when idle and the free database expires 30 days after
+creation — say so whenever a URL is handed out.
+
 Release and sandbox wiring differ on purpose: the sandbox runs a Vite dev server proxying to a
 separate API on :8000, a release serves both from Express on one port. Keep `SERVE_WEB` unset in
 `docker-compose.base44.yml` so the preview keeps serving live source, and never point the preview at

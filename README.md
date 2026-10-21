@@ -37,9 +37,24 @@ docker compose -f docker-compose.prod.yml up -d --build
   `docker compose -f docker-compose.prod.yml --profile https up -d` — Caddy fetches a free
   Let's Encrypt certificate and proxies the WebSocket upgrade the chat needs.
 
+### Free random URL on Render — nothing to type
+
+`render.yaml` describes the whole stack, so Render builds it for you and hands back a random
+`https://<something>.onrender.com` link:
+
+1. Sign in at [render.com](https://render.com) with GitHub (one click — Render needs an account).
+2. **New → Blueprint**, pick this repository, press **Apply**.
+
+Render builds the `Dockerfile`, creates the free Postgres, and sets `DATABASE_URL` itself. The first
+account made at that URL becomes the Owner.
+
+Free plan, so expect two things: the site sleeps after ~15 minutes idle and takes about a minute to
+wake on the next visit, and the free database expires 30 days after creation (14-day grace period
+before its data is deleted). Upgrade the database when the room should last.
+
 ### Managed hosting
 
-The image is self-contained, so any Docker-capable host (Render, Koyeb, Fly.io, …) can build the
+The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can build the
 `Dockerfile` directly. Give it a Postgres — Neon's free tier is the usual no-cost choice — as
 `DATABASE_URL`, leave the port alone (the app reads `PORT`), and that is the whole setup. Free tiers
 change their limits, so check the current offering before relying on one.
