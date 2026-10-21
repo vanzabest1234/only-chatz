@@ -27,7 +27,9 @@ Non-obvious things worth knowing before changing something:
 - **Demo data only appears on a virgin database.** If you ever need the seed back without destroying
   messages, promote an account by hand rather than wiping the data volume.
 - **Roles are enforced server-side only.** `owner > co-owner > admin > mod > member`; you may never
-  act on someone at or above your own rank, and `/role` can only hand out ranks below your own.
+  act on someone at or above your own rank. **Only the Owner hands out roles** — `/role` is
+  `minRank: 4` and re-checks `actor.role === 'owner'`, so co-owners and admins cannot promote anyone;
+  every later signup is a plain member until the Owner promotes them.
   The UI merely filters the command list it is given (`GET /api/me` → `commands`).
 - **Muting blocks channel and DM posting**; bans revoke sessions and refuse future logins.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for

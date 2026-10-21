@@ -208,9 +208,11 @@ const COMMANDS = [
   {
     name: 'role',
     usage: '/role @user <role>',
-    description: 'Give someone a role below your own.',
-    minRank: 2,
+    description: 'Owner only — give someone a role.',
+    minRank: 4,
     async run({ actor, args }) {
+      // Only the Owner hands out roles; everyone else stays a member.
+      if (actor.role !== 'owner') return { error: 'Only the Owner can hand out roles.' }
       const target = await findUser(args[0])
       const problem = guardTarget(actor, target)
       if (problem) return { error: problem }
