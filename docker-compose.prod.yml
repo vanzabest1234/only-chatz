@@ -1,0 +1,60 @@
+# Release stack: Postgres + the single app container that serves the site and the API.
+#
+#   cp deploy.env.example .env    # fill in POSTGRES_PASSWORD, optionally DOMAIN
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Add automatic HTTPS (needs a domain pointing at this machine):
+#   docker compose -f docker-compose.prod.yml --profile https up -d
+
+name: only-chatz-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-chatz}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-chatz}
+    volumes:
+      - chatz-prod-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chatz} -d ${POSTGRES_DB:-chatz}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - SERVE_WEB=1
+      - DATABASE_URL=postgres://${POSTGRES_USER:-chatz}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-chatz}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - chatz-caddy-data:/data
+      - chatz-caddy-config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  chatz-prod-db:
+  chatz-caddy-data:
+  chatz-caddy-config:

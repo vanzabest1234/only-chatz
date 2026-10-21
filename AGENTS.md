@@ -51,9 +51,9 @@ Non-obvious things worth knowing before changing something:
 docker compose -f docker-compose.base44.yml ps          # all three healthy
 curl -s -o /dev/null -w '%{http_code}\n' localhost:3000 # 200
 curl -s localhost:3000/api/me                            # 401 without a token
-curl -s -X POST localhost:3000/api/auth/login \
+curl -s -X POST localhost:3000/api/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"username":"zara","password":"zara123"}'          # returns a token
+  -d '{"username":"tester","password":"tester123"}'       # returns a token (first signup = owner)
 ```
 
 Served assets must be live source: `curl -s localhost:3000/src/main.jsx` should return transformed
@@ -62,6 +62,19 @@ production build instead of the dev server.
 
 There is no test suite; verification is done by driving the UI (sign in, post, run a slash command,
 open a DM) and checking `docker compose logs api`.
+
+## Releasing it
+
+`Dockerfile` builds the web app and serves it plus the API from one container: `SERVE_WEB=1` makes
+`server/index.js` serve `web/dist` with an SPA fallback (`/api` and `/socket.io` excluded).
+`docker-compose.prod.yml` runs that image with Postgres, and its optional `https` profile adds Caddy
+(`Caddyfile`) for Let's Encrypt certificates and the WebSocket upgrade;
+`deploy.env.example` lists the variables.
+
+Release and sandbox wiring differ on purpose: the sandbox runs a Vite dev server proxying to a
+separate API on :8000, a release serves both from Express on one port. Keep `SERVE_WEB` unset in
+`docker-compose.base44.yml` so the preview keeps serving live source, and never point the preview at
+a production image — edits would stop showing.
 
 ## Accounts and seed data
 

@@ -1,0 +1,6 @@
+# Automatic HTTPS in front of the app. Caddy gets the certificates and passes the
+# WebSocket upgrade the chat needs. Only used by the "https" compose profile.
+{$DOMAIN:localhost} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

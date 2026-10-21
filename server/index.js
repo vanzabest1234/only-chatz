@@ -1,4 +1,6 @@
 import http from 'node:http'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
 import { migrate, waitForDb } from './db.js'
@@ -9,6 +11,7 @@ import chatRoutes from './routes/chat.js'
 import profileRoutes from './routes/profile.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
+const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
 
 const app = express()
 // 1mb leaves room for the cropped avatar data URL sent by the profile screen.
@@ -16,6 +19,16 @@ app.use(express.json({ limit: '1mb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api', profileRoutes)
 app.use('/api', chatRoutes)
+
+// A release build serves the built site from this same origin (see Dockerfile).
+// The sandbox preview leaves this off and Vite serves the source instead.
+if (process.env.SERVE_WEB === '1') {
+  app.use(express.static(WEB_DIR, { index: false }))
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()
+    res.sendFile(path.join(WEB_DIR, 'index.html'))
+  })
+}
 
 // eslint-disable-next-line no-unused-vars
 app.use((error, _req, res, _next) => {

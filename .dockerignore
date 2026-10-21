@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+*.log
+.env
+AGENTS.md
+README.md
+docker-compose*.yml
+Caddyfile
+deploy.env.example
