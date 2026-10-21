@@ -10,6 +10,8 @@
       html,
       body {
         min-height: 100%;
+        /* The blurred corner blobs reach past the edges; keep the page from scrolling sideways. */
+        overflow-x: hidden;
       }
 
       body {
@@ -53,7 +55,9 @@
       .card {
         position: relative;
         z-index: 1;
-        width: min(460px, 100%);
+        width: min(520px, 100%);
+        max-height: calc(100dvh - 48px);
+        overflow-y: auto;
         display: grid;
         gap: 20px;
         padding: 30px 28px;
@@ -111,6 +115,39 @@
       .about strong {
         color: #eef0ff;
         font-weight: 600;
+      }
+
+      .features {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .features li {
+        display: grid;
+        grid-template-columns: 128px 1fr;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .features strong {
+        color: #7dd3fc;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .features span {
+        color: rgba(238, 240, 255, 0.68);
+        font-size: 13px;
+      }
+
+      @media (max-width: 420px) {
+        .features li {
+          grid-template-columns: 1fr;
+          gap: 2px;
+        }
       }
 
       .actions {
@@ -239,11 +276,32 @@
       </div>
 
       <section class="about">
-        <p>
-          <strong>Channels</strong> with live messages, <strong>roles with real power</strong> —
-          Owner, Co-Owner, Admin, Mod, Member — and <strong>direct messages</strong> that keep your
-          friends at the top.
-        </p>
+        <ul class="features">
+          <li>
+            <strong>Channels</strong>
+            <span>#general, #design, #random — live messages, topics and slow mode.</span>
+          </li>
+          <li>
+            <strong>Direct messages</strong>
+            <span>Friends stay pinned at the top of your sidebar.</span>
+          </li>
+          <li>
+            <strong>Real roles</strong>
+            <span>Owner, Co-Owner, Admin, Mod, Member — enforced by the server, not the buttons.</span>
+          </li>
+          <li>
+            <strong>Your profile</strong>
+            <span>Display name, bio, accent colour and a cropped avatar.</span>
+          </li>
+          <li>
+            <strong>Who&apos;s online</strong>
+            <span>A live board showing everyone and which room they are floating in.</span>
+          </li>
+          <li>
+            <strong>Commands</strong>
+            <span>/help · /nick · /topic · /slowmode · /clear · /mute · /kick · /ban · /role</span>
+          </li>
+        </ul>
         <p>
           No email, no verification: pick a username and a password. The first account created
           becomes the Owner.
