@@ -128,6 +128,12 @@ export default function App() {
         }
         setReplyTo(previous => (previous?.id === message.id ? { ...previous, ...message } : previous))
       },
+      'message:delete': payload => {
+        const id = payload?.id
+        if (!id) return
+        setMessages(previous => previous.filter(item => item.id !== id))
+        setReplyTo(previous => (previous?.id === id ? null : previous))
+      },
       'messages:refresh': () => {
         loadMessages().catch(() => {})
       },
@@ -246,6 +252,16 @@ export default function App() {
     }
   }
 
+  const deleteMessage = async messageId => {
+    try {
+      await api(`/api/messages/${messageId}`, { method: 'DELETE' })
+      setMessages(previous => previous.filter(item => item.id !== messageId))
+      setReplyTo(previous => (previous?.id === messageId ? null : previous))
+    } catch (problem) {
+      setNotice(problem.message)
+    }
+  }
+
   const startReply = message => setReplyTo(message)
 
   if (booting) {
@@ -318,6 +334,7 @@ export default function App() {
             onCancelReply={() => setReplyTo(null)}
             onReact={react}
             onEditMessage={editMessage}
+            onDeleteMessage={deleteMessage}
           />
         ) : (
           <section className="chat glass">

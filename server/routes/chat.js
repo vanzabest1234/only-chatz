@@ -304,6 +304,44 @@ router.patch('/messages/:id', requireAuth, async (req, res) => {
   res.json({ message })
 })
 
+// Take a message down: the author may remove their own, the Owner may remove anyone's.
+router.delete('/messages/:id', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const { rows } = await q(
+    'SELECT author_id, channel_id, thread_id, system FROM messages WHERE id = $1',
+    [id],
+  )
+  const existing = rows[0]
+  if (!existing || existing.system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+
+  const own = existing.author_id === req.user.id
+  if (!own && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'You can only delete your own messages.' })
+  }
+  if (!take(`delete:${req.user.id}`, 20, 60_000).ok) {
+    return res.status(429).json({ error: 'Easy on the deletes — try again in a moment.' })
+  }
+
+  await q('DELETE FROM messages WHERE id = $1', [id])
+  if (!own) {
+    audit('message-deleted', {
+      actor: req.user.username,
+      messageId: id,
+      authorId: existing.author_id,
+    })
+  }
+
+  // Everyone looking at the room drops it too; the payload is just where it lived.
+  const gone = { id, channelId: existing.channel_id, threadId: existing.thread_id }
+  if (existing.channel_id) emitTo(`channel:${existing.channel_id}`, 'message:delete', gone)
+  else emitTo(`thread:${existing.thread_id}`, 'message:delete', gone)
+  res.json({ ok: true, ...gone })
+})
+
 // Everyone reacts; tapping the same reaction again takes it back.
 router.post('/messages/:id/reactions', requireAuth, async (req, res) => {
   const id = readId(req.params.id)

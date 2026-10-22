@@ -691,6 +691,12 @@ textarea:focus-visible,
   background: rgba(116, 240, 166, 0.1);
 }
 
+/* Deleting a message is the one destructive action: it reads red, never phosphor. */
+.msg-tool-del:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+}
+
 .reaction-picker {
   position: absolute;
   top: 24px;

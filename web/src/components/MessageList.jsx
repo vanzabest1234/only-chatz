@@ -36,8 +36,8 @@ function ReactionBar({ message, me, onReact }) {
   )
 }
 
-/** Hover (or tap) actions: react, reply, and edit your own message. */
-function MessageTools({ message, own, onReact, onReply, onEdit }) {
+/** Hover (or tap) actions: react, reply, edit your own message, and delete where allowed. */
+function MessageTools({ message, own, canDelete, onReact, onReply, onEdit, onDelete }) {
   const [picking, setPicking] = useState(false)
 
   return (
@@ -56,6 +56,16 @@ function MessageTools({ message, own, onReact, onReply, onEdit }) {
       {own && (
         <button type="button" className="msg-tool" aria-label="Edit message" onClick={onEdit}>
           ✎
+        </button>
+      )}
+      {canDelete && (
+        <button
+          type="button"
+          className="msg-tool msg-tool-del"
+          aria-label="Delete message"
+          onClick={onDelete}
+        >
+          ✕
         </button>
       )}
       {picking && (
@@ -110,7 +120,7 @@ function EditBox({ text, busy, onSave, onCancel }) {
   )
 }
 
-function ChannelMessage({ message, me, onReact, onReply, onEdit }) {
+function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -123,6 +133,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit }) {
   }
 
   const own = message.authorId === me.user.id
+  const canDelete = own || me.user.role === 'owner'
 
   async function save(text) {
     if (!text.trim()) return
@@ -162,19 +173,22 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit }) {
         <MessageTools
           message={message}
           own={own}
+          canDelete={canDelete}
           onReact={onReact}
           onReply={onReply}
           onEdit={() => setEditing(true)}
+          onDelete={() => onDelete(message)}
         />
       )}
     </div>
   )
 }
 
-function DmMessage({ message, me, onReact, onReply, onEdit }) {
+function DmMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const own = message.authorId === me.user.id
+  const canDelete = own || me.user.role === 'owner'
 
   async function save(text) {
     if (!text.trim()) return
@@ -228,16 +242,26 @@ function DmMessage({ message, me, onReact, onReply, onEdit }) {
         <MessageTools
           message={message}
           own={own}
+          canDelete={canDelete}
           onReact={onReact}
           onReply={onReply}
           onEdit={() => setEditing(true)}
+          onDelete={() => onDelete(message)}
         />
       )}
     </div>
   )
 }
 
-export default function MessageList({ messages, kind, me, onReact, onReply, onEditMessage }) {
+export default function MessageList({
+  messages,
+  kind,
+  me,
+  onReact,
+  onReply,
+  onEditMessage,
+  onDeleteMessage,
+}) {
   const scroller = useRef(null)
 
   useEffect(() => {
@@ -268,6 +292,7 @@ export default function MessageList({ messages, kind, me, onReact, onReply, onEd
             onReact={onReact}
             onReply={onReply}
             onEdit={onEditMessage}
+            onDelete={onDeleteMessage}
           />
         ) : (
           <ChannelMessage
@@ -277,6 +302,7 @@ export default function MessageList({ messages, kind, me, onReact, onReply, onEd
             onReact={onReact}
             onReply={onReply}
             onEdit={onEditMessage}
+            onDelete={onDeleteMessage}
           />
         ),
       )}

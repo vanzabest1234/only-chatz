@@ -16,6 +16,7 @@ export default function ChatPane({
   onCancelReply,
   onReact,
   onEditMessage,
+  onDeleteMessage,
 }) {
   const kind = channel ? 'channel' : 'dm'
   const peer = thread?.peer
@@ -70,6 +71,7 @@ export default function ChatPane({
         onReact={onReact}
         onReply={onReply}
         onEditMessage={onEditMessage}
+        onDeleteMessage={onDeleteMessage}
       />
 
       <Composer

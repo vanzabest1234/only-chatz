@@ -48,6 +48,13 @@ Non-obvious things worth knowing before changing something:
   client re-renders from that one payload — the client never patches optimistic state itself.
   The action buttons live in `MessageList.jsx` and reveal on hover, and stay visible on
   `(hover: none)` touch screens; "edit" only appears on your own messages.
+- **Deleting a message follows the same split: your own, or anyone's if you are the Owner.**
+  `DELETE /api/messages/:id` refuses a non-owner acting on someone else's message (403) and
+  removes the row otherwise; `reply_to_id` is `ON DELETE SET NULL` and `message_reactions`
+  cascades, so quotes and reactions go with it. The room is told `message:delete` with just
+  `{id, channelId, threadId}` and every client drops it from its list, so nothing re-renders from a
+  stale payload. Unlike an edit, a delete is also audited (`message-deleted`) when the Owner removes
+  someone else's message.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in
