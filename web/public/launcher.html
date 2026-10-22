@@ -477,7 +477,7 @@
           <div class="ps">
             <span class="pr">$</span>
             <a class="btn" href="/chat" data-room>Enter the room</a>
-            <a class="btn g" href="/chat" data-room target="_blank" rel="noopener">Open in a new tab</a>
+            <a class="btn g" href="/chat" data-room id="room-newtab">Open in a new tab</a>
             <span class="cur"></span>
           </div>
           <p class="note">
@@ -492,11 +492,34 @@
       // Carry the current query string (a hosted preview's access token) onto the
       // room links. Without it the plain /chat href still loads the room.
       (function () {
-        if (!location.search) return;
         var links = document.querySelectorAll('[data-room]');
-        for (var i = 0; i < links.length; i++) {
-          links[i].setAttribute('href', '/chat' + location.search);
+        if (location.search) {
+          for (var i = 0; i < links.length; i++) {
+            links[i].setAttribute('href', '/chat' + location.search);
+          }
         }
+
+        // The new-tab button: a sandboxed frame turns `target="_blank"` into about:blank,
+        // so the tab is opened from script and, when popups are blocked, the plain href
+        // simply takes this tab to the room.
+        var newTab = document.getElementById('room-newtab');
+        if (!newTab) return;
+
+        newTab.addEventListener('click', function (event) {
+          var opened = null;
+          try {
+            opened = window.open(newTab.getAttribute('href'), '_blank');
+          } catch (error) {
+            opened = null;
+          }
+          if (!opened || opened.closed) return; // blocked: let the anchor do the work
+          try {
+            opened.opener = null;
+          } catch (error) {
+            /* already detached */
+          }
+          event.preventDefault();
+        });
       })();
     </script>
   </body>

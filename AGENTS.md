@@ -53,9 +53,12 @@ Non-obvious things worth knowing before changing something:
   and `/launcher.html` would silently fall through to the chat app. It is deliberately dependency-free:
   both buttons are plain `<a href="/chat">` anchors, so the room opens even where scripted
   `window.open` / iframe handling is blocked (the old embedded-iframe and `APP_URL`-detection versions
-  left the buttons dead inside the preview pane). The only script copies the current query string — a
-  hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
-  works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
+  left the buttons dead inside the preview pane). The script copies the current query string — a
+  hosted preview's access token — onto those hrefs, and the "Open in a new tab" button opens its tab
+  with `window.open` instead of `target="_blank"` (a sandboxed frame resolves `_blank` to
+  `about:blank`); when popups are blocked the anchor's own `/chat` href loads the room in this tab.
+  With the script gone both plain `/chat` hrefs still work. Never hardcode a sandbox host: `/chat` is
+  relative to whatever site serves the file.
   The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
   remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
 - **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
