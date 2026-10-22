@@ -58,6 +58,11 @@ Non-obvious things worth knowing before changing something:
   works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
   The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
   remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
+- **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
+  after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
+  and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
+  instead of editing component CSS, and keep its `border-radius: 0` rules after the media-query radius
+  rules in `app.css` (later import order is what lets them win).
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
