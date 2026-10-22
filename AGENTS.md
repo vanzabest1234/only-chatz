@@ -38,6 +38,16 @@ Non-obvious things worth knowing before changing something:
   from a non-owner, and the client disables the composer for them. Everyone still sees the room
   and its messages — the flag only gates writing. Adding another announcement room means setting
   the same column, not adding a second rule.
+- **Messages can be edited, replied to and reacted to.** `messages.edited_at` and
+  `messages.reply_to_id` plus the `message_reactions` table carry it.
+  `PATCH /api/messages/:id` only touches your own message and always stamps `edited_at`, which the
+  UI renders as "(edited)"; a reply must point at a message in the *same* room (`readReply`
+  compares the room column) and the client shows the quoted line above the text; reactions come
+  from a fixed six-emoji palette (`REACTIONS` in `routes/chat.js`) and tapping your own again
+  removes it. Both changes are broadcast as `message:update` to the message's room, so every open
+  client re-renders from that one payload — the client never patches optimistic state itself.
+  The action buttons live in `MessageList.jsx` and reveal on hover, and stay visible on
+  `(hover: none)` touch screens; "edit" only appears on your own messages.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in

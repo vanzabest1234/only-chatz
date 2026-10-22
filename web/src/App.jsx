@@ -20,6 +20,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [boardOpen, setBoardOpen] = useState(false)
   const [where, setWhere] = useState({})
+  const [replyTo, setReplyTo] = useState(null)
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -113,6 +114,20 @@ export default function App() {
           )
         }
       },
+      'message:update': message => {
+        const target = viewRef.current
+        const matches =
+          target &&
+          (target.type === 'channel'
+            ? message.channelId === target.id
+            : message.threadId === target.id)
+        if (matches) {
+          setMessages(previous =>
+            previous.map(item => (item.id === message.id ? message : item)),
+          )
+        }
+        setReplyTo(previous => (previous?.id === message.id ? { ...previous, ...message } : previous))
+      },
       'messages:refresh': () => {
         loadMessages().catch(() => {})
       },
@@ -143,12 +158,19 @@ export default function App() {
   }, [view?.type, view?.id, shareRoom])
 
   useEffect(() => {
+    setReplyTo(null)
     if (!view) {
       setMessages([])
       return
     }
     loadMessages().catch(() => setMessages([]))
   }, [view, loadMessages])
+
+  useEffect(() => {
+    if (!notice || !me) return
+    const timer = setTimeout(() => setNotice(''), 5000)
+    return () => clearTimeout(timer)
+  }, [notice, me])
 
   const openChannel = channel => {
     setView({ type: 'channel', id: channel.id })
@@ -183,7 +205,9 @@ export default function App() {
       target.type === 'channel'
         ? `/api/channels/${target.id}/messages`
         : `/api/dm/${target.id}/messages`
-    const data = await api(path, { method: 'POST', body: JSON.stringify({ content }) })
+    const body = replyTo ? { content, replyToId: replyTo.id } : { content }
+    const data = await api(path, { method: 'POST', body: JSON.stringify(body) })
+    setReplyTo(null)
     if (data.message) {
       setMessages(previous =>
         previous.some(item => item.id === data.message.id) ? previous : [...previous, data.message],
@@ -192,6 +216,37 @@ export default function App() {
       await load()
     }
   }
+
+  const replaceMessage = message => {
+    setMessages(previous => previous.map(item => (item.id === message.id ? message : item)))
+  }
+
+  const react = async (messageId, emoji) => {
+    try {
+      const data = await api(`/api/messages/${messageId}/reactions`, {
+        method: 'POST',
+        body: JSON.stringify({ emoji }),
+      })
+      replaceMessage(data.message)
+    } catch (problem) {
+      setNotice(problem.message)
+    }
+  }
+
+  const editMessage = async (messageId, content) => {
+    try {
+      const data = await api(`/api/messages/${messageId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content }),
+      })
+      replaceMessage(data.message)
+    } catch (problem) {
+      setNotice(problem.message)
+      throw problem
+    }
+  }
+
+  const startReply = message => setReplyTo(message)
 
   if (booting) {
     return (
@@ -221,6 +276,8 @@ export default function App() {
     <>
       <Background />
       <div className="shell">
+        {notice && <p className="toast">{notice}</p>}
+
         <Sidebar
           me={me}
           channelId={channel?.id}
@@ -256,6 +313,11 @@ export default function App() {
             onSend={send}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenMembers={() => setMembersOpen(value => !value)}
+            replyTo={replyTo}
+            onReply={startReply}
+            onCancelReply={() => setReplyTo(null)}
+            onReact={react}
+            onEditMessage={editMessage}
           />
         ) : (
           <section className="chat glass">

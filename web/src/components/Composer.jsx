@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
 
 export default function Composer({
@@ -8,11 +8,18 @@ export default function Composer({
   disabled,
   disabledNote,
   slowmode = 0,
+  replyTo,
+  onCancelReply,
 }) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const area = useRef(null)
+
+  // Picking "reply" is a request to type, so the cursor goes straight to the box.
+  useEffect(() => {
+    if (replyTo) area.current?.focus()
+  }, [replyTo?.id])
 
   const matches =
     value.startsWith('/') && !/\s/.test(value)
@@ -64,6 +71,22 @@ export default function Composer({
               <span className="cmd-desc">{command.description}</span>
             </button>
           ))}
+        </div>
+      )}
+
+      {replyTo && (
+        <div className="composer-reply">
+          <span className="reply-arrow">↰</span>
+          <span className="reply-who">{replyTo.authorName}</span>
+          <span className="reply-text">{replyTo.content}</span>
+          <button
+            type="button"
+            className="reply-cancel"
+            onClick={onCancelReply}
+            aria-label="Cancel reply"
+          >
+            ×
+          </button>
         </div>
       )}
 

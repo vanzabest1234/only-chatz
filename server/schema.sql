@@ -72,3 +72,15 @@ CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
 
 CREATE INDEX IF NOT EXISTS messages_channel_idx ON messages (channel_id, id DESC);
 CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);
+
+-- fixing a typo, quoting someone, and reacting to a message
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id BIGINT REFERENCES messages(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS message_reactions (
+  message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id, emoji)
+);

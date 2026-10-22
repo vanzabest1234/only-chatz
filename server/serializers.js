@@ -24,5 +24,7 @@ export function publicMessage(row) {
     content: row.content,
     system: Boolean(row.system),
     createdAt: row.created_at,
+    editedAt: row.edited_at ?? null,
+    replyToId: row.reply_to_id ? Number(row.reply_to_id) : null,
   }
 }

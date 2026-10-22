@@ -11,6 +11,11 @@ export default function ChatPane({
   onSend,
   onOpenSidebar,
   onOpenMembers,
+  replyTo,
+  onReply,
+  onCancelReply,
+  onReact,
+  onEditMessage,
 }) {
   const kind = channel ? 'channel' : 'dm'
   const peer = thread?.peer
@@ -58,12 +63,21 @@ export default function ChatPane({
         </button>
       </header>
 
-      <MessageList messages={messages} kind={kind} me={me} />
+      <MessageList
+        messages={messages}
+        kind={kind}
+        me={me}
+        onReact={onReact}
+        onReply={onReply}
+        onEditMessage={onEditMessage}
+      />
 
       <Composer
         placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}
         commands={me.commands}
         onSend={onSend}
+        replyTo={replyTo}
+        onCancelReply={onCancelReply}
         disabled={muted || readOnly}
         disabledNote={
           readOnly

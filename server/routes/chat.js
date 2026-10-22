@@ -11,6 +11,8 @@ const router = Router()
 
 const MAX_MESSAGE = 2000
 const MAX_COMMAND = 400
+// A fixed palette instead of free text: reactions stay one tap and cannot be abused for spam.
+const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
 
 // Only identifiers this module chooses may be interpolated into SQL.
 const MESSAGE_COLUMNS = new Set(['channel_id', 'thread_id'])
@@ -105,6 +107,51 @@ async function loadSnapshot(user) {
   }
 }
 
+/** Reactions, plus the quoted line a reply points at, attached to a page of messages. */
+async function withExtras(rows) {
+  const messages = rows.map(publicMessage)
+  if (!messages.length) return messages
+
+  const ids = messages.map(message => message.id)
+  const { rows: reactionRows } = await q(
+    `SELECT message_id, emoji, user_id FROM message_reactions
+      WHERE message_id = ANY($1::bigint[])
+      ORDER BY created_at`,
+    [ids],
+  )
+  const tally = new Map()
+  reactionRows.forEach(row => {
+    const id = Number(row.message_id)
+    if (!tally.has(id)) tally.set(id, new Map())
+    const group = tally.get(id)
+    group.set(row.emoji, [...(group.get(row.emoji) ?? []), row.user_id])
+  })
+
+  const replyIds = [...new Set(messages.map(message => message.replyToId).filter(Boolean))]
+  const quotes = new Map()
+  if (replyIds.length) {
+    const { rows: quoteRows } = await q(
+      `SELECT m.id, m.content, COALESCE(u.display_name, m.author_name) AS author
+         FROM messages m LEFT JOIN users u ON u.id = m.author_id
+        WHERE m.id = ANY($1::bigint[])`,
+      [replyIds],
+    )
+    quoteRows.forEach(row => quotes.set(Number(row.id), row))
+  }
+
+  return messages.map(message => {
+    const group = tally.get(message.id)
+    const quote = message.replyToId ? quotes.get(message.replyToId) : null
+    return {
+      ...message,
+      reactions: group ? [...group].map(([emoji, userIds]) => ({ emoji, userIds })) : [],
+      replyTo: quote
+        ? { id: Number(quote.id), authorName: quote.author, content: quote.content.slice(0, 140) }
+        : null,
+    }
+  })
+}
+
 async function hydrateMessage(id) {
   const { rows } = await q(
     `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
@@ -112,7 +159,8 @@ async function hydrateMessage(id) {
       WHERE m.id = $1`,
     [id],
   )
-  return publicMessage(rows[0])
+  const [message] = await withExtras(rows)
+  return message
 }
 
 async function listMessages(column, id) {
@@ -125,7 +173,26 @@ async function listMessages(column, id) {
       LIMIT 80`,
     [id],
   )
-  return rows.reverse().map(publicMessage)
+  return withExtras(rows.reverse())
+}
+
+/** An edit or a reaction changes a message everyone is looking at, so it goes out to its room. */
+function broadcastMessage(event, message) {
+  if (message.channelId) emitTo(`channel:${message.channelId}`, event, message)
+  else emitTo(`thread:${message.threadId}`, event, message)
+}
+
+/** A reply only ever points at a message in the same room; anything else is treated as stale. */
+async function readReply(body, column, roomId) {
+  const raw = body?.replyToId
+  if (raw === undefined || raw === null || raw === '') return { replyToId: null }
+  const id = readId(raw)
+  if (!id) return { error: 'The message you replied to is gone.' }
+  const { rows } = await q(`SELECT ${column} AS room FROM messages WHERE id = $1`, [id])
+  if (!rows.length || rows[0].room !== roomId) {
+    return { error: 'The message you replied to is gone.' }
+  }
+  return { replyToId: id }
 }
 
 async function checkCanSpeak(user, channel) {
@@ -196,13 +263,88 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
     return res.json({ ok: true })
   }
 
+  const reply = await readReply(req.body, 'channel_id', channelId)
+  if (reply.error) return res.status(400).json({ error: reply.error })
+
   const { rows: inserted } = await q(
-    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [channelId, req.user.id, req.user.display_name, req.user.role, content],
+    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content, reply_to_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [channelId, req.user.id, req.user.display_name, req.user.role, content, reply.replyToId],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`channel:${channelId}`, 'message:new', message)
+  res.json({ message })
+})
+
+// Fix a typo: only the author edits, and the message keeps a visible "edited" mark.
+router.patch('/messages/:id', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const read = readContent(req.body?.content)
+  if (read.error) return res.status(400).json({ error: read.error })
+
+  if (!take(`edit:${req.user.id}`, 10, 60_000).ok) {
+    return res.status(429).json({ error: 'Easy on the edits — try again in a moment.' })
+  }
+
+  const { rows } = await q('SELECT author_id, content, system FROM messages WHERE id = $1', [id])
+  const existing = rows[0]
+  if (!existing || existing.system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+  if (existing.author_id !== req.user.id) {
+    return res.status(403).json({ error: 'You can only edit your own messages.' })
+  }
+  if (existing.content === read.content) return res.json({ message: await hydrateMessage(id) })
+
+  await q('UPDATE messages SET content = $1, edited_at = now() WHERE id = $2', [read.content, id])
+  const message = await hydrateMessage(id)
+  broadcastMessage('message:update', message)
+  res.json({ message })
+})
+
+// Everyone reacts; tapping the same reaction again takes it back.
+router.post('/messages/:id/reactions', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const emoji = String(req.body?.emoji ?? '')
+  if (!REACTIONS.includes(emoji)) {
+    return res.status(400).json({ error: 'That is not one of the reactions.' })
+  }
+  if (req.user.muted_until && new Date(req.user.muted_until) > new Date()) {
+    return res.status(403).json({ error: 'You are muted right now.' })
+  }
+  if (!take(`react:${req.user.id}`, 20, 10_000).ok) {
+    return res.status(429).json({ error: 'Easy on the reactions — try again in a moment.' })
+  }
+
+  const found = await q('SELECT system FROM messages WHERE id = $1', [id])
+  if (!found.rows.length || found.rows[0].system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+
+  const mine = await q(
+    'SELECT 1 FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3',
+    [id, req.user.id, emoji],
+  )
+  if (mine.rows.length) {
+    await q('DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3', [
+      id,
+      req.user.id,
+      emoji,
+    ])
+  } else {
+    await q('INSERT INTO message_reactions (message_id, user_id, emoji) VALUES ($1, $2, $3)', [
+      id,
+      req.user.id,
+      emoji,
+    ])
+  }
+
+  const message = await hydrateMessage(id)
+  broadcastMessage('message:update', message)
   res.json({ message })
 })
 
@@ -268,10 +410,13 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   const blocked = await checkCanSpeak(req.user, null)
   if (blocked) return res.status(blocked.status).json({ error: blocked.error })
 
+  const reply = await readReply(req.body, 'thread_id', threadId)
+  if (reply.error) return res.status(400).json({ error: reply.error })
+
   const { rows: inserted } = await q(
-    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [threadId, req.user.id, req.user.display_name, req.user.role, content],
+    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content, reply_to_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [threadId, req.user.id, req.user.display_name, req.user.role, content, reply.replyToId],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`thread:${threadId}`, 'message:new', message)

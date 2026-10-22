@@ -1,9 +1,119 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Avatar from './Avatar'
 import RoleBadge from './RoleBadge'
-import { timeShort } from '../lib/format'
+import { snippet, timeShort } from '../lib/format'
 
-function ChannelMessage({ message }) {
+const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
+
+function ReplyQuote({ replyTo }) {
+  if (!replyTo) return null
+  return (
+    <span className="reply-quote">
+      <span className="reply-arrow">↰</span>
+      <span className="reply-who">{replyTo.authorName}</span>
+      <span className="reply-text">{snippet(replyTo.content, 90)}</span>
+    </span>
+  )
+}
+
+function ReactionBar({ message, me, onReact }) {
+  if (!message.reactions?.length) return null
+  return (
+    <div className="reactions">
+      {message.reactions.map(group => (
+        <button
+          key={group.emoji}
+          type="button"
+          className={`reaction ${group.userIds.includes(me.user.id) ? 'mine' : ''}`}
+          onClick={() => onReact(message.id, group.emoji)}
+          title={`${group.userIds.length} reacted`}
+        >
+          <span>{group.emoji}</span>
+          <span className="reaction-count">{group.userIds.length}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Hover (or tap) actions: react, reply, and edit your own message. */
+function MessageTools({ message, own, onReact, onReply, onEdit }) {
+  const [picking, setPicking] = useState(false)
+
+  return (
+    <div className={`msg-tools ${picking ? 'open' : ''}`}>
+      <button
+        type="button"
+        className="msg-tool"
+        aria-label="Add a reaction"
+        onClick={() => setPicking(value => !value)}
+      >
+        ☺
+      </button>
+      <button type="button" className="msg-tool" aria-label="Reply" onClick={() => onReply(message)}>
+        ↰
+      </button>
+      {own && (
+        <button type="button" className="msg-tool" aria-label="Edit message" onClick={onEdit}>
+          ✎
+        </button>
+      )}
+      {picking && (
+        <div className="reaction-picker">
+          {REACTIONS.map(emoji => (
+            <button
+              key={emoji}
+              type="button"
+              aria-label={`React with ${emoji}`}
+              onClick={() => {
+                onReact(message.id, emoji)
+                setPicking(false)
+              }}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EditBox({ text, busy, onSave, onCancel }) {
+  const [value, setValue] = useState(text)
+
+  return (
+    <div className="msg-edit">
+      <textarea
+        value={value}
+        rows={2}
+        autoFocus
+        aria-label="Edit message"
+        onChange={event => setValue(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === 'Escape') onCancel()
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            onSave(value)
+          }
+        }}
+      />
+      <div className="msg-edit-actions">
+        <button type="button" onClick={() => onSave(value)} disabled={busy}>
+          save
+        </button>
+        <button type="button" onClick={onCancel}>
+          cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ChannelMessage({ message, me, onReact, onReply, onEdit }) {
+  const [editing, setEditing] = useState(false)
+  const [busy, setBusy] = useState(false)
+
   if (message.system) {
     return (
       <div className="msg system">
@@ -11,6 +121,20 @@ function ChannelMessage({ message }) {
       </div>
     )
   }
+
+  const own = message.authorId === me.user.id
+
+  async function save(text) {
+    if (!text.trim()) return
+    setBusy(true)
+    try {
+      await onEdit(message.id, text.trim())
+      setEditing(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="msg">
       <Avatar name={message.authorName} color={message.authorColor} src={message.authorAvatar} />
@@ -19,15 +143,50 @@ function ChannelMessage({ message }) {
           <span className="msg-name">{message.authorName}</span>
           <RoleBadge role={message.authorRole} />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
+          {message.editedAt && <span className="msg-edited">(edited)</span>}
         </div>
-        <p className="msg-text">{message.content}</p>
+        <ReplyQuote replyTo={message.replyTo} />
+        {editing ? (
+          <EditBox
+            text={message.content}
+            busy={busy}
+            onSave={save}
+            onCancel={() => setEditing(false)}
+          />
+        ) : (
+          <p className="msg-text">{message.content}</p>
+        )}
+        <ReactionBar message={message} me={me} onReact={onReact} />
       </div>
+      {!editing && (
+        <MessageTools
+          message={message}
+          own={own}
+          onReact={onReact}
+          onReply={onReply}
+          onEdit={() => setEditing(true)}
+        />
+      )}
     </div>
   )
 }
 
-function DmMessage({ message, me }) {
+function DmMessage({ message, me, onReact, onReply, onEdit }) {
+  const [editing, setEditing] = useState(false)
+  const [busy, setBusy] = useState(false)
   const own = message.authorId === me.user.id
+
+  async function save(text) {
+    if (!text.trim()) return
+    setBusy(true)
+    try {
+      await onEdit(message.id, text.trim())
+      setEditing(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className={`msg dm ${own ? 'own' : ''}`}>
       {!own && (
@@ -44,16 +203,41 @@ function DmMessage({ message, me }) {
             <span className="msg-name">{message.authorName}</span>
             <RoleBadge role={message.authorRole} />
             <span className="msg-time">{timeShort(message.createdAt)}</span>
+            {message.editedAt && <span className="msg-edited">(edited)</span>}
           </div>
         )}
-        <div className="bubble">{message.content}</div>
-        {own && <span className="msg-time dm-time-own">{timeShort(message.createdAt)}</span>}
+        <ReplyQuote replyTo={message.replyTo} />
+        {editing ? (
+          <EditBox
+            text={message.content}
+            busy={busy}
+            onSave={save}
+            onCancel={() => setEditing(false)}
+          />
+        ) : (
+          <div className="bubble">{message.content}</div>
+        )}
+        <ReactionBar message={message} me={me} onReact={onReact} />
+        {own && (
+          <span className="msg-time dm-time-own">
+            {message.editedAt ? `${timeShort(message.createdAt)} · edited` : timeShort(message.createdAt)}
+          </span>
+        )}
       </div>
+      {!editing && (
+        <MessageTools
+          message={message}
+          own={own}
+          onReact={onReact}
+          onReply={onReply}
+          onEdit={() => setEditing(true)}
+        />
+      )}
     </div>
   )
 }
 
-export default function MessageList({ messages, kind, me }) {
+export default function MessageList({ messages, kind, me, onReact, onReply, onEditMessage }) {
   const scroller = useRef(null)
 
   useEffect(() => {
@@ -77,9 +261,23 @@ export default function MessageList({ messages, kind, me }) {
     <div className={`messages ${kind === 'dm' ? 'dm-list' : ''}`} ref={scroller}>
       {messages.map(message =>
         kind === 'dm' ? (
-          <DmMessage key={message.id} message={message} me={me} />
+          <DmMessage
+            key={message.id}
+            message={message}
+            me={me}
+            onReact={onReact}
+            onReply={onReply}
+            onEdit={onEditMessage}
+          />
         ) : (
-          <ChannelMessage key={message.id} message={message} />
+          <ChannelMessage
+            key={message.id}
+            message={message}
+            me={me}
+            onReact={onReact}
+            onReply={onReply}
+            onEdit={onEditMessage}
+          />
         ),
       )}
     </div>

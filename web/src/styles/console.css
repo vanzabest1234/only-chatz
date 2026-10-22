@@ -625,3 +625,231 @@ textarea:focus-visible,
   background: var(--phosphor);
   box-shadow: 0 0 10px var(--phosphor);
 }
+
+/* ---------- edits, replies, reactions ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 60;
+  margin: 0;
+  padding: 7px 12px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--phosphor);
+  background: var(--panel-deep);
+  border: 1px solid rgba(116, 240, 166, 0.45);
+}
+
+.msg {
+  position: relative;
+}
+
+.msg-tools {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  display: none;
+  gap: 1px;
+  padding: 2px;
+  z-index: 4;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.msg:hover .msg-tools,
+.msg:focus-within .msg-tools,
+.msg-tools.open {
+  display: flex;
+}
+
+/* Touch screens have no hover: the actions stay visible. */
+@media (hover: none) {
+  .msg-tools {
+    display: flex;
+  }
+}
+
+.msg-tool {
+  width: 24px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.msg-tool:hover {
+  color: var(--phosphor);
+  background: rgba(116, 240, 166, 0.1);
+}
+
+.reaction-picker {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  display: flex;
+  gap: 1px;
+  padding: 3px;
+  z-index: 6;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.reaction-picker button {
+  padding: 2px 4px;
+  font-size: 15px;
+  line-height: 1.2;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reaction-picker button:hover {
+  background: rgba(116, 240, 166, 0.12);
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reaction:hover {
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.reaction.mine {
+  color: var(--phosphor);
+  background: rgba(116, 240, 166, 0.1);
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.reaction-count {
+  font-size: 11px;
+}
+
+.reply-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  margin: 2px 0 3px;
+  padding-left: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  border-left: 2px solid rgba(116, 240, 166, 0.45);
+}
+
+.reply-quote .reply-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-who {
+  color: var(--phosphor);
+}
+
+.reply-arrow {
+  color: var(--phosphor-dim);
+}
+
+.msg-edited {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.msg-edit textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--panel-deep);
+  border: 1px solid rgba(116, 240, 166, 0.4);
+  border-radius: 0;
+  resize: vertical;
+}
+
+.msg-edit-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.msg-edit-actions button {
+  padding: 2px 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.msg-edit-actions button:hover {
+  color: var(--phosphor);
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.composer-reply {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+  border-left: 2px solid rgba(116, 240, 166, 0.5);
+}
+
+.composer-reply .reply-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-cancel {
+  margin-left: auto;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reply-cancel:hover {
+  color: var(--phosphor);
+}
