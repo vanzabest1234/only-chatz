@@ -1,0 +1,76 @@
+name: only-chatz
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=chatz
+      - POSTGRES_PASSWORD=chatz_dev_password
+      - POSTGRES_DB=chatz
+    volumes:
+      - chatz-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatz -d chatz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: on-failure
+
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["sh", "-ec", "npm install --no-audit --no-fund && exec node --watch index.js"]
+    environment:
+      - PORT=8000
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://chatz:chatz_dev_password@db:5432/chatz
+    volumes:
+      - ./server:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8000/api/me').then((r) => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      start_period: 25s
+    restart: on-failure
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["sh", "-ec", "npm install --no-audit --no-fund && exec npm run dev"]
+    environment:
+      - BASE44_PREVIEW_MODE
+      - BASE44_SANDBOX_HOST_DOMAIN
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    volumes:
+      - ./web:/app
+    ports:
+      - "3000:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "Promise.all(['http://127.0.0.1:5173/', 'http://127.0.0.1:5173/api/me'].map(async (url) => { const r = await fetch(url); if (r.status >= 500) throw new Error(url + ' -> ' + r.status) })).then(() => process.exit(0)).catch((e) => { console.error(e.message); process.exit(1) })",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: on-failure
+
+volumes:
+  chatz-db:

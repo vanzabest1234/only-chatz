@@ -1,0 +1,26 @@
+# One-click deploy on Render: a free web service (random <name>.onrender.com URL)
+# plus a free Postgres, with DATABASE_URL wired up automatically.
+#
+# Dashboard -> New -> Blueprint -> pick this repo -> Apply. Nothing to type.
+#
+# Free plan caveats: the web service sleeps after ~15 minutes idle (first visit
+# takes about a minute to wake), and a free Postgres expires 30 days after
+# creation. Upgrade the database to keep the accounts and messages.
+
+databases:
+  - name: chatz-db
+    plan: free
+    databaseName: chatz
+    user: chatz
+
+services:
+  - type: web
+    name: only-chatz
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatz-db
+          property: connectionString
