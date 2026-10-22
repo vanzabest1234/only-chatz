@@ -23,8 +23,9 @@ Non-obvious things worth knowing before changing something:
   (`server/auth.js` and the `io.use` middleware in `server/realtime.js`).
 - **Schema + seed run inside API boot** (`server/index.js` → `migrate()` → `seed()`), not as a
   separate one-shot compose service. `schema.sql` is idempotent (`CREATE … IF NOT EXISTS`), and the
-  seed re-asserts the fixed room list with `ON CONFLICT (name) DO NOTHING` on every boot — that is how
-  an older database picks up `#announcements` — so `node --watch` restarts are harmless.
+  seed re-asserts the fixed room list on every boot, updating `position` from `server/seed.js` — that is
+  how an older database picks up `#announcements` and a changed room order — so `node --watch`
+  restarts are harmless.
 - **Demo data only appears on a virgin database.** If you ever need the seed back without destroying
   messages, promote an account by hand rather than wiping the data volume.
 - **Roles are enforced server-side only.** `owner > co-owner > admin > mod > member`; you may never
@@ -85,7 +86,8 @@ Non-obvious things worth knowing before changing something:
   The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
   remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
   Its room list and "Channels" line are hand-written copy, not fetched: update them whenever
-  `server/seed.js` gains or loses a room (they must list `#announcements`, `#general`, `#random`).
+  `server/seed.js` gains or loses a room (they must list `#general`, `#announcements`, `#random`, in
+  the room order the seed sets).
 - **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
   after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
   and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
@@ -191,8 +193,9 @@ a production image — edits would stop showing.
 
 ## Accounts and seed data
 
-There are no demo accounts and no pre-made conversations. The seed keeps exactly three empty channels:
-`#announcements` (owner-only posting, `announce = TRUE`), `#general` and `#random`. `#design` was
+There are no demo accounts and no pre-made conversations. The seed keeps exactly three empty channels,
+in this order: `#general`, `#announcements` (owner-only posting, `announce = TRUE`) and `#random`.
+Room order comes from `channels.position`, which the seed re-asserts on every boot. `#design` was
 removed at the owner's request; there is no room-creation command, so the seed list is the whole set.
 
 The **first account to register becomes the owner** (`server/routes/auth.js`); every later signup is
