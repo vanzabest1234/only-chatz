@@ -859,3 +859,17 @@ textarea:focus-visible,
 .reply-cancel:hover {
   color: var(--phosphor);
 }
+
+/* Live "who is typing" line, above the composer */
+.typing-line {
+  min-height: 16px;
+  padding: 0 14px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

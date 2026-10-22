@@ -21,6 +21,7 @@ export default function App() {
   const [boardOpen, setBoardOpen] = useState(false)
   const [where, setWhere] = useState({})
   const [replyTo, setReplyTo] = useState(null)
+  const [typing, setTyping] = useState([])
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -57,6 +58,13 @@ export default function App() {
     const target = viewRef.current
     if (!target || !socket.connected) return
     socket.emit('presence:where', { kind: target.type, id: target.id })
+  }, [])
+
+  // Tell the room someone is writing; the server expires the note after a few seconds.
+  const shareTyping = useCallback(() => {
+    const target = viewRef.current
+    if (!target || !socket.connected) return
+    socket.emit('typing', { kind: target.type, id: target.id })
   }, [])
 
   const finishAuth = useCallback(async () => {
@@ -146,6 +154,11 @@ export default function App() {
       'presence:update': ids =>
         setMe(previous => (previous ? { ...previous, online: ids } : previous)),
       'presence:where': payload => setWhere(payload ?? {}),
+      'typing:update': payload => {
+        const target = viewRef.current
+        if (!target || payload?.kind !== target.type || payload?.id !== target.id) return
+        setTyping(Array.isArray(payload.names) ? payload.names : [])
+      },
       connect: shareRoom,
       'session:revoke': payload => {
         setNotice(payload?.message || 'You were removed from this server.')
@@ -165,6 +178,7 @@ export default function App() {
 
   useEffect(() => {
     setReplyTo(null)
+    setTyping([])
     if (!view) {
       setMessages([])
       return
@@ -332,6 +346,8 @@ export default function App() {
             replyTo={replyTo}
             onReply={startReply}
             onCancelReply={() => setReplyTo(null)}
+            typing={typing}
+            onTyping={shareTyping}
             onReact={react}
             onEditMessage={editMessage}
             onDeleteMessage={deleteMessage}

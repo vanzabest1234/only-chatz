@@ -10,11 +10,22 @@ export default function Composer({
   slowmode = 0,
   replyTo,
   onCancelReply,
+  onTyping,
 }) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const area = useRef(null)
+  const lastPing = useRef(0)
+
+  // At most one typing ping every couple of seconds; the server expires it on its own.
+  function pingTyping() {
+    if (!onTyping) return
+    const now = Date.now()
+    if (now - lastPing.current < 2000) return
+    lastPing.current = now
+    onTyping()
+  }
 
   // Picking "reply" is a request to type, so the cursor goes straight to the box.
   useEffect(() => {
@@ -101,6 +112,7 @@ export default function Composer({
           onChange={event => {
             setValue(event.target.value)
             resize(event.target)
+            if (event.target.value.trim()) pingTyping()
           }}
           onKeyDown={event => {
             if (event.key === 'Enter' && !event.shiftKey) {

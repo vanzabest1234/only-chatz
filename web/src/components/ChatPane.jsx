@@ -3,6 +3,14 @@ import Icon from './Icon'
 import MessageList from './MessageList'
 import Composer from './Composer'
 
+/** "x is typing", "x and y are typing", or a summary once the room gets loud. */
+function typingLabel(names) {
+  if (!names.length) return ''
+  if (names.length > 7) return 'more than 7 people are typing'
+  if (names.length === 1) return `${names[0]} is typing`
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are typing`
+}
+
 export default function ChatPane({
   me,
   channel,
@@ -17,6 +25,8 @@ export default function ChatPane({
   onReact,
   onEditMessage,
   onDeleteMessage,
+  typing = [],
+  onTyping,
 }) {
   const kind = channel ? 'channel' : 'dm'
   const peer = thread?.peer
@@ -74,10 +84,15 @@ export default function ChatPane({
         onDeleteMessage={onDeleteMessage}
       />
 
+      <div className="typing-line" aria-live="polite">
+        {typingLabel(typing)}
+      </div>
+
       <Composer
         placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}
         commands={me.commands}
         onSend={onSend}
+        onTyping={onTyping}
         replyTo={replyTo}
         onCancelReply={onCancelReply}
         disabled={muted || readOnly}

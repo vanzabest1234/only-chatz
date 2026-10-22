@@ -14,12 +14,66 @@ const MAX_SOCKETS_PER_USER = 5
 const PRESENCE_LIMIT = 10
 const PRESENCE_WINDOW = 10_000
 
+// Who is typing where. In memory only, like presence: an entry lives for a few seconds
+// after the last keystroke and is dropped by the sweep, so nobody stays "typing" forever.
+const typing = new Map()
+const TYPING_LIMIT = 30
+const TYPING_WINDOW = 10_000
+const TYPING_TTL = 4_000
+
 function whereSnapshot() {
   return Object.fromEntries(where)
 }
 
+function typingRoom(kind, id) {
+  return kind === 'dm' ? `thread:${id}` : `channel:${id}`
+}
+
+function typingNames(key) {
+  const people = typing.get(key)
+  return people ? [...people.values()].map(person => person.name) : []
+}
+
+/** Tell a room who is typing right now; `exclude` skips the socket that just typed. */
+function broadcastTyping(key, exclude) {
+  const split = key.indexOf(':')
+  const kind = key.slice(0, split)
+  const id = Number(key.slice(split + 1))
+  const payload = { kind, id, names: typingNames(key) }
+  if (exclude) exclude.to(typingRoom(kind, id)).emit('typing:update', payload)
+  else io?.to(typingRoom(kind, id)).emit('typing:update', payload)
+}
+
+function forgetTypist(userId) {
+  for (const [key, people] of typing) {
+    if (!people.delete(userId)) continue
+    if (!people.size) typing.delete(key)
+    broadcastTyping(key)
+  }
+}
+
+function startTypingSweep() {
+  const timer = setInterval(() => {
+    const now = Date.now()
+    for (const [key, people] of typing) {
+      let changed = false
+      for (const [userId, person] of people) {
+        if (person.expiresAt <= now) {
+          people.delete(userId)
+          changed = true
+        }
+      }
+      if (!people.size) typing.delete(key)
+      if (changed) broadcastTyping(key)
+    }
+  }, 1_000)
+  timer.unref?.()
+  return timer
+}
+
 export function initRealtime(httpServer) {
   io = new Server(httpServer)
+  startTypingSweep()
 
   io.use(async (socket, next) => {
     const forwarded = String(socket.handshake.headers?.['x-forwarded-for'] ?? '').split(',')[0].trim()
@@ -83,6 +137,41 @@ export function initRealtime(httpServer) {
       io.emit('presence:where', whereSnapshot())
     })
 
+    socket.on('typing', async payload => {
+      // Typing pings are cheap and frequent, so each socket gets a small allowance.
+      if (!take(`typing:${socket.id}`, TYPING_LIMIT, TYPING_WINDOW).ok) return
+
+      const kind = payload?.kind === 'dm' ? 'dm' : 'channel'
+      const id = Number(payload?.id)
+      if (!Number.isInteger(id) || id <= 0) return
+
+      try {
+        // Only relay a room the person actually belongs to.
+        const { rows } =
+          kind === 'dm'
+            ? await q('SELECT 1 FROM dm_members WHERE thread_id = $1 AND user_id = $2 LIMIT 1', [
+                id,
+                user.id,
+              ])
+            : await q('SELECT 1 FROM channels WHERE id = $1 LIMIT 1', [id])
+        if (!rows.length) return
+      } catch {
+        return
+      }
+
+      const key = `${kind}:${id}`
+      let people = typing.get(key)
+      if (!people) {
+        people = new Map()
+        typing.set(key, people)
+      }
+      people.set(user.id, {
+        name: user.display_name || user.username,
+        expiresAt: Date.now() + TYPING_TTL,
+      })
+      broadcastTyping(key, socket)
+    })
+
     socket.on('disconnect', () => {
       const open = (socketCount.get(user.id) ?? 1) - 1
       if (open > 0) socketCount.set(user.id, open)
@@ -92,6 +181,7 @@ export function initRealtime(httpServer) {
       if (remaining <= 0) {
         online.delete(user.id)
         where.delete(user.id)
+        forgetTypist(user.id)
       } else {
         online.set(user.id, remaining)
       }

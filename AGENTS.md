@@ -61,6 +61,15 @@ Non-obvious things worth knowing before changing something:
   `presence:where` socket event whenever their view changes; the snapshot rides along in
   `GET /api/me`. Both maps are cleared by an API restart, and the rooms are re-learned as clients
   reconnect. The "Who's online" board (`web/src/components/OnlineBoard.jsx`) renders from that data.
+- **Typing indicators are in-memory too, and never persisted.** `Composer.jsx` pings
+  `socket.emit('typing', {kind, id})` at most once every 2s while the box has text; `realtime.js`
+  checks the room belongs to the sender, stores the display name in a `typing` map with a 4s expiry
+  and relays `typing:update` (`{kind, id, names}`) to everyone else in that room. A 1s sweep drops
+  expired names and re-broadcasts, and the names are dropped on disconnect, so a closed tab cannot
+  leave a ghost. The line above the composer renders from `App.jsx`'s `typing` state
+  (`typingLabel` in `ChatPane.jsx`): one name, "a and b are typing", or "more than 7 people are
+  typing" once eight or more are going at once. Nothing is stored, so a restart only loses the
+  current notes.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
   `SettingsModal.jsx`; `express.json` is limited to 1mb for that payload. No file storage involved.
 - **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds
