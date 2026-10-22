@@ -63,8 +63,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
 -- announcement rooms: everyone reads, only the Owner posts
 ALTER TABLE channels ADD COLUMN IF NOT EXISTS announce BOOLEAN NOT NULL DEFAULT FALSE;
 
--- Exactly one owner, even if two people register at the same instant.
-CREATE UNIQUE INDEX IF NOT EXISTS users_single_owner ON users (role) WHERE role = 'owner';
+-- More than one owner is allowed (ownership can be shared between accounts).
+-- The first account on a fresh server still becomes the only owner of that moment: the
+-- check runs under a transaction advisory lock in routes/auth.js, so two people
+-- registering at the same instant cannot both grab it.
+DROP INDEX IF EXISTS users_single_owner;
 CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
 
 CREATE INDEX IF NOT EXISTS messages_channel_idx ON messages (channel_id, id DESC);

@@ -105,8 +105,12 @@ Things not to undo:
 - **Passwords are 8-128 characters, hashed with async scrypt.** A sign-in for a username that
   does not exist still pays for one scrypt round (`DUMMY_HASH`), so response timing cannot be
   used to enumerate accounts.
-- **Exactly one owner**: `users_single_owner` is a partial unique index, so two simultaneous
-  first signups cannot both become owner — the loser registers as a member.
+- **First signup claims ownership, and ownership can be shared.** Several accounts may hold
+  `owner` (currently `shadow` and `vanzabest123`); there is no longer a partial unique index on
+  the role. The first-signup decision in `routes/auth.js` runs under a transaction advisory lock
+  (`pg_advisory_xact_lock`), so two simultaneous first signups still produce exactly one owner —
+  the loser registers as a member. `/role` still refuses to hand out a role at or above your own,
+  so sharing ownership is a deliberate database change, not a command.
 - **Kick and ban disconnect the person's sockets** (`disconnectUser`), not just their sessions.
 - **Presence only reports rooms you belong to**, so `presence:where` cannot be used to claim a
   DM thread id you are not part of.
