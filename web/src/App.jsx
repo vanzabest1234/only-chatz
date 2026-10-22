@@ -79,7 +79,8 @@ export default function App() {
 
   const finishAuth = useCallback(async () => {
     const data = await load()
-    const first = data.channels[0]
+    // Land in #general by name, so a fresh tab opens straight into the main room.
+    const first = data.channels.find(channel => channel.name === 'general') ?? data.channels[0]
     setView(first ? { type: 'channel', id: first.id } : null)
   }, [load])
 
