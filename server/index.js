@@ -75,3 +75,7 @@ start().catch(error => {
   console.error('api failed to start', error)
   process.exit(1)
 })
+
+// Vercel's express service loads this module as a function and needs the server
+// (Socket.IO's upgrade handler rides on it). Docker keeps using the listener above.
+export default server
