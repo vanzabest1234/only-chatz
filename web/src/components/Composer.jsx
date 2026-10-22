@@ -24,6 +24,8 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
     setBusy(true)
     setError('')
     try {
+      // A short beat before the message leaves, so a send is never instant.
+      await new Promise(resolve => setTimeout(resolve, 1000))
       await onSend(text)
       setValue('')
       resize(area.current)

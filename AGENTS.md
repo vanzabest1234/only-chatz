@@ -131,7 +131,9 @@ JSX with `/@vite/client` in the page shell. If it looks minified, the compose fi
 production build instead of the dev server.
 
 There is no test suite; verification is done by driving the UI (sign in, post, run a slash command,
-open a DM) and checking `docker compose logs api`.
+open a DM) and checking `docker compose logs api`. Note that `Composer.jsx` holds every send for one
+second before it posts, so a message lands about a second after Enter — that gap is deliberate, not a
+slow request.
 
 ## Releasing it
 
