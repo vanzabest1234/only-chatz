@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS messages (
 -- profile customisation (added after the first schema; keeps older databases in step)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pronouns TEXT NOT NULL DEFAULT '';
 
 -- chatting unlocks only after the 10 rules are accepted (NULL = not yet agreed)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_accepted_at TIMESTAMPTZ;

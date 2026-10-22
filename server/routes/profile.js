@@ -34,6 +34,11 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Keep your bio under 160 characters.' })
   }
 
+  const pronouns = cleanText(req.body?.pronouns, 25).trim()
+  if (pronouns.length > 24) {
+    return res.status(400).json({ error: 'Keep your pronouns under 24 characters.' })
+  }
+
   const color = String(req.body?.color ?? '').trim().toLowerCase()
   if (!/^#[0-9a-f]{6}$/.test(color)) {
     return res.status(400).json({ error: 'Pick one of the accent colours.' })
@@ -52,9 +57,10 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
   }
 
   const { rows } = await q(
-    `UPDATE users SET display_name = $1, bio = $2, color = $3, avatar_url = $4
-      WHERE id = $5 RETURNING *`,
-    [displayName, bio, color, avatarUrl, req.user.id],
+    `UPDATE users SET display_name = $1, bio = $2, color = $3, avatar_url = $4,
+            pronouns = $5
+      WHERE id = $6 RETURNING *`,
+    [displayName, bio, color, avatarUrl, pronouns, req.user.id],
   )
 
   emitAll('profile:update')

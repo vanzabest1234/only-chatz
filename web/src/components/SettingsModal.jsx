@@ -33,6 +33,7 @@ function shrinkToAvatar(file) {
 export default function SettingsModal({ user, onClose, onSaved }) {
   const [displayName, setDisplayName] = useState(user.displayName)
   const [bio, setBio] = useState(user.bio || '')
+  const [pronouns, setPronouns] = useState(user.pronouns || '')
   const [color, setColor] = useState(user.color)
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
   const [error, setError] = useState('')
@@ -60,7 +61,7 @@ export default function SettingsModal({ user, onClose, onSaved }) {
     try {
       const data = await api('/api/me/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ displayName, bio, color, avatarUrl: avatarUrl || null }),
+        body: JSON.stringify({ displayName, bio, pronouns, color, avatarUrl: avatarUrl || null }),
       })
       onSaved(data.user)
       onClose()
@@ -114,6 +115,16 @@ export default function SettingsModal({ user, onClose, onSaved }) {
               value={displayName}
               maxLength={32}
               onChange={event => setDisplayName(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>Pronouns</span>
+            <input
+              value={pronouns}
+              maxLength={24}
+              placeholder="they/them"
+              onChange={event => setPronouns(event.target.value)}
             />
           </label>
 

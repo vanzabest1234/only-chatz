@@ -10,7 +10,7 @@ const GROUPS = [
   { role: 'member', label: 'Members' },
 ]
 
-export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFriend }) {
+export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFriend, onOpenProfile }) {
   const isOnline = id => me.online.includes(id)
 
   return (
@@ -41,9 +41,11 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                   return (
                     <div className="member-row" key={member.id}>
                       <button
-                        className="member-open"
-                        onClick={() => onOpenDm(member.id)}
-                        title={`Message ${member.displayName}`}
+                        type="button"
+                        className="member-avatar"
+                        onClick={() => onOpenProfile(member.id)}
+                        aria-label={`View ${member.displayName}'s profile`}
+                        title="View profile"
                       >
                         <Avatar
                           name={member.displayName}
@@ -52,6 +54,12 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                           online={isOnline(member.id)}
                           src={member.avatarUrl}
                         />
+                      </button>
+                      <button
+                        className="member-open"
+                        onClick={() => onOpenDm(member.id)}
+                        title={`Message ${member.displayName}`}
+                      >
                         <span className="member-text">
                           <span className="member-name">{member.displayName}</span>
                           <span className="member-handle">@{member.username}</span>

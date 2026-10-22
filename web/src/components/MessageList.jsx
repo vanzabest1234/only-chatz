@@ -120,7 +120,31 @@ function EditBox({ text, busy, onSave, onCancel }) {
   )
 }
 
-function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
+/** The author's picture opens their profile banner; a deleted author has no profile. */
+function ProfileAvatar({ message, size, onOpenProfile }) {
+  const avatar = (
+    <Avatar
+      name={message.authorName}
+      color={message.authorColor}
+      size={size}
+      src={message.authorAvatar}
+    />
+  )
+  if (!message.authorId) return avatar
+  return (
+    <button
+      type="button"
+      className="avatar-btn"
+      onClick={() => onOpenProfile(message.authorId)}
+      aria-label={`View ${message.authorName}'s profile`}
+      title="View profile"
+    >
+      {avatar}
+    </button>
+  )
+}
+
+function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProfile }) {
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -148,7 +172,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
 
   return (
     <div className="msg">
-      <Avatar name={message.authorName} color={message.authorColor} src={message.authorAvatar} />
+      <ProfileAvatar message={message} size={38} onOpenProfile={onOpenProfile} />
       <div className="msg-body">
         <div className="msg-head">
           <span className="msg-name">{message.authorName}</span>
@@ -184,7 +208,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
   )
 }
 
-function DmMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
+function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProfile }) {
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const own = message.authorId === me.user.id
@@ -203,14 +227,7 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete }) {
 
   return (
     <div className={`msg dm ${own ? 'own' : ''}`}>
-      {!own && (
-        <Avatar
-          name={message.authorName}
-          color={message.authorColor}
-          size={32}
-          src={message.authorAvatar}
-        />
-      )}
+      {!own && <ProfileAvatar message={message} size={32} onOpenProfile={onOpenProfile} />}
       <div className="dm-stack">
         {!own && (
           <div className="msg-head">
@@ -261,6 +278,7 @@ export default function MessageList({
   onReply,
   onEditMessage,
   onDeleteMessage,
+  onOpenProfile,
 }) {
   const scroller = useRef(null)
 
@@ -293,6 +311,7 @@ export default function MessageList({
             onReply={onReply}
             onEdit={onEditMessage}
             onDelete={onDeleteMessage}
+            onOpenProfile={onOpenProfile}
           />
         ) : (
           <ChannelMessage
@@ -303,6 +322,7 @@ export default function MessageList({
             onReply={onReply}
             onEdit={onEditMessage}
             onDelete={onDeleteMessage}
+            onOpenProfile={onOpenProfile}
           />
         ),
       )}

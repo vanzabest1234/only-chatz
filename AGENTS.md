@@ -76,6 +76,11 @@ Non-obvious things worth knowing before changing something:
   (`typingLabel` in `ChatPane.jsx`): one name, "a and b are typing", or "more than 7 people are
   typing" once eight or more are going at once. Nothing is stored, so a restart only loses the
   current notes.
+- **Tapping an avatar opens a profile banner.** `web/src/components/ProfileCard.jsx` renders name,
+  `@username`, role, pronouns, online state and bio from the `me.members` entry (nothing is fetched);
+  the message-list avatars (`ProfileAvatar` in `MessageList.jsx`) and the members panel's separate
+  avatar button open it. Pronouns live in `users.pronouns` (max 24 chars, edited in
+  `SettingsModal.jsx`, saved through `PATCH /api/me/profile`); bio comes from the existing column.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
   `SettingsModal.jsx`; `express.json` is limited to 1mb for that payload. No file storage involved.
 - **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds

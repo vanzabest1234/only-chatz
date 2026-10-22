@@ -7,6 +7,7 @@ export function publicUser(row) {
     color: row.color,
     avatarUrl: row.avatar_url ?? null,
     bio: row.bio ?? '',
+    pronouns: row.pronouns ?? '',
     mutedUntil: row.muted_until ?? null,
     rulesAccepted: Boolean(row.rules_accepted_at),
   }

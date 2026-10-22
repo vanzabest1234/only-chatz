@@ -26,6 +26,7 @@ export default function ChatPane({
   onEditMessage,
   onDeleteMessage,
   onOpenRules,
+  onOpenProfile,
   typing = [],
   onTyping,
 }) {
@@ -85,6 +86,7 @@ export default function ChatPane({
         onReply={onReply}
         onEditMessage={onEditMessage}
         onDeleteMessage={onDeleteMessage}
+        onOpenProfile={onOpenProfile}
       />
 
       <div className="typing-line" aria-live="polite">

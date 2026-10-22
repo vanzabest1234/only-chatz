@@ -9,6 +9,7 @@ import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
 import OnlineBoard from './components/OnlineBoard'
 import RulesGate from './components/RulesGate'
+import ProfileCard from './components/ProfileCard'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -22,6 +23,7 @@ export default function App() {
   const [boardOpen, setBoardOpen] = useState(false)
   const [where, setWhere] = useState({})
   const [replyTo, setReplyTo] = useState(null)
+  const [profileId, setProfileId] = useState(null)
   const [typing, setTyping] = useState([])
   const [rulesOpen, setRulesOpen] = useState(false)
   const [rulesDeclined, setRulesDeclined] = useState(false)
@@ -58,6 +60,7 @@ export default function App() {
     setWhere({})
     setRulesOpen(false)
     setRulesDeclined(false)
+    setProfileId(null)
   }, [])
 
   // Tell the server which room we are looking at, so the online board can show it.
@@ -338,6 +341,7 @@ export default function App() {
 
   const channel = view?.type === 'channel' ? me.channels.find(item => item.id === view.id) : null
   const thread = view?.type === 'dm' ? me.threads.find(item => item.id === view.id) : null
+  const profileMember = profileId ? me.members.find(member => member.id === profileId) : null
 
   return (
     <>
@@ -389,6 +393,7 @@ export default function App() {
             onEditMessage={editMessage}
             onDeleteMessage={deleteMessage}
             onOpenRules={openRules}
+            onOpenProfile={setProfileId}
           />
         ) : (
           <section className="chat glass">
@@ -402,6 +407,7 @@ export default function App() {
           onClose={() => setMembersOpen(false)}
           onOpenDm={openDm}
           onToggleFriend={toggleFriend}
+          onOpenProfile={setProfileId}
         />
 
         {boardOpen && (
@@ -440,6 +446,16 @@ export default function App() {
             error={rulesError}
             onAccept={acceptRules}
             onDecline={declineRules}
+          />
+        )}
+
+        {profileMember && (
+          <ProfileCard
+            member={profileMember}
+            online={me.online.includes(profileMember.id)}
+            isSelf={profileMember.id === me.user.id}
+            onClose={() => setProfileId(null)}
+            onOpenDm={openDm}
           />
         )}
       </div>
