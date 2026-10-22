@@ -501,14 +501,16 @@
 
         // The new-tab button: a sandboxed frame turns `target="_blank"` into about:blank,
         // so the tab is opened from script and, when popups are blocked, the plain href
-        // simply takes this tab to the room.
+        // simply takes this tab to the room. The tab gets the bare /chat path — the
+        // session lives in localStorage, so it needs none of the preview's long token URL.
         var newTab = document.getElementById('room-newtab');
         if (!newTab) return;
+        newTab.setAttribute('href', '/chat');
 
         newTab.addEventListener('click', function (event) {
           var opened = null;
           try {
-            opened = window.open(newTab.getAttribute('href'), '_blank');
+            opened = window.open('/chat', '_blank');
           } catch (error) {
             opened = null;
           }
@@ -518,6 +520,25 @@
           } catch (error) {
             /* already detached */
           }
+
+          // Some sandboxed frames hand back a tab that stays on about:blank. Rather than
+          // leaving the person on a blank page, drop that tab and open the room here.
+          setTimeout(function () {
+            var stuck = false;
+            try {
+              stuck = opened.closed || opened.location.href === 'about:blank';
+            } catch (error) {
+              stuck = false;
+            }
+            if (!stuck) return;
+            try {
+              opened.close();
+            } catch (error) {
+              /* already gone */
+            }
+            location.assign('/chat');
+          }, 400);
+
           event.preventDefault();
         });
       })();
