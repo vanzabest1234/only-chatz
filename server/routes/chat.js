@@ -196,6 +196,10 @@ async function readReply(body, column, roomId) {
 }
 
 async function checkCanSpeak(user, channel) {
+  // Reading is always open; posting waits for an explicit "I accept" on the rules.
+  if (!user.rules_accepted_at) {
+    return { status: 403, error: 'Accept the 10 rules before you can chat.' }
+  }
   if (channel?.announce && user.role !== 'owner') {
     return { status: 403, error: `Only the Owner can post in #${channel.name}.` }
   }
@@ -219,6 +223,18 @@ async function checkCanSpeak(user, channel) {
 
 router.get('/me', requireAuth, async (req, res) => {
   res.json(await loadSnapshot(req.user))
+})
+
+// Agreeing to the 10 rules is what unlocks posting (see checkCanSpeak).
+router.post('/rules/accept', requireAuth, async (req, res) => {
+  if (req.user.rules_accepted_at) return res.json({ user: publicUser(req.user) })
+
+  const { rows } = await q(
+    'UPDATE users SET rules_accepted_at = now() WHERE id = $1 RETURNING *',
+    [req.user.id],
+  )
+  audit('rules-accepted', { userId: req.user.id, username: req.user.username })
+  res.json({ user: publicUser(rows[0]) })
 })
 
 // Owner-visible trail of refused logins, floods and privileged actions.

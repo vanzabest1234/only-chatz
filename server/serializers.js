@@ -8,6 +8,7 @@ export function publicUser(row) {
     avatarUrl: row.avatar_url ?? null,
     bio: row.bio ?? '',
     mutedUntil: row.muted_until ?? null,
+    rulesAccepted: Boolean(row.rules_accepted_at),
   }
 }
 

@@ -25,6 +25,7 @@ export default function ChatPane({
   onReact,
   onEditMessage,
   onDeleteMessage,
+  onOpenRules,
   typing = [],
   onTyping,
 }) {
@@ -34,6 +35,8 @@ export default function ChatPane({
   const muted = me.user.mutedUntil ? new Date(me.user.mutedUntil) > new Date() : false
   // Announcement rooms are readable by everyone and writable only by the Owner.
   const readOnly = Boolean(channel?.announce) && me.user.role !== 'owner'
+  // No accepted rules, no chatting — the API refuses the post either way.
+  const needsRules = !me.user.rulesAccepted
   const title = channel ? channel.name : peer?.displayName ?? 'Conversation'
   const subtitle = channel
     ? channel.topic || 'No topic yet'
@@ -88,6 +91,15 @@ export default function ChatPane({
         {typingLabel(typing)}
       </div>
 
+      {needsRules && (
+        <div className="rules-banner">
+          <span>rules not accepted — you can read every room, but not post.</span>
+          <button type="button" className="text-btn" onClick={onOpenRules}>
+            read the 10 rules
+          </button>
+        </div>
+      )}
+
       <Composer
         placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}
         commands={me.commands}
@@ -95,11 +107,13 @@ export default function ChatPane({
         onTyping={onTyping}
         replyTo={replyTo}
         onCancelReply={onCancelReply}
-        disabled={muted || readOnly}
+        disabled={muted || readOnly || needsRules}
         disabledNote={
-          readOnly
-            ? 'Only the Owner posts in #announcements — you can read everything here.'
-            : 'You are muted right now.'
+          needsRules
+            ? 'Accept the 10 rules before you can chat.'
+            : readOnly
+              ? 'Only the Owner posts in #announcements — you can read everything here.'
+              : 'You are muted right now.'
         }
         slowmode={channel?.slowmode ?? 0}
       />

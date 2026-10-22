@@ -8,6 +8,7 @@ import ChatPane from './components/ChatPane'
 import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
 import OnlineBoard from './components/OnlineBoard'
+import RulesGate from './components/RulesGate'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -22,6 +23,10 @@ export default function App() {
   const [where, setWhere] = useState({})
   const [replyTo, setReplyTo] = useState(null)
   const [typing, setTyping] = useState([])
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [rulesDeclined, setRulesDeclined] = useState(false)
+  const [rulesBusy, setRulesBusy] = useState(false)
+  const [rulesError, setRulesError] = useState('')
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -51,6 +56,8 @@ export default function App() {
     setMessages([])
     setView(null)
     setWhere({})
+    setRulesOpen(false)
+    setRulesDeclined(false)
   }, [])
 
   // Tell the server which room we are looking at, so the online board can show it.
@@ -191,6 +198,36 @@ export default function App() {
     const timer = setTimeout(() => setNotice(''), 5000)
     return () => clearTimeout(timer)
   }, [notice, me])
+
+  // No agreement yet, no composer: the gate opens on its own until the account accepts.
+  useEffect(() => {
+    if (me && !me.user.rulesAccepted) setRulesOpen(true)
+  }, [me?.user?.id, me?.user?.rulesAccepted])
+
+  const openRules = () => {
+    setRulesError('')
+    setRulesOpen(true)
+  }
+
+  const acceptRules = async () => {
+    setRulesBusy(true)
+    setRulesError('')
+    try {
+      const data = await api('/api/rules/accept', { method: 'POST' })
+      setMe(previous => (previous ? { ...previous, user: data.user } : previous))
+      setRulesOpen(false)
+      setRulesDeclined(false)
+    } catch (problem) {
+      setRulesError(problem.message)
+    } finally {
+      setRulesBusy(false)
+    }
+  }
+
+  const declineRules = () => {
+    setRulesOpen(false)
+    setRulesDeclined(true)
+  }
 
   const openChannel = channel => {
     setView({ type: 'channel', id: channel.id })
@@ -351,6 +388,7 @@ export default function App() {
             onReact={react}
             onEditMessage={editMessage}
             onDeleteMessage={deleteMessage}
+            onOpenRules={openRules}
           />
         ) : (
           <section className="chat glass">
@@ -392,6 +430,16 @@ export default function App() {
                   : previous,
               )
             }
+          />
+        )}
+
+        {rulesOpen && (
+          <RulesGate
+            declined={rulesDeclined}
+            busy={rulesBusy}
+            error={rulesError}
+            onAccept={acceptRules}
+            onDecline={declineRules}
           />
         )}
       </div>

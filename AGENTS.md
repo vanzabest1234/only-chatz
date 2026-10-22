@@ -34,6 +34,12 @@ Non-obvious things worth knowing before changing something:
   every later signup is a plain member until the Owner promotes them.
   The UI merely filters the command list it is given (`GET /api/me` → `commands`).
 - **Muting blocks channel and DM posting**; bans revoke sessions and refuse future logins.
+- **Chatting needs the 10 rules accepted.** `users.rules_accepted_at` stays NULL until the account
+  agrees on the gate (`web/src/components/RulesGate.jsx`, which also owns the rule text); until then
+  `checkCanSpeak` refuses every channel and DM post (slash commands included), while reading stays
+  open. `POST /api/rules/accept` stamps the column and returns the fresh `user`, which is what flips
+  `rulesAccepted` in `GET /api/me`. Declining only closes the gate for that session — the banner
+  above the composer reopens it, so a refusal can be taken back without a new account.
 - **`#announcements` is read-only for everyone but the Owner.** The room carries
   `channels.announce = TRUE`; `checkCanSpeak` refuses every message (slash commands included)
   from a non-owner, and the client disables the composer for them. Everyone still sees the room
