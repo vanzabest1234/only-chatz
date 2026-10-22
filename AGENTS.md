@@ -69,6 +69,49 @@ Non-obvious things worth knowing before changing something:
   the check treats anything under 500 as alive; the web check fetches `/` plus the proxied `/api/me`
   so a dead backend fails the frontend's health too.
 
+## Security guard rails
+
+Cheating, flooding and impersonation are refused server-side; nothing depends on the client
+behaving. Two modules own it:
+
+- `server/guard.js` — fixed-window rate limits (`take`, `limiter`), the sign-in lockout
+  (`recordFailure` / `lockoutSeconds`), `cleanText` / `cleanName` (control characters,
+  zero-width and bidi tricks are deleted before anything is stored) and the in-memory audit
+  trail (`audit`, read by the Owner at `GET /api/audit`).
+- `server/names.js` — one display-name rule set for `/nick` and the profile screen: 2-32
+  characters, no reserved words ("owner", "admin", "system", …), never another account's
+  `@username`.
+
+Limits in force: 8 messages / 5s and 40 / minute per account (the burst trips first),
+10 registrations / hour / IP, 30 sign-ins / 5 min / IP, 5 wrong passwords lock that
+username+IP for 30s and double each further failure (15 min cap), 40 socket handshakes /
+minute / IP, 5 open sockets per account, 10 `presence:where` events / 10s per socket, and a
+1200 request / minute / IP backstop on `/api`.
+
+Things not to undo:
+
+- **Session tokens are stored hashed (sha256).** `sessionUser` still accepts a row stored in
+  the clear and rewrites it on use, so rotating this never signs anyone out; new sessions are
+  written hashed. `createSession` prunes expired rows on every login.
+- **Passwords are 8-128 characters, hashed with async scrypt.** A sign-in for a username that
+  does not exist still pays for one scrypt round (`DUMMY_HASH`), so response timing cannot be
+  used to enumerate accounts.
+- **Exactly one owner**: `users_single_owner` is a partial unique index, so two simultaneous
+  first signups cannot both become owner — the loser registers as a member.
+- **Kick and ban disconnect the person's sockets** (`disconnectUser`), not just their sessions.
+- **Presence only reports rooms you belong to**, so `presence:where` cannot be used to claim a
+  DM thread id you are not part of.
+- **Avatars must be real PNG/JPEG/WebP bytes** — the file signature is checked, not just the
+  `data:` prefix.
+- **Command targets resolve `@username` first**; a display name is used only when exactly one
+  account has it, so a rename cannot redirect a moderator's `/mute`, `/ban` or `/role`.
+- **`GET /api/audit` is Owner only**: refused logins, lockouts, floods, denied commands and
+  every mute/kick/ban/role change land there.
+- **Proxy trust**: `app.set('trust proxy', 1)` plus `xfwd: true` in the Vite proxy is what lets
+  the per-IP limits see the real caller. Adding another hop means bumping that number, and the
+  API must never be reachable without a proxy that sets `X-Forwarded-For` — a spoofable header
+  defeats the IP limits (per-account limits still hold).
+
 ## Verify it is actually working
 
 ```bash

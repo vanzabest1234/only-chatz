@@ -35,8 +35,10 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: allowedHosts.length ? allowedHosts : undefined,
     proxy: {
-      '/api': { target: API_TARGET, changeOrigin: true },
-      '/socket.io': { target: API_TARGET, ws: true },
+      // xfwd forwards the caller's address, so the API's per-IP limits see the real
+      // client instead of the proxy container.
+      '/api': { target: API_TARGET, changeOrigin: true, xfwd: true },
+      '/socket.io': { target: API_TARGET, ws: true, xfwd: true },
     },
   },
 })

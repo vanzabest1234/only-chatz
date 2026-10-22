@@ -60,5 +60,9 @@ CREATE TABLE IF NOT EXISTS messages (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
 
+-- Exactly one owner, even if two people register at the same instant.
+CREATE UNIQUE INDEX IF NOT EXISTS users_single_owner ON users (role) WHERE role = 'owner';
+CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
+
 CREATE INDEX IF NOT EXISTS messages_channel_idx ON messages (channel_id, id DESC);
 CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);

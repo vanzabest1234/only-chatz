@@ -4,9 +4,45 @@ import { requireAuth } from '../auth.js'
 import { emitTo, joinThread, onlineIds, onlineWhere } from '../realtime.js'
 import { publicMessage, publicUser } from '../serializers.js'
 import { rankOf } from '../roles.js'
+import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
 
 const router = Router()
+
+const MAX_MESSAGE = 2000
+const MAX_COMMAND = 400
+
+// Only identifiers this module chooses may be interpolated into SQL.
+const MESSAGE_COLUMNS = new Set(['channel_id', 'thread_id'])
+
+function readId(raw) {
+  const id = Number(raw)
+  return Number.isInteger(id) && id > 0 ? id : null
+}
+
+/** Text a person typed, minus control/invisible characters, within the length cap. */
+function readContent(raw) {
+  if (typeof raw !== 'string') return { error: 'Messages have to be text.' }
+  const content = cleanText(raw, MAX_MESSAGE + 1).trim()
+  if (!content) return { error: 'Type a message first.' }
+  if (content.length > MAX_MESSAGE) return { error: 'Messages top out at 2000 characters.' }
+  return { content }
+}
+
+/** Burst + sustained allowance per account; a scripted flood trips the first one. */
+function overPostingLimit(user, res) {
+  const burst = take(`msg:burst:${user.id}`, 8, 5_000)
+  const steady = take(`msg:steady:${user.id}`, 40, 60_000)
+  if (burst.ok && steady.ok) return false
+
+  const retry = Math.max(burst.retryAfter, steady.retryAfter, 1)
+  if (take(`audit:msg:${user.id}`, 1, 60_000).ok) {
+    audit('message-flood', { userId: user.id, username: user.username })
+  }
+  res.set('Retry-After', String(retry))
+  res.status(429).json({ error: `You are posting too fast — wait ${retry}s.` })
+  return true
+}
 
 async function loadSnapshot(user) {
   const [channels, members, friends, threads] = await Promise.all([
@@ -80,6 +116,7 @@ async function hydrateMessage(id) {
 }
 
 async function listMessages(column, id) {
+  if (!MESSAGE_COLUMNS.has(column)) throw new Error(`unknown message column: ${column}`)
   const { rows } = await q(
     `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
@@ -114,30 +151,46 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json(await loadSnapshot(req.user))
 })
 
+// Owner-visible trail of refused logins, floods and privileged actions.
+router.get('/audit', requireAuth, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' })
+  res.json({ entries: recentAudit() })
+})
+
 router.get('/channels/:id/messages', requireAuth, async (req, res) => {
-  res.json({ messages: await listMessages('channel_id', Number(req.params.id)) })
+  const channelId = readId(req.params.id)
+  if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
+
+  const channel = await q('SELECT 1 FROM channels WHERE id = $1', [channelId])
+  if (!channel.rows.length) return res.status(404).json({ error: 'That channel no longer exists.' })
+
+  res.json({ messages: await listMessages('channel_id', channelId) })
 })
 
 router.post('/channels/:id/messages', requireAuth, async (req, res) => {
-  const channelId = Number(req.params.id)
-  const content = String(req.body?.content ?? '').trim()
-  if (!content) return res.status(400).json({ error: 'Type a message first.' })
+  const channelId = readId(req.params.id)
+  if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
+
+  const read = readContent(req.body?.content)
+  if (read.error) return res.status(400).json({ error: read.error })
+  const content = read.content
 
   const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
   const channel = rows[0]
   if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
 
+  if (overPostingLimit(req.user, res)) return
+
   const blocked = await checkCanSpeak(req.user, channel)
   if (blocked) return res.status(blocked.status).json({ error: blocked.error })
 
   if (content.startsWith('/')) {
+    if (content.length > MAX_COMMAND) {
+      return res.status(400).json({ error: 'That command is too long.' })
+    }
     const outcome = await runCommand({ actor: req.user, channel, content })
     if (outcome.error) return res.status(400).json({ error: outcome.error })
     return res.json({ ok: true })
-  }
-
-  if (content.length > 2000) {
-    return res.status(400).json({ error: 'Messages top out at 2000 characters.' })
   }
 
   const { rows: inserted } = await q(
@@ -151,10 +204,11 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
 })
 
 router.post('/dm/:userId/open', requireAuth, async (req, res) => {
-  const peerId = Number(req.params.userId)
+  const peerId = readId(req.params.userId)
+  if (!peerId) return res.status(400).json({ error: 'That person is no longer here.' })
   if (peerId === req.user.id) return res.status(400).json({ error: 'You cannot direct message yourself.' })
 
-  const peer = await q('SELECT id FROM users WHERE id = $1', [peerId])
+  const peer = await q('SELECT id FROM users WHERE id = $1 AND banned = FALSE', [peerId])
   if (!peer.rows.length) return res.status(404).json({ error: 'That person is no longer here.' })
 
   const existing = await q(
@@ -181,7 +235,9 @@ router.post('/dm/:userId/open', requireAuth, async (req, res) => {
 })
 
 router.get('/dm/:threadId/messages', requireAuth, async (req, res) => {
-  const threadId = Number(req.params.threadId)
+  const threadId = readId(req.params.threadId)
+  if (!threadId) return res.status(403).json({ error: 'That conversation is not yours.' })
+
   const member = await q('SELECT 1 FROM dm_members WHERE thread_id = $1 AND user_id = $2', [
     threadId,
     req.user.id,
@@ -191,15 +247,20 @@ router.get('/dm/:threadId/messages', requireAuth, async (req, res) => {
 })
 
 router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
-  const threadId = Number(req.params.threadId)
-  const content = String(req.body?.content ?? '').trim()
+  const threadId = readId(req.params.threadId)
+  if (!threadId) return res.status(403).json({ error: 'That conversation is not yours.' })
+
   const member = await q('SELECT 1 FROM dm_members WHERE thread_id = $1 AND user_id = $2', [
     threadId,
     req.user.id,
   ])
   if (!member.rows.length) return res.status(403).json({ error: 'That conversation is not yours.' })
-  if (!content) return res.status(400).json({ error: 'Type a message first.' })
-  if (content.length > 2000) return res.status(400).json({ error: 'Messages top out at 2000 characters.' })
+
+  const read = readContent(req.body?.content)
+  if (read.error) return res.status(400).json({ error: read.error })
+  const content = read.content
+
+  if (overPostingLimit(req.user, res)) return
 
   const blocked = await checkCanSpeak(req.user, null)
   if (blocked) return res.status(blocked.status).json({ error: blocked.error })
@@ -215,8 +276,12 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
 })
 
 router.post('/friends/:userId', requireAuth, async (req, res) => {
-  const friendId = Number(req.params.userId)
+  const friendId = readId(req.params.userId)
+  if (!friendId) return res.status(400).json({ error: 'That person is no longer here.' })
   if (friendId === req.user.id) return res.status(400).json({ error: 'You cannot add yourself.' })
+
+  const friend = await q('SELECT 1 FROM users WHERE id = $1', [friendId])
+  if (!friend.rows.length) return res.status(404).json({ error: 'That person is no longer here.' })
 
   const existing = await q('SELECT 1 FROM friendships WHERE user_id = $1 AND friend_id = $2', [
     req.user.id,

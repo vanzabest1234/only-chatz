@@ -1,7 +1,9 @@
 import { q } from './db.js'
 import { destroyUserSessions } from './auth.js'
-import { emitAll, emitTo } from './realtime.js'
+import { disconnectUser, emitAll, emitTo } from './realtime.js'
 import { ASSIGNABLE_ROLES, rankOf, labelFor, roleForRank } from './roles.js'
+import { audit, cleanText } from './guard.js'
+import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
 
 async function postSystem(channel, content) {
@@ -15,19 +17,26 @@ async function postSystem(channel, content) {
   return message
 }
 
+/**
+ * Resolve `@who` to one person. The @username wins; a display name is only used when
+ * exactly one account has it, so renaming yourself to someone else's display name can
+ * never make a moderator act on the wrong account.
+ */
 async function findUser(token) {
-  if (!token) return null
-  const name = String(token).replace(/^@/, '')
+  const name = cleanText(token, 64).replace(/^@/, '').trim()
   if (!name) return null
-  const { rows } = await q(
-    'SELECT * FROM users WHERE lower(username) = lower($1) OR lower(display_name) = lower($1) LIMIT 1',
-    [name],
-  )
-  return rows[0] ?? null
+
+  const byUsername = await q('SELECT * FROM users WHERE lower(username) = lower($1) LIMIT 1', [name])
+  if (byUsername.rows.length) return byUsername.rows[0]
+
+  const byDisplay = await q('SELECT * FROM users WHERE lower(display_name) = lower($1) LIMIT 2', [name])
+  if (byDisplay.rows.length > 1) return { ambiguous: name }
+  return byDisplay.rows[0] ?? null
 }
 
 function guardTarget(actor, target) {
   if (!target) return 'I could not find that person.'
+  if (target.ambiguous) return 'More than one person has that name — use their @username.'
   if (target.id === actor.id) return 'You cannot use that on yourself.'
   if (rankOf(target.role) >= rankOf(actor.role)) {
     return 'You cannot act on someone at or above your own rank.'
@@ -52,8 +61,9 @@ const COMMANDS = [
     description: 'Change your display name.',
     minRank: 0,
     async run({ actor, args }) {
-      const name = args.join(' ').trim()
-      if (!name || name.length > 32) return { error: 'Usage: /nick <new display name>' }
+      const named = await checkDisplayName(args.join(' '), actor.id)
+      if (named.error) return { error: `${named.error} Usage: /nick <new display name>` }
+      const name = named.name
       await q('UPDATE users SET display_name = $1 WHERE id = $2', [name, actor.id])
       emitAll('members:refresh')
       emitTo(`user:${actor.id}`, 'profile:update')
@@ -66,7 +76,7 @@ const COMMANDS = [
     description: 'Set the topic of this channel.',
     minRank: 1,
     async run({ actor, channel, args }) {
-      const topic = args.join(' ').trim().slice(0, 140)
+      const topic = cleanText(args.join(' '), 140).replace(/\s+/g, ' ').trim()
       await q('UPDATE channels SET topic = $1 WHERE id = $2', [topic, channel.id])
       emitAll('channels:refresh')
       return { notice: `${actor.display_name} set the topic to "${topic || 'none'}".` }
@@ -105,6 +115,7 @@ const COMMANDS = [
          )`,
         [channel.id, Math.round(count)],
       )
+      audit('messages-cleared', { actor: actor.username, channel: channel.name, count: Math.round(count) })
       return {
         notice: `${actor.display_name} cleared the last ${Math.round(count)} messages.`,
         refresh: 'channel',
@@ -122,11 +133,12 @@ const COMMANDS = [
       if (problem) return { error: problem }
       const minutes = Math.min(Math.max(Number(args[1] ?? 10), 1), 10080)
       if (!Number.isFinite(minutes)) return { error: 'Usage: /mute @user <minutes> [reason]' }
-      const reason = args.slice(2).join(' ').trim()
+      const reason = cleanText(args.slice(2).join(' '), 140).trim()
       await q(`UPDATE users SET muted_until = now() + ($1 || ' minutes')::interval WHERE id = $2`, [
         String(Math.round(minutes)),
         target.id,
       ])
+      audit('muted', { actor: actor.username, target: target.username, minutes: Math.round(minutes) })
       emitAll('members:refresh')
       emitTo(`user:${target.id}`, 'profile:update')
       return {
@@ -160,11 +172,14 @@ const COMMANDS = [
       const target = await findUser(args[0])
       const problem = guardTarget(actor, target)
       if (problem) return { error: problem }
-      const reason = args.slice(1).join(' ').trim()
+      const reason = cleanText(args.slice(1).join(' '), 140).trim()
       await destroyUserSessions(target.id)
       emitTo(`user:${target.id}`, 'session:revoke', {
         message: `You were kicked by ${actor.display_name}.${reason ? ` Reason: ${reason}` : ''}`,
       })
+      // Sessions are gone, but an open socket would otherwise keep receiving events.
+      disconnectUser(target.id)
+      audit('kicked', { actor: actor.username, target: target.username })
       emitAll('members:refresh')
       return { notice: `${target.display_name} was kicked by ${actor.display_name}${reason ? ` — ${reason}` : ''}.` }
     },
@@ -178,12 +193,14 @@ const COMMANDS = [
       const target = await findUser(args[0])
       const problem = guardTarget(actor, target)
       if (problem) return { error: problem }
-      const reason = args.slice(1).join(' ').trim()
+      const reason = cleanText(args.slice(1).join(' '), 140).trim()
       await q('UPDATE users SET banned = TRUE WHERE id = $1', [target.id])
       await destroyUserSessions(target.id)
       emitTo(`user:${target.id}`, 'session:revoke', {
         message: `You were banned by ${actor.display_name}.${reason ? ` Reason: ${reason}` : ''}`,
       })
+      disconnectUser(target.id)
+      audit('banned', { actor: actor.username, target: target.username })
       emitAll('members:refresh')
       return { notice: `${target.display_name} was banned by ${actor.display_name}${reason ? ` — ${reason}` : ''}.` }
     },
@@ -196,11 +213,13 @@ const COMMANDS = [
     async run({ actor, args }) {
       const target = await findUser(args[0])
       if (!target) return { error: 'I could not find that person.' }
+      if (target.ambiguous) return { error: 'More than one person has that name — use their @username.' }
       if (!target.banned) return { error: `${target.display_name} is not banned.` }
       if (rankOf(target.role) >= rankOf(actor.role)) {
         return { error: 'You cannot act on someone at or above your own rank.' }
       }
       await q('UPDATE users SET banned = FALSE WHERE id = $1', [target.id])
+      audit('unbanned', { actor: actor.username, target: target.username })
       emitAll('members:refresh')
       return { notice: `${target.display_name} was unbanned by ${actor.display_name}.` }
     },
@@ -224,6 +243,7 @@ const COMMANDS = [
         return { error: 'You can only hand out roles below your own.' }
       }
       await q('UPDATE users SET role = $1 WHERE id = $2', [role, target.id])
+      audit('role-changed', { actor: actor.username, target: target.username, role })
       emitAll('members:refresh')
       emitTo(`user:${target.id}`, 'profile:update')
       return { notice: `${target.display_name} is now ${labelFor(role)}.` }
@@ -243,6 +263,8 @@ export async function runCommand({ actor, channel, content }) {
   const command = COMMANDS.find(item => item.name === name)
   if (!command) return { error: `I don't know /${name}. Type /help for the list.` }
   if (rankOf(actor.role) < command.minRank) {
+    // A member poking at moderator commands is worth a line in the audit trail.
+    audit('command-denied', { actor: actor.username, command: name, rank: rankOf(actor.role) })
     return { error: `/${command.name} needs ${roleForRank(command.minRank)} or higher.` }
   }
 
