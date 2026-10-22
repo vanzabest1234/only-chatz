@@ -77,6 +77,8 @@ Non-obvious things worth knowing before changing something:
   relative to whatever site serves the file.
   The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
   remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
+  Its room list and "Channels" line are hand-written copy, not fetched: update them whenever
+  `server/seed.js` gains or loses a room (they must list `#announcements`, `#general`, `#random`).
 - **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
   after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
   and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
