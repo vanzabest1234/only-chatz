@@ -16,6 +16,8 @@ export default function ChatPane({
   const peer = thread?.peer
   const peerOnline = peer ? me.online.includes(peer.id) : false
   const muted = me.user.mutedUntil ? new Date(me.user.mutedUntil) > new Date() : false
+  // Announcement rooms are readable by everyone and writable only by the Owner.
+  const readOnly = Boolean(channel?.announce) && me.user.role !== 'owner'
   const title = channel ? channel.name : peer?.displayName ?? 'Conversation'
   const subtitle = channel
     ? channel.topic || 'No topic yet'
@@ -62,7 +64,12 @@ export default function ChatPane({
         placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}
         commands={me.commands}
         onSend={onSend}
-        disabled={muted}
+        disabled={muted || readOnly}
+        disabledNote={
+          readOnly
+            ? 'Only the Owner posts in #announcements — you can read everything here.'
+            : 'You are muted right now.'
+        }
         slowmode={channel?.slowmode ?? 0}
       />
     </section>

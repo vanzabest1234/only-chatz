@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS messages (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
 
+-- announcement rooms: everyone reads, only the Owner posts
+ALTER TABLE channels ADD COLUMN IF NOT EXISTS announce BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- Exactly one owner, even if two people register at the same instant.
 CREATE UNIQUE INDEX IF NOT EXISTS users_single_owner ON users (role) WHERE role = 'owner';
 CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);

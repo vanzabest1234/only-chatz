@@ -46,7 +46,7 @@ function overPostingLimit(user, res) {
 
 async function loadSnapshot(user) {
   const [channels, members, friends, threads] = await Promise.all([
-    q('SELECT id, name, topic, slowmode, position FROM channels ORDER BY position, id'),
+    q('SELECT id, name, topic, slowmode, position, announce FROM channels ORDER BY position, id'),
     q('SELECT * FROM users WHERE banned = FALSE ORDER BY id'),
     q('SELECT friend_id FROM friendships WHERE user_id = $1', [user.id]),
     q(
@@ -129,6 +129,9 @@ async function listMessages(column, id) {
 }
 
 async function checkCanSpeak(user, channel) {
+  if (channel?.announce && user.role !== 'owner') {
+    return { status: 403, error: `Only the Owner can post in #${channel.name}.` }
+  }
   if (user.muted_until && new Date(user.muted_until) > new Date()) {
     return { status: 403, error: 'You are muted right now.' }
   }

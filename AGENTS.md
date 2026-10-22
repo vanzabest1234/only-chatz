@@ -23,7 +23,8 @@ Non-obvious things worth knowing before changing something:
   (`server/auth.js` and the `io.use` middleware in `server/realtime.js`).
 - **Schema + seed run inside API boot** (`server/index.js` → `migrate()` → `seed()`), not as a
   separate one-shot compose service. `schema.sql` is idempotent (`CREATE … IF NOT EXISTS`), and the
-  seed bails out as soon as any user exists, so `node --watch` restarts are harmless.
+  seed re-asserts the fixed room list with `ON CONFLICT (name) DO NOTHING` on every boot — that is how
+  an older database picks up `#announcements` — so `node --watch` restarts are harmless.
 - **Demo data only appears on a virgin database.** If you ever need the seed back without destroying
   messages, promote an account by hand rather than wiping the data volume.
 - **Roles are enforced server-side only.** `owner > co-owner > admin > mod > member`; you may never
@@ -32,6 +33,11 @@ Non-obvious things worth knowing before changing something:
   every later signup is a plain member until the Owner promotes them.
   The UI merely filters the command list it is given (`GET /api/me` → `commands`).
 - **Muting blocks channel and DM posting**; bans revoke sessions and refuse future logins.
+- **`#announcements` is read-only for everyone but the Owner.** The room carries
+  `channels.announce = TRUE`; `checkCanSpeak` refuses every message (slash commands included)
+  from a non-owner, and the client disables the composer for them. Everyone still sees the room
+  and its messages — the flag only gates writing. Adding another announcement room means setting
+  the same column, not adding a second rule.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in
@@ -162,8 +168,9 @@ a production image — edits would stop showing.
 
 ## Accounts and seed data
 
-There are no demo accounts and no pre-made conversations. The seed creates only the empty channels
-(`#general`, `#design`, `#random`) and only when the `channels` table is empty.
+There are no demo accounts and no pre-made conversations. The seed keeps exactly three empty channels:
+`#announcements` (owner-only posting, `announce = TRUE`), `#general` and `#random`. `#design` was
+removed at the owner's request; there is no room-creation command, so the seed list is the whole set.
 
 The **first account to register becomes the owner** (`server/routes/auth.js`); every later signup is
 a member and has to be promoted with `/role`. Consequence for testing: if you delete the last owner,

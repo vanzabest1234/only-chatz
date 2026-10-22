@@ -1,7 +1,14 @@
 import { useRef, useState } from 'react'
 import Icon from './Icon'
 
-export default function Composer({ placeholder, commands, onSend, disabled, slowmode = 0 }) {
+export default function Composer({
+  placeholder,
+  commands,
+  onSend,
+  disabled,
+  disabledNote,
+  slowmode = 0,
+}) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -66,7 +73,7 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
           rows={1}
           value={value}
           disabled={disabled}
-          placeholder={disabled ? 'You cannot post right now.' : placeholder}
+          placeholder={disabled ? disabledNote || 'You cannot post right now.' : placeholder}
           aria-label={placeholder}
           onChange={event => {
             setValue(event.target.value)
@@ -93,7 +100,11 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
         {error ? (
           <span className="composer-error">{error}</span>
         ) : (
-          <span>{disabled ? 'Muted by a moderator.' : 'Type / for commands · Enter to send'}</span>
+          <span>
+            {disabled
+              ? disabledNote || 'Muted by a moderator.'
+              : 'Type / for commands · Enter to send'}
+          </span>
         )}
         {slowmode > 0 && <span className="chip">slowmode {slowmode}s</span>}
       </div>
