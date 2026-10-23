@@ -623,8 +623,8 @@ const COMMANDS = [
   },
   {
     name: 'ai',
-    usage: '/ai <command>',
-    description: 'Ask the Royal Aide — /ai help lists what it knows.',
+    usage: '/ai <question or command>',
+    description: 'Ask the Royal Aide anything, or a command — /ai help lists them.',
     minRank: 0,
     async run({ actor, channel, args }) {
       // The Aide answers in the room itself (as Royal Aide), so this command posts nothing.

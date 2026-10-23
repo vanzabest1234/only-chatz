@@ -110,35 +110,12 @@ export default function App() {
       setBooting(false)
       return
     }
-
-    let cancelled = false
-
-    // A stored token only becomes worthless when the server rejects it. A dev-server
-    // restart or a dropped request must not sign the member out, so those are retried.
-    const boot = async (attempt = 0) => {
-      try {
-        await finishAuth()
-      } catch (problem) {
-        if (cancelled) return
-        if (problem.status === 401 || problem.status === 403) {
-          setToken(null)
-          setMe(null)
-          return
-        }
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 1200))
-          if (!cancelled) return boot(attempt + 1)
-        }
-      }
-    }
-
-    boot().finally(() => {
-      if (!cancelled) setBooting(false)
-    })
-
-    return () => {
-      cancelled = true
-    }
+    finishAuth()
+      .catch(() => {
+        setToken(null)
+        setMe(null)
+      })
+      .finally(() => setBooting(false))
   }, [finishAuth])
 
   useEffect(() => {

@@ -121,12 +121,19 @@ Non-obvious things worth knowing before changing something:
   and every roll lands in `coin_bets` so the panel can show the last few. Bets are rate-limited
   (20 / 10s per account) and capped at `MAX_BET`; `wager` must be a whole number ≥ `MIN_BET`.
   Never trust a roll, wager or result sent by the client.
-- **The Royal Aide answers `!ai …` (`server/ai.js`).** It is a local command table, not a model:
-  no external service is called and it costs nothing to run. `routes/chat.js` answers a channel
-  message matching `^!ai` (6 per minute per account) with a system message from `author_name`
-  `Royal Aide`, broadcast as `message:new`. Adding a command is one `{ name, usage, description,
+- **The Royal Aide answers `!ai …` (`server/ai.js` + `server/aide-voice.js`).** It is a local
+  command table with a conversational front, not a model: no external service is called and it
+  costs nothing to run. `routes/chat.js` answers a channel message matching `^!ai` (6 per minute
+  per account) with a system message from `author_name` `Royal Aide`, broadcast as `message:new`.
+  When the first word after `!ai` names a command the command runs; anything else goes to
+  `converse` in `aide-voice.js`, which answers plain questions in the Aide's voice from live data
+  (purse, ladder leaders, presence) and recognises greetings, thanks, "how are you", identity,
+  coins, wheel, pass and rules, plus arithmetic when the text is a sum — with a polite fallback for
+  anything past its line. Adding a command is one `{ name, usage, description,
   run({ actor, channel, args }) }` entry in `AI_COMMANDS`; `run` returns the sentence to say or
-  `{ error }`. `!ai help` prints the table. System messages cannot be edited or deleted.
+  `{ error }`. The table is help/balance/stats/top/online/who/summarize/count, the fun ones (joke,
+  fact, riddle, compliment, roast, coin, dice, choose) and math/time. `!ai help [topic]` prints it.
+  System messages cannot be edited or deleted.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in
