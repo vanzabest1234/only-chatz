@@ -622,14 +622,14 @@ const COMMANDS = [
     },
   },
   {
-    name: 'ai',
-    usage: '/ai <question or command>',
-    description: 'Ask the Royal Aide anything, or a command — /ai help lists them.',
+    name: 'ask',
+    usage: '/ask <question or command>',
+    description: 'Ask the Royal Aide anything, or a command — /ask help lists them.',
     minRank: 0,
     async run({ actor, channel, args }) {
       // The Aide answers in the room itself (as Royal Aide), so this command posts nothing.
       const ask = cleanText(args.join(' '), 200).trim()
-      await answerAi({ actor, channel, content: ask ? `!ai ${ask}` : '!ai help' })
+      await answerAi({ actor, channel, content: ask ? `!ask ${ask}` : '!ask help' })
       return { ok: true }
     },
   },

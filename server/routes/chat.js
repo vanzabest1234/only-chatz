@@ -353,7 +353,7 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
     label: `#${channel.name}`,
   })
 
-  // "!ai …" is answered by the Royal Aide, in the room, under the question. The answer
+  // "!ask …" is answered by the Royal Aide, in the room, under the question. The answer
   // arrives over the socket like any other message, so this response does not wait for it.
   if (isAiMessage(content) && take(`ai:${req.user.id}`, 6, 60_000).ok) {
     answerAi({ actor: req.user, channel, content }).catch(error => {

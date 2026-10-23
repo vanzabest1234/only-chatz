@@ -11,7 +11,7 @@ const pick = list => list[randomInt(list.length)]
 const coins = value => Number(value ?? 0).toLocaleString('en-US')
 
 /**
- * A tiny arithmetic parser for "!ai math" and "what is 12 * 3".
+ * A tiny arithmetic parser for "!ask math" and "what is 12 * 3".
  * Numbers and + - * / % ^ ( ) only; anything else returns null instead of being evaluated.
  */
 export function evaluateExpression(expression) {
@@ -135,13 +135,13 @@ const SMALL_TALK = [
   {
     match: /\b(who are you|what are you|your name|are you (a )?(bot|real|human|ai))\b/i,
     async reply() {
-      return "The Royal Aide — this room's own bot. I'm not a model and I call no outside service: every line I say comes from this server's database and its command table. Type !ai help and you'll see the whole repertoire."
+      return "The Royal Aide — this room's own bot. I'm not a model and I call no outside service: every line I say comes from this server's database and its command table. Type !ask help and you'll see the whole repertoire."
     },
   },
   {
     match: /\b(what can you do|how do you work|capabilities|your commands?)\b/i,
     async reply() {
-      return "I can read this room: purses, the coin ladder, who is online and where, how busy a channel is, plus a bit of fun — jokes, riddles, dice, maths, gentle roasts. !ai help prints every command; ask me something in plain words and I'll try to answer."
+      return "I can read this room: purses, the coin ladder, who is online and where, how busy a channel is, plus a bit of fun — jokes, riddles, dice, maths, gentle roasts. !ask help prints every command; ask me something in plain words and I'll try to answer."
     },
   },
   {
@@ -157,7 +157,7 @@ const SMALL_TALK = [
   {
     match: /\b(who('| i)?s (winning|richest)|leaderboard|top purses?|richest)\b/i,
     async reply() {
-      return `The ladder's top three: ${await topThree()}. !ai top shows five, and /leaderboard posts all ten in chat.`
+      return `The ladder's top three: ${await topThree()}. !ask top shows five, and /leaderboard posts all ten in chat.`
     },
   },
   {
@@ -189,7 +189,7 @@ const SMALL_TALK = [
     match: /\b(i'?m|i am|im|i feel)\s+(sad|tired|bored|lonely|down|stressed|anxious)\b/i,
     async reply({ channel }) {
       return pick([
-        `That's noted, and I mean it — this room is better with you in it. If you want company, #${channel.name} is where everyone gathers; if you want a distraction, !ai joke or !ai dice will do.`,
+        `That's noted, and I mean it — this room is better with you in it. If you want company, #${channel.name} is where everyone gathers; if you want a distraction, !ask joke or !ask dice will do.`,
         "Sounds like a lot to carry. I can't fix the day, but I can sit here with you, roll some dice, or read you the room's numbers. Your call.",
       ])
     },
@@ -217,18 +217,18 @@ const SMALL_TALK = [
 
 const FALLBACKS = [
   text =>
-    `I'll be honest: "${text.slice(0, 80)}" isn't something I can look up. I'm a command table with good manners, not a model. What I can do is read this room — try !ai stats, !ai online or !ai top.`,
+    `I'll be honest: "${text.slice(0, 80)}" isn't something I can look up. I'm a command table with good manners, not a model. What I can do is read this room — try !ask stats, !ask online or !ask top.`,
   () =>
     'Good question, and I would rather not guess. Ask me about purses, the ladder, who is online, or how busy this channel is — those I can answer straight from the database.',
   () =>
-    'That one is past my line. Type !ai help for the whole list; if it is about this room, there is a good chance I can read it out.',
+    'That one is past my line. Type !ask help for the whole list; if it is about this room, there is a good chance I can read it out.',
 ]
 
 /** Answer free text in the Aide's own voice. Returns one line to post in the room. */
 export async function converse({ actor, channel, text }) {
   const said = String(text ?? '').trim()
   if (!said) {
-    return 'Ask me anything about this room — !ai help lists the commands, or just type a question.'
+    return 'Ask me anything about this room — !ask help lists the commands, or just type a question.'
   }
 
   const math = mathFromText(said)

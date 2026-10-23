@@ -5,19 +5,19 @@ import { publicMessage } from './serializers.js'
 import { accrueCoins, topWallets } from './coins.js'
 import { converse, evaluateExpression } from './aide-voice.js'
 
-// The Royal Aide — the chat's own bot. It answers a message that starts with "!ai"
+// The Royal Aide — the chat's own bot. It answers a message that starts with "!ask"
 // with a line in the room. Every answer is computed right here from the database, so it
 // costs nothing to run and never needs an outside service.
 //
-// Two halves: AI_COMMANDS is the table (`!ai <name>`), and anything that names no command
+// Two halves: AI_COMMANDS is the table (`!ask <name>`), and anything that names no command
 // is handed to `converse` in aide-voice.js, which answers plain questions in the Aide's voice.
 //
 // Adding a command is one entry in AI_COMMANDS: `run({ actor, channel, args })` returns
-// the text to say (or `{ error }` to refuse). `usage` is what "!ai help" prints.
+// the text to say (or `{ error }` to refuse). `usage` is what "!ask help" prints.
 
 export const AI_NAME = 'Royal Aide'
 
-const TRIGGER = /^!ai(?:\s|$)/i
+const TRIGGER = /^!ask(?:\s|$)/i
 
 export const isAiMessage = content => TRIGGER.test(content)
 
@@ -114,7 +114,7 @@ async function onlineLine() {
 export const AI_COMMANDS = [
   {
     name: 'help',
-    usage: '!ai help [topic]',
+    usage: '!ask help [topic]',
     description: 'List everything the Aide can do.',
     async run({ args }) {
       const topic = String(args[0] ?? '').toLowerCase()
@@ -126,14 +126,14 @@ export const AI_COMMANDS = [
               item.description.toLowerCase().includes(topic),
           )
         : AI_COMMANDS
-      if (!list.length) return `Nothing here matches "${topic}". Try !ai help on its own.`
+      if (!list.length) return `Nothing here matches "${topic}". Try !ask help on its own.`
       const lines = list.map(item => `${item.usage} — ${item.description}`)
       return `${AI_NAME} online. ${lines.join('  ·  ')}`
     },
   },
   {
     name: 'balance',
-    usage: '!ai balance',
+    usage: '!ask balance',
     description: 'Check your royal coins.',
     async run({ actor }) {
       const { state } = await accrueCoins(actor.id)
@@ -142,7 +142,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'stats',
-    usage: '!ai stats',
+    usage: '!ask stats',
     description: 'Your purse, rank, messages and worn flairs.',
     async run({ actor }) {
       const { state } = await accrueCoins(actor.id)
@@ -161,7 +161,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'top',
-    usage: '!ai top',
+    usage: '!ask top',
     description: 'The five richest purses.',
     async run() {
       const leaders = await topWallets(5)
@@ -173,7 +173,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'online',
-    usage: '!ai online',
+    usage: '!ask online',
     description: 'Who is connected, and which room they are in.',
     async run() {
       return onlineLine()
@@ -181,7 +181,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'who',
-    usage: '!ai who @user',
+    usage: '!ask who @user',
     description: 'A one-line profile for anyone here.',
     async run({ args }) {
       const person = await findPerson(args[0])
@@ -199,7 +199,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'summarize',
-    usage: '!ai summarize',
+    usage: '!ask summarize',
     description: 'Sum up the recent life of this channel.',
     async run({ channel }) {
       const { rows } = await q(
@@ -228,7 +228,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'count',
-    usage: '!ai count',
+    usage: '!ask count',
     description: 'How many messages this channel holds.',
     async run({ channel }) {
       const { rows } = await q(
@@ -240,7 +240,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'joke',
-    usage: '!ai joke',
+    usage: '!ask joke',
     description: 'One dry joke, no charge.',
     async run() {
       return pick(JOKES)
@@ -248,7 +248,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'fact',
-    usage: '!ai fact',
+    usage: '!ask fact',
     description: 'A small true thing.',
     async run() {
       return pick(FACTS)
@@ -256,7 +256,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'riddle',
-    usage: '!ai riddle',
+    usage: '!ask riddle',
     description: 'A riddle, with the answer.',
     async run() {
       const [question, answer] = pick(RIDDLES)
@@ -265,7 +265,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'compliment',
-    usage: '!ai compliment [@user]',
+    usage: '!ask compliment [@user]',
     description: 'Say something nice, to you or someone else.',
     async run({ actor, args }) {
       const person = args[0] ? await findPerson(args[0]) : actor
@@ -276,7 +276,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'roast',
-    usage: '!ai roast [@user]',
+    usage: '!ask roast [@user]',
     description: 'A gentle roast — nobody bleeds.',
     async run({ actor, args }) {
       const person = args[0] ? await findPerson(args[0]) : actor
@@ -287,7 +287,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'coin',
-    usage: '!ai coin',
+    usage: '!ask coin',
     description: 'Call it — heads or tails.',
     async run({ actor }) {
       return `${actor.display_name} flips a coin — ${randomInt(2) === 0 ? 'heads' : 'tails'}.`
@@ -295,7 +295,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'dice',
-    usage: '!ai dice [sides]',
+    usage: '!ask dice [sides]',
     description: 'Roll one die, d6 by default (2-1000).',
     async run({ actor, args }) {
       const sides = Math.min(1000, Math.max(2, Number(args[0]) || 6))
@@ -304,7 +304,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'choose',
-    usage: '!ai choose a | b | c',
+    usage: '!ask choose a | b | c',
     description: 'Hand the decision to the Aide.',
     async run({ args }) {
       const options = args
@@ -318,7 +318,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'math',
-    usage: '!ai math 12 * (3 + 1)',
+    usage: '!ask math 12 * (3 + 1)',
     description: 'Arithmetic, worked out server-side.',
     async run({ args }) {
       const expression = args.join(' ')
@@ -329,7 +329,7 @@ export const AI_COMMANDS = [
   },
   {
     name: 'time',
-    usage: '!ai time',
+    usage: '!ask time',
     description: 'The server clock, so nobody argues.',
     async run() {
       const now = new Date()
@@ -348,7 +348,7 @@ async function postBotMessage(channelId, content) {
   emitTo(`channel:${channelId}`, 'message:new', publicMessage(rows[0]))
 }
 
-/** Read a "!ai <command> <args…>" message and answer it in the same channel. */
+/** Read a "!ask <command> <args…>" message and answer it in the same channel. */
 export async function answerAi({ actor, channel, content }) {
   const body = content.replace(TRIGGER, '').trim()
   const [name = '', ...args] = body.split(/\s+/)
