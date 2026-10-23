@@ -35,6 +35,7 @@ export default function SettingsModal({ user, onClose, onSaved }) {
   const [bio, setBio] = useState(user.bio || '')
   const [pronouns, setPronouns] = useState(user.pronouns || '')
   const [color, setColor] = useState(user.color)
+  const [customTag, setCustomTag] = useState(user.customTag || '')
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -61,7 +62,14 @@ export default function SettingsModal({ user, onClose, onSaved }) {
     try {
       const data = await api('/api/me/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ displayName, bio, pronouns, color, avatarUrl: avatarUrl || null }),
+        body: JSON.stringify({
+          displayName,
+          bio,
+          pronouns,
+          color,
+          avatarUrl: avatarUrl || null,
+          ...(user.ownsCustomTag ? { customTag } : {}),
+        }),
       })
       onSaved(data.user)
       onClose()
@@ -139,6 +147,19 @@ export default function SettingsModal({ user, onClose, onSaved }) {
             />
             <em className="settings-count">{bio.length}/160</em>
           </label>
+
+          {user.ownsCustomTag && (
+            <label className="field">
+              <span>Custom tag</span>
+              <input
+                value={customTag}
+                maxLength={16}
+                placeholder="your word"
+                onChange={event => setCustomTag(event.target.value)}
+              />
+              <em className="settings-count">the 0.01% wheel win · show it by equipping the tag</em>
+            </label>
+          )}
 
           <div className="field">
             <span>Accent colour</span>

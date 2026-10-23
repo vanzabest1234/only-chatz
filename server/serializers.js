@@ -1,3 +1,5 @@
+import { frameFor } from './pass.js'
+
 export function publicUser(row) {
   return {
     id: row.id,
@@ -11,6 +13,9 @@ export function publicUser(row) {
     mutedUntil: row.muted_until ?? null,
     rulesAccepted: Boolean(row.rules_accepted_at),
     flairs: Array.isArray(row.flairs) ? row.flairs : [],
+    customTag: row.custom_tag ?? null,
+    passTier: Number(row.pass_tier ?? 0),
+    frame: frameFor(Number(row.pass_tier ?? 0)),
   }
 }
 
@@ -25,6 +30,8 @@ export function publicMessage(row) {
     authorColor: row.color ?? '#93a0c9',
     authorAvatar: row.avatar_url ?? null,
     authorFlairs: Array.isArray(row.author_flairs) ? row.author_flairs : [],
+    authorCustomTag: row.custom_tag ?? null,
+    authorFrame: frameFor(Number(row.pass_tier ?? 0)),
     content: row.content,
     system: Boolean(row.system),
     createdAt: row.created_at,

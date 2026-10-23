@@ -15,13 +15,15 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
         onClick={event => event.stopPropagation()}
       >
         <div className="profile-top">
-          <Avatar
-            name={member.displayName}
-            color={member.color}
-            size={64}
-            online={online}
-            src={member.avatarUrl}
-          />
+          <span className={`avatar-frame ${member.frame ? `frame-${member.frame}` : ''}`}>
+            <Avatar
+              name={member.displayName}
+              color={member.color}
+              size={64}
+              online={online}
+              src={member.avatarUrl}
+            />
+          </span>
           <div className="profile-id">
             <h2>{member.displayName}</h2>
             <p className="profile-handle">@{member.username}</p>
@@ -33,7 +35,8 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
 
         <div className="profile-tags">
           <RoleBadge role={member.role} />
-          <FlairBadges flairs={member.flairs} />
+          <FlairBadges flairs={member.flairs} customTag={member.customTag} />
+          {member.passTier > 0 && <span className="pass-badge">S★{member.passTier}</span>}
           {member.pronouns && <span className="profile-pronouns">{member.pronouns}</span>}
           <span className={`profile-status ${online ? 'is-on' : ''}`}>
             {online ? 'online' : 'offline'}

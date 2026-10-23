@@ -2,6 +2,7 @@ import { Server } from 'socket.io'
 import { q } from './db.js'
 import { sessionUser } from './auth.js'
 import { audit, take } from './guard.js'
+import { addPresenceMinutes } from './pass.js'
 
 let io = null
 const online = new Map()
@@ -71,9 +72,28 @@ function startTypingSweep() {
   return timer
 }
 
+/**
+ * The season pass counts minutes with a socket open. A minute is a tick, and the tick is
+ * the only writer, so closing the tab stops the clock and the pass cannot be farmed offline.
+ */
+function startPassClock() {
+  const timer = setInterval(() => {
+    for (const userId of [...online.keys()]) {
+      addPresenceMinutes(userId, 1)
+        .then(state => {
+          if (state) emitTo(`user:${userId}`, 'pass:update', state)
+        })
+        .catch(() => {})
+    }
+  }, 60_000)
+  timer.unref?.()
+  return timer
+}
+
 export function initRealtime(httpServer) {
   io = new Server(httpServer)
   startTypingSweep()
+  startPassClock()
 
   io.use(async (socket, next) => {
     const forwarded = String(socket.handshake.headers?.['x-forwarded-for'] ?? '').split(',')[0].trim()

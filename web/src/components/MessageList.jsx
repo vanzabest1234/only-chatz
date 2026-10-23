@@ -3,6 +3,30 @@ import Avatar from './Avatar'
 import RoleBadge from './RoleBadge'
 import FlairBadges from './FlairBadges'
 import { snippet, timeShort } from '../lib/format'
+import { splitMentions } from '../lib/mentions'
+
+/** Message text with every "@name" picked out, and your own name lit up. */
+function MessageText({ content, username, className = 'msg-text' }) {
+  return (
+    <p className={className}>
+      {splitMentions(content, username).map((part, index) =>
+        part.mention ? (
+          <mark key={index} className={`msg-mention ${part.mine ? 'is-me' : ''}`}>
+            {part.text}
+          </mark>
+        ) : (
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </p>
+  )
+}
+
+/** Avatars pick up the season-pass frame its owner reached (nothing at tier 0). */
+function FramedAvatar({ frame, children }) {
+  if (!frame) return children
+  return <span className={`avatar-frame frame-${frame}`}>{children}</span>
+}
 
 const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
 
@@ -173,12 +197,14 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
 
   return (
     <div className="msg">
-      <ProfileAvatar message={message} size={38} onOpenProfile={onOpenProfile} />
+      <FramedAvatar frame={message.authorFrame}>
+        <ProfileAvatar message={message} size={38} onOpenProfile={onOpenProfile} />
+      </FramedAvatar>
       <div className="msg-body">
         <div className="msg-head">
           <span className="msg-name">{message.authorName}</span>
           <RoleBadge role={message.authorRole} />
-          <FlairBadges flairs={message.authorFlairs} />
+          <FlairBadges flairs={message.authorFlairs} customTag={message.authorCustomTag} />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
           {message.editedAt && <span className="msg-edited">(edited)</span>}
         </div>
@@ -191,7 +217,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <p className="msg-text">{message.content}</p>
+          <MessageText content={message.content} username={me.user.username} />
         )}
         <ReactionBar message={message} me={me} onReact={onReact} />
       </div>
@@ -248,7 +274,7 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProf
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <div className="bubble">{message.content}</div>
+          <MessageText content={message.content} username={me.user.username} className="bubble" />
         )}
         <ReactionBar message={message} me={me} onReact={onReact} />
         {own && (

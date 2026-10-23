@@ -44,6 +44,26 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Pick one of the accent colours.' })
   }
 
+  // The custom tag is a wheel reward: owning it is what allows the text to be set.
+  const customTagRaw = cleanText(req.body?.customTag ?? '', 17).replace(/\s+/g, ' ').trim()
+  if (customTagRaw && customTagRaw.length < 2) {
+    return res.status(400).json({ error: 'A custom tag needs at least 2 characters.' })
+  }
+  if (customTagRaw.length > 16) {
+    return res.status(400).json({ error: 'Keep your custom tag under 16 characters.' })
+  }
+  if (customTagRaw && !/^[\p{L}\p{N} _.\-!'?]{2,16}$/u.test(customTagRaw)) {
+    return res.status(400).json({ error: 'Letters, numbers and simple punctuation only.' })
+  }
+  if (customTagRaw) {
+    const owns = await q("SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = 'custom'", [
+      req.user.id,
+    ])
+    if (!owns.rows.length) {
+      return res.status(403).json({ error: 'The custom tag is a wheel reward — win it first.' })
+    }
+  }
+
   const avatar = req.body?.avatarUrl
   let avatarUrl = null
   if (typeof avatar === 'string' && avatar.length > 0) {
@@ -58,9 +78,9 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
 
   const { rows } = await q(
     `UPDATE users SET display_name = $1, bio = $2, color = $3, avatar_url = $4,
-            pronouns = $5
-      WHERE id = $6 RETURNING *`,
-    [displayName, bio, color, avatarUrl, pronouns, req.user.id],
+            pronouns = $5, custom_tag = $6
+      WHERE id = $7 RETURNING *`,
+    [displayName, bio, color, avatarUrl, pronouns, customTagRaw || null, req.user.id],
   )
 
   emitAll('profile:update')

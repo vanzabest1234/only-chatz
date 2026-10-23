@@ -100,3 +100,25 @@ CREATE TABLE IF NOT EXISTS message_reactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (message_id, user_id, emoji)
 );
+
+-- "@username" said in a message, recorded so the person can be told rather than noticing late
+CREATE TABLE IF NOT EXISTS message_mentions (
+  message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id)
+);
+
+-- the custom tag: a 0.01% wheel win that unlocks a word of your own next to your name
+ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_tag TEXT;
+
+-- season pass: a minute with a socket open is XP, and tiers hand out cosmetics (never flairs)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_season TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_xp INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_minutes INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_tier INTEGER NOT NULL DEFAULT 0;
+-- which token rewards were already paid this season, so a restart cannot pay twice
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_spin_awarded INTEGER NOT NULL DEFAULT 0;
+
+-- extra turns of the wheel, handed out by the season pass
+ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_tokens INTEGER NOT NULL DEFAULT 0;

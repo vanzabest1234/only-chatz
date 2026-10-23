@@ -71,7 +71,11 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                         </span>
                         <span className="member-tags">
                           <RoleBadge role={member.role} />
-                          <FlairBadges flairs={member.flairs} compact />
+                          <FlairBadges
+                            flairs={member.flairs}
+                            customTag={member.customTag}
+                            compact
+                          />
                         </span>
                       </button>
                       {member.id !== me.user.id && (

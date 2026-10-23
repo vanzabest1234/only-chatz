@@ -11,6 +11,7 @@ export const FLAIR_COLORS = {
   devil: '#ff6b6b',
   vip: '#dbe6ef',
   mvp: '#ffc44d',
+  custom: '#c9a4ff',
   bread: '#e0b074',
 }
 
@@ -25,8 +26,11 @@ export const FLAIR_LABELS = {
   devil: 'Devil',
   vip: 'VIP',
   mvp: 'MVP',
+  custom: 'Custom tag',
   bread: 'bread',
 }
+
+export const CUSTOM_FLAIR = 'custom'
 
 export const flairColor = key => FLAIR_COLORS[key] ?? '#74f0a6'
 

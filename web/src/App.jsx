@@ -11,6 +11,8 @@ import OnlineBoard from './components/OnlineBoard'
 import RulesGate from './components/RulesGate'
 import ProfileCard from './components/ProfileCard'
 import FlairWheel from './components/FlairWheel'
+import PassPanel from './components/PassPanel'
+import { playPing } from './lib/mentions'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -23,6 +25,9 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [boardOpen, setBoardOpen] = useState(false)
   const [flairOpen, setFlairOpen] = useState(false)
+  const [passOpen, setPassOpen] = useState(false)
+  const [ping, setPing] = useState(null)
+  const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
   const [replyTo, setReplyTo] = useState(null)
   const [profileId, setProfileId] = useState(null)
@@ -63,6 +68,16 @@ export default function App() {
     setRulesOpen(false)
     setRulesDeclined(false)
     setProfileId(null)
+  }, [])
+
+  // A ping names the room it came from, so answering it is one tap.
+  const answerPing = useCallback(payload => {
+    window.clearTimeout(pingTimer.current)
+    setPing(null)
+    const room = payload?.room
+    if (!room?.id) return
+    setView({ type: room.kind === 'dm' ? 'dm' : 'channel', id: room.id })
+    setSidebarOpen(false)
   }, [])
 
   // Tell the server which room we are looking at, so the online board can show it.
@@ -172,6 +187,18 @@ export default function App() {
         if (!target || payload?.kind !== target.type || payload?.id !== target.id) return
         setTyping(Array.isArray(payload.names) ? payload.names : [])
       },
+      // Someone said "@you": chime, and keep the toast up long enough to answer it.
+      'ping:new': payload => {
+        if (!payload?.message) return
+        playPing()
+        setPing(payload)
+        window.clearTimeout(pingTimer.current)
+        pingTimer.current = window.setTimeout(() => setPing(null), 12_000)
+      },
+      'pass:update': state =>
+        setMe(previous =>
+          previous ? { ...previous, user: { ...previous.user, pass: state } } : previous,
+        ),
       connect: shareRoom,
       'session:revoke': payload => {
         setNotice(payload?.message || 'You were removed from this server.')
@@ -352,6 +379,19 @@ export default function App() {
       <div className="shell">
         {notice && <p className="toast">{notice}</p>}
 
+        {ping && (
+          <button type="button" className="ping-toast" onClick={() => answerPing(ping)}>
+            <span className="ping-glint" aria-hidden="true">
+              @
+            </span>
+            <span className="ping-text">
+              <strong>{ping.from?.displayName ?? 'someone'}</strong> pinged you in{' '}
+              {ping.room?.label ?? 'a room'}
+            </span>
+            <span className="ping-answer">answer</span>
+          </button>
+        )}
+
         <Sidebar
           me={me}
           channelId={channel?.id}
@@ -374,6 +414,10 @@ export default function App() {
           }}
           onOpenFlairs={() => {
             setFlairOpen(true)
+            setSidebarOpen(false)
+          }}
+          onOpenPass={() => {
+            setPassOpen(true)
             setSidebarOpen(false)
           }}
           onSignOut={() => {
@@ -429,6 +473,8 @@ export default function App() {
         {flairOpen && (
           <FlairWheel onClose={() => setFlairOpen(false)} onChanged={() => load().catch(() => {})} />
         )}
+
+        {passOpen && <PassPanel pass={me.user.pass} onClose={() => setPassOpen(false)} />}
 
         {settingsOpen && (
           <SettingsModal

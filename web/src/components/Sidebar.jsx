@@ -15,6 +15,7 @@ export default function Sidebar({
   onOpenSettings,
   onOpenBoard,
   onOpenFlairs,
+  onOpenPass,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -49,6 +50,11 @@ export default function Sidebar({
               <span className="hash">✦</span>
               <span className="nav-label">Flair wheel</span>
               <span className="chip">spin</span>
+            </button>
+            <button className="nav-row pass-link" onClick={onOpenPass}>
+              <span className="hash">▮</span>
+              <span className="nav-label">Season pass</span>
+              <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
             </button>
           </section>
 

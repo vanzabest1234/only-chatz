@@ -6,6 +6,8 @@ import { publicMessage, publicUser } from '../serializers.js'
 import { rankOf } from '../roles.js'
 import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
+import { grantOwnerWheel } from '../flairs.js'
+import { passState } from '../pass.js'
 
 const router = Router()
 
@@ -52,8 +54,36 @@ function overPostingLimit(user, res) {
   return true
 }
 
+// "@name" is how people call each other over here, so a mention is recorded and pushed
+// to that account's sockets instead of quietly sitting in the scrollback.
+const MENTION = /@([a-z0-9_]{2,32})/gi
+
+async function notifyMentions(message, actor, room) {
+  const names = [...new Set((message.content.match(MENTION) ?? []).map(hit => hit.slice(1).toLowerCase()))]
+  if (!names.length) return
+
+  const { rows } = await q(
+    'SELECT id FROM users WHERE banned = FALSE AND lower(username) = ANY($1::text[]) AND id <> $2',
+    [names, actor.id],
+  )
+  if (!rows.length) return
+
+  await q(
+    `INSERT INTO message_mentions (message_id, user_id)
+     SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING`,
+    [message.id, rows.map(row => row.id)],
+  )
+
+  const payload = {
+    message,
+    from: { id: actor.id, displayName: actor.display_name, username: actor.username },
+    room,
+  }
+  rows.forEach(row => emitTo(`user:${row.id}`, 'ping:new', payload))
+}
+
 async function loadSnapshot(user) {
-  const [channels, members, friends, threads] = await Promise.all([
+  const [channels, members, friends, threads, tag] = await Promise.all([
     q('SELECT id, name, topic, slowmode, position, announce FROM channels ORDER BY position, id'),
     q(
       `SELECT *, ${EQUIPPED_FLAIRS('users.id')} AS flairs
@@ -85,10 +115,17 @@ async function loadSnapshot(user) {
         ORDER BY COALESCE(lm.id, 0) DESC`,
       [user.id],
     ),
+    q(`SELECT EXISTS (
+         SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = 'custom'
+       ) AS owns_custom_tag`, [user.id]),
   ])
 
   return {
-    user: publicUser(user),
+    user: {
+      ...publicUser(user),
+      ownsCustomTag: Boolean(tag.rows[0]?.owns_custom_tag),
+      pass: passState(user),
+    },
     channels: channels.rows,
     members: members.rows.map(publicUser),
     friends: friends.rows.map(row => row.friend_id),
@@ -163,7 +200,8 @@ async function withExtras(rows) {
 
 async function hydrateMessage(id) {
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, u.custom_tag, u.pass_tier,
+            ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.id = $1`,
     [id],
@@ -175,7 +213,8 @@ async function hydrateMessage(id) {
 async function listMessages(column, id) {
   if (!MESSAGE_COLUMNS.has(column)) throw new Error(`unknown message column: ${column}`)
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, u.custom_tag, u.pass_tier,
+            ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.${column} = $1
       ORDER BY m.id DESC
@@ -231,6 +270,8 @@ async function checkCanSpeak(user, channel) {
 }
 
 router.get('/me', requireAuth, async (req, res) => {
+  // Owners hold the whole wheel, so this is where their missing flairs get filled in.
+  await grantOwnerWheel(req.user)
   res.json(await loadSnapshot(req.user))
 })
 
@@ -298,6 +339,11 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`channel:${channelId}`, 'message:new', message)
+  await notifyMentions(message, req.user, {
+    kind: 'channel',
+    id: channelId,
+    label: `#${channel.name}`,
+  })
   res.json({ message })
 })
 
@@ -483,6 +529,7 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`thread:${threadId}`, 'message:new', message)
+  await notifyMentions(message, req.user, { kind: 'dm', id: threadId, label: 'a direct message' })
   res.json({ message })
 })
 
