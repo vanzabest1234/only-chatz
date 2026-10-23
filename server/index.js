@@ -31,8 +31,9 @@ app.use((req, res, next) => {
   next()
 })
 
-// 1mb leaves room for the cropped avatar data URL sent by the profile screen.
-app.use(express.json({ limit: '1mb' }))
+// 3mb leaves room for the cropped avatar data URL from the profile screen and for a
+// downscaled picture sent with a message.
+app.use(express.json({ limit: '3mb' }))
 // Backstop for anything the per-route limits do not cover.
 app.use('/api', limiter('api', 1200, 60_000))
 app.use('/api/auth', authRoutes)

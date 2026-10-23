@@ -297,14 +297,16 @@ export default function App() {
     }
   }
 
-  const send = async content => {
+  const send = async (content, imageUrl) => {
     const target = viewRef.current
     if (!target) return
     const path =
       target.type === 'channel'
         ? `/api/channels/${target.id}/messages`
         : `/api/dm/${target.id}/messages`
-    const body = replyTo ? { content, replyToId: replyTo.id } : { content }
+    const body = { content }
+    if (imageUrl) body.imageUrl = imageUrl
+    if (replyTo) body.replyToId = replyTo.id
     const data = await api(path, { method: 'POST', body: JSON.stringify(body) })
     setReplyTo(null)
     if (data.message) {

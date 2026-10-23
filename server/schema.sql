@@ -79,6 +79,9 @@ CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);
 
 -- fixing a typo, quoting someone, and reacting to a message
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+
+-- a picture sent with a message: a data URL the browser downscales before posting
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id BIGINT REFERENCES messages(id) ON DELETE SET NULL;
 
 -- collectible cosmetic flairs: won on the wheel, worn next to your name, no powers at all

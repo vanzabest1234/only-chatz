@@ -22,6 +22,12 @@ function MessageText({ content, username, className = 'msg-text' }) {
   )
 }
 
+/** A picture sent with a message, shown under the name and above the text. */
+function MessageImage({ imageUrl }) {
+  if (!imageUrl) return null
+  return <img className="msg-image" src={imageUrl} alt="Picture sent in the chat" loading="lazy" />
+}
+
 /** Avatars pick up the season-pass frame its owner reached (nothing at tier 0). */
 function FramedAvatar({ frame, children }) {
   if (!frame) return children
@@ -218,7 +224,12 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <MessageText content={message.content} username={me.user.username} />
+          <>
+            <MessageImage imageUrl={message.imageUrl} />
+            {message.content && (
+              <MessageText content={message.content} username={me.user.username} />
+            )}
+          </>
         )}
         <ReactionBar message={message} me={me} onReact={onReact} />
       </div>
@@ -275,7 +286,16 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProf
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <MessageText content={message.content} username={me.user.username} className="bubble" />
+          <>
+            <MessageImage imageUrl={message.imageUrl} />
+            {message.content && (
+              <MessageText
+                content={message.content}
+                username={me.user.username}
+                className="bubble"
+              />
+            )}
+          </>
         )}
         <ReactionBar message={message} me={me} onReact={onReact} />
         {own && (

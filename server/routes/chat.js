@@ -10,11 +10,16 @@ import { grantOwnerWheel } from '../flairs.js'
 import { ensureOwnerSeason, passState } from '../pass.js'
 import { accrueCoins } from '../coins.js'
 import { answerAi, isAiMessage } from '../ai.js'
+import { isRealImage } from '../images.js'
 
 const router = Router()
 
 const MAX_MESSAGE = 2000
 const MAX_COMMAND = 400
+// A picture arrives as a data URL the browser already shrank; the cap keeps one post well
+// under the JSON body limit (server/index.js).
+const MAX_IMAGE_CHARS = 900000
+const IMAGE_PATTERN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/
 // A fixed palette instead of free text: reactions stay one tap and cannot be abused for spam.
 const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
 
@@ -33,12 +38,28 @@ function readId(raw) {
 }
 
 /** Text a person typed, minus control/invisible characters, within the length cap. */
-function readContent(raw) {
+function readContent(raw, hasImage = false) {
+  if (raw === undefined || raw === null || raw === '') {
+    // A picture on its own is a whole message; a note is what may be left out.
+    return hasImage ? { content: '' } : { error: 'Type a message first.' }
+  }
   if (typeof raw !== 'string') return { error: 'Messages have to be text.' }
   const content = cleanText(raw, MAX_MESSAGE + 1).trim()
-  if (!content) return { error: 'Type a message first.' }
+  if (!content && !hasImage) return { error: 'Type a message first.' }
   if (content.length > MAX_MESSAGE) return { error: 'Messages top out at 2000 characters.' }
   return { content }
+}
+
+/** A picture rides along with the message it was sent with. */
+function readImage(raw) {
+  if (raw === undefined || raw === null || raw === '') return { imageUrl: null }
+  if (typeof raw !== 'string' || !IMAGE_PATTERN.test(raw) || !isRealImage(raw)) {
+    return { error: 'That picture could not be read — try a JPG or PNG.' }
+  }
+  if (raw.length > MAX_IMAGE_CHARS) {
+    return { error: 'That picture is too large — pick a smaller one.' }
+  }
+  return { imageUrl: raw }
 }
 
 /** Burst + sustained allowance per account; a scripted flood trips the first one. */
@@ -97,7 +118,7 @@ async function loadSnapshot(user) {
               peer.id AS peer_id, peer.display_name AS peer_name,
               peer.role AS peer_role, peer.color AS peer_color,
               peer.avatar_url AS peer_avatar,
-              lm.id AS last_id, lm.content AS last_content,
+              lm.id AS last_id, lm.content AS last_content, lm.image_url AS last_image,
               lm.created_at AS last_at, lm.author_id AS last_author
          FROM dm_threads t
          JOIN dm_members me ON me.thread_id = t.id AND me.user_id = $1
@@ -108,7 +129,7 @@ async function loadSnapshot(user) {
             LIMIT 1
          ) peer ON TRUE
          LEFT JOIN LATERAL (
-           SELECT m.id, m.content, m.created_at, m.author_id
+           SELECT m.id, m.content, m.image_url, m.created_at, m.author_id
              FROM messages m
             WHERE m.thread_id = t.id
             ORDER BY m.id DESC
@@ -149,7 +170,7 @@ async function loadSnapshot(user) {
       lastMessage: row.last_id
         ? {
             id: Number(row.last_id),
-            content: row.last_content,
+            content: row.last_content || (row.last_image ? 'sent a picture' : ''),
             createdAt: row.last_at,
             authorId: row.last_author,
           }
@@ -185,7 +206,7 @@ async function withExtras(rows) {
   const quotes = new Map()
   if (replyIds.length) {
     const { rows: quoteRows } = await q(
-      `SELECT m.id, m.content, COALESCE(u.display_name, m.author_name) AS author
+      `SELECT m.id, m.content, m.image_url, COALESCE(u.display_name, m.author_name) AS author
          FROM messages m LEFT JOIN users u ON u.id = m.author_id
         WHERE m.id = ANY($1::bigint[])`,
       [replyIds],
@@ -200,7 +221,11 @@ async function withExtras(rows) {
       ...message,
       reactions: group ? [...group].map(([emoji, userIds]) => ({ emoji, userIds })) : [],
       replyTo: quote
-        ? { id: Number(quote.id), authorName: quote.author, content: quote.content.slice(0, 140) }
+        ? {
+            id: Number(quote.id),
+            authorName: quote.author,
+            content: (quote.content || (quote.image_url ? 'sent a picture' : '')).slice(0, 140),
+          }
         : null,
     }
   })
@@ -315,7 +340,9 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   const channelId = readId(req.params.id)
   if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
 
-  const read = readContent(req.body?.content)
+  const picture = readImage(req.body?.imageUrl)
+  if (picture.error) return res.status(400).json({ error: picture.error })
+  const read = readContent(req.body?.content, Boolean(picture.imageUrl))
   if (read.error) return res.status(400).json({ error: read.error })
   const content = read.content
 
@@ -341,9 +368,17 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   if (reply.error) return res.status(400).json({ error: reply.error })
 
   const { rows: inserted } = await q(
-    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content, reply_to_id)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [channelId, req.user.id, req.user.display_name, req.user.role, content, reply.replyToId],
+    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content, reply_to_id, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [
+      channelId,
+      req.user.id,
+      req.user.display_name,
+      req.user.role,
+      content,
+      reply.replyToId,
+      picture.imageUrl,
+    ],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`channel:${channelId}`, 'message:new', message)
@@ -527,7 +562,9 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   ])
   if (!member.rows.length) return res.status(403).json({ error: 'That conversation is not yours.' })
 
-  const read = readContent(req.body?.content)
+  const picture = readImage(req.body?.imageUrl)
+  if (picture.error) return res.status(400).json({ error: picture.error })
+  const read = readContent(req.body?.content, Boolean(picture.imageUrl))
   if (read.error) return res.status(400).json({ error: read.error })
   const content = read.content
 
@@ -540,9 +577,17 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   if (reply.error) return res.status(400).json({ error: reply.error })
 
   const { rows: inserted } = await q(
-    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content, reply_to_id)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [threadId, req.user.id, req.user.display_name, req.user.role, content, reply.replyToId],
+    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content, reply_to_id, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [
+      threadId,
+      req.user.id,
+      req.user.display_name,
+      req.user.role,
+      content,
+      reply.replyToId,
+      picture.imageUrl,
+    ],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`thread:${threadId}`, 'message:new', message)

@@ -272,6 +272,20 @@ textarea:focus-visible,
   font-size: 13.5px;
 }
 
+/* pictures sent with a message stay inside the row on every width */
+.msg-image {
+  display: block;
+  margin-top: 6px;
+  max-width: min(360px, 100%);
+  max-height: 260px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  background: var(--void);
+  border-radius: 0;
+}
+
 .system-line {
   border-radius: 0;
   color: var(--phosphor);
@@ -355,6 +369,82 @@ textarea:focus-visible,
 
 .send:disabled {
   opacity: 0.35;
+}
+
+/* a picture waiting to be sent, above the box */
+.composer-attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--panel-deep);
+}
+
+.composer-attach img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.attach-note {
+  flex: 1;
+  min-width: 0;
+  color: var(--phosphor);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.attach-cancel {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.attach-cancel:hover {
+  color: #ff8fa3;
+  border-color: rgba(255, 143, 163, 0.6);
+}
+
+/* the file input is only ever opened by the button beside the box */
+.attach-input {
+  display: none;
+}
+
+.attach {
+  flex: none;
+  align-self: flex-end;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 3px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.attach:hover:not(:disabled) {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.attach:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .composer-foot {

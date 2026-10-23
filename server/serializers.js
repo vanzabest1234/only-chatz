@@ -35,6 +35,7 @@ export function publicMessage(row) {
     authorCustomTag: row.custom_tag ?? null,
     authorFrame: frameFor(Number(row.pass_tier ?? 0)),
     content: row.content,
+    imageUrl: row.image_url ?? null,
     system: Boolean(row.system),
     createdAt: row.created_at,
     editedAt: row.edited_at ?? null,

@@ -159,7 +159,17 @@ Non-obvious things worth knowing before changing something:
   avatar button open it. Pronouns live in `users.pronouns` (max 24 chars, edited in
   `SettingsModal.jsx`, saved through `PATCH /api/me/profile`); bio comes from the existing column.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
-  `SettingsModal.jsx`; `express.json` is limited to 1mb for that payload. No file storage involved.
+  `SettingsModal.jsx`; no file storage involved.
+- **Pictures can be sent with a message.** `messages.image_url` holds a data URL that
+  `web/src/lib/image.js` produced: the browser shrinks the picked file to a 1280px max edge and
+  re-encodes it as JPEG before it ever reaches the API. `routes/chat.js` runs it through
+  `readImage` (500k-ish character cap plus the shared `isRealImage` byte check from
+  `server/images.js`, so no fake `data:` prefix gets through), and a message may carry a picture
+  with no text at all — `readContent(raw, hasImage)` only insists on words when there is no
+  picture. `express.json` is 3mb for both payload kinds. The composer attaches with the button
+  beside the box (`Composer.jsx` → `onSend(text, imageUrl)`), and the picture renders above the
+  text in both channel rows and DM bubbles (`MessageImage` in `MessageList.jsx`). Edits still only
+  change the text; there is no way to edit or swap the picture after sending.
 - **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds
   `.<BASE44_SANDBOX_HOST_DOMAIN>` to Vite's `allowedHosts` (the preview host rotates). With the flag
   unset the allowlist is untouched. `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` is passed through from
