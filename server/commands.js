@@ -377,6 +377,33 @@ const COMMANDS = [
     },
   },
   {
+    name: 'give',
+    usage: '/give @user <amount>',
+    description: 'Owner only — hand someone royal coins.',
+    minRank: 4,
+    async run({ actor, args }) {
+      if (actor.role !== 'owner') return { error: 'Only the Owner can give coins.' }
+      const target = await findUser(args[0])
+      const problem = guardTarget(actor, target)
+      if (problem) return { error: problem }
+
+      // Digits only, and passed on as a digit string: a purse holds more than a JS number
+      // counts exactly, so nothing goes through Math.floor / Number on the way in.
+      const typed = args.slice(1).join('').replace(/[,_]/g, '')
+      if (!/^\d+$/.test(typed)) return { error: 'Usage: /give @user <amount>' }
+      const amount = BigInt(typed).toString()
+      if (BigInt(amount) < 1n) return { error: 'The amount has to be at least 1 coin.' }
+
+      const state = await grantCoins(target.id, amount)
+      if (!state) return { error: 'The coins did not go through.' }
+      emitTo(`user:${target.id}`, 'coins:update', state)
+      audit('coins-given', { actor: actor.username, target: target.username, amount })
+      return {
+        notice: `${actor.display_name} gave ${target.display_name} ${coinText(amount)} royal coins.`,
+      }
+    },
+  },
+  {
     name: 'steal',
     usage: '/steal @user',
     description: 'Try to lift a quarter of someone’s coins — you win it or you pay it.',

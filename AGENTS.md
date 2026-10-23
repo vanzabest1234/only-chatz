@@ -103,7 +103,9 @@ Non-obvious things worth knowing before changing something:
   `/gamble <amount>` stakes between `MIN_BET` and `MAX_BET` through `settleBet` and returns one of
   four weighted outcomes (`GAMBLE_OUTCOMES` in `server/casino.js`, ~90.5% returned). Owners are
   immune to both `/steal` and `/punch`, and every balance change pushes `coins:update` to the
-  affected accounts.
+  affected accounts. `/give @user <amount>` is the Owner-only mint: `minRank: 4` plus an
+  `actor.role === 'owner'` re-check (like `/role` and `/flair`), digits only, handed to `grantCoins`
+  as a digit string so an amount past `Number.MAX_SAFE_INTEGER` is not rounded.
 - **Eight member commands hang off the same table** (`server/commands.js`, all `minRank: 0`):
   `/8ball <question>`, `/flip`, `/roll [sides]` (2-1000, default d6) and `/quote` pick their line
   server-side from `EIGHT_BALL` / `QUOTES`; `/whois @user`, `/stats` and `/rank [@user]` read the
