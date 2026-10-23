@@ -3,8 +3,8 @@ import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
 import { api } from '../api'
+import { money } from '../lib/format'
 
-const money = value => Number(value ?? 0).toLocaleString('en-US')
 
 /**
  * The coin ladder: the ten richest purses, counted by the server. The same rows answer

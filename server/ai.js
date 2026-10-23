@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { q } from './db.js'
 import { emitTo, onlineIds, onlineWhere } from './realtime.js'
 import { publicMessage } from './serializers.js'
-import { accrueCoins, topWallets } from './coins.js'
+import { accrueCoins, coinText, topWallets } from './coins.js'
 import { converse, evaluateExpression } from './aide-voice.js'
 
 // The Royal Aide — the chat's own bot. It answers a message that starts with "!ask"
@@ -22,7 +22,7 @@ const TRIGGER = /^!ask(?:\s|$)/i
 export const isAiMessage = content => TRIGGER.test(content)
 
 const pick = list => list[randomInt(list.length)]
-const coins = value => Number(value ?? 0).toLocaleString('en-US')
+const coins = coinText
 
 const JOKES = [
   'a packet walks into a room and drops its payload. nobody noticed — it was UDP.',

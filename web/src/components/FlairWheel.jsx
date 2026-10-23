@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
 import { api } from '../api'
 import { flairColor, flairLabel } from '../lib/flairs'
+import { money } from '../lib/format'
 
 const TURNS = 5
 const SPIN_MS = 4200
@@ -19,7 +20,6 @@ function slicePath(start, end) {
   return `M100 100 L${from.x} ${from.y} A100 100 0 ${large} 1 ${to.x} ${to.y} Z`
 }
 
-const money = value => Number(value ?? 0).toLocaleString('en-US')
 
 export default function FlairWheel({ coins, onClose, onChanged }) {
   const [data, setData] = useState(null)

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
 import { api } from '../api'
+import { money } from '../lib/format'
 
-const money = value => Number(value ?? 0).toLocaleString('en-US')
 
 /** The drip: 100 coins every ten minutes, so the panel counts down to the next one. */
 function nextDrip(nextAt, now) {

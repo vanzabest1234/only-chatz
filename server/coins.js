@@ -46,15 +46,34 @@ export async function topWallets(limit = LEADERBOARD_SIZE) {
     role: row.role,
     color: row.color,
     avatarUrl: row.avatar_url ?? null,
-    coins: Number(row.royal_coins),
+    coins: walletValue(row.royal_coins),
   }))
+}
+
+/**
+ * A purse can hold more than a JS number counts exactly. Past that, the database's own digits
+ * travel through untouched as a string, so nothing is rounded on the way out.
+ */
+function walletValue(value) {
+  const text = String(value ?? 0)
+  const number = Number(text)
+  return Number.isSafeInteger(number) ? number : text
+}
+
+/** A balance as grouped digits, exact however large the purse is. */
+export function coinText(value) {
+  try {
+    return BigInt(value ?? 0).toLocaleString('en-US')
+  } catch {
+    return Number(value ?? 0).toLocaleString('en-US')
+  }
 }
 
 /** What the client paints: the balance, the drip rate, and when the next 100 lands. */
 export function coinState(row) {
   const last = row?.coins_claimed_at ? new Date(row.coins_claimed_at).getTime() : Date.now()
   return {
-    coins: Number(row?.royal_coins ?? 0),
+    coins: walletValue(row?.royal_coins),
     perTick: COIN_PER_TICK,
     tickMinutes: TICK_MINUTES,
     nextAt: new Date(last + TICK_MS).toISOString(),

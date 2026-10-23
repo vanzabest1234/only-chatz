@@ -1,3 +1,12 @@
+/** Royal coins can outgrow a JS number, so a balance that arrives as digits is formatted exactly. */
+export function money(value) {
+  try {
+    return BigInt(value ?? 0).toLocaleString('en-US')
+  } catch {
+    return Number(value ?? 0).toLocaleString('en-US')
+  }
+}
+
 export function timeShort(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })

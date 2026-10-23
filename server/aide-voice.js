@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto'
 import { q } from './db.js'
-import { accrueCoins, topWallets } from './coins.js'
+import { accrueCoins, coinText, topWallets } from './coins.js'
 import { onlineIds, onlineWhere } from './realtime.js'
 
 // The Royal Aide's conversational side. Free text arrives here when it names no command,
@@ -8,7 +8,7 @@ import { onlineIds, onlineWhere } from './realtime.js'
 // presence map — no model, no API key, no outside service.
 
 const pick = list => list[randomInt(list.length)]
-const coins = value => Number(value ?? 0).toLocaleString('en-US')
+const coins = coinText
 
 /**
  * A tiny arithmetic parser for "!ask math" and "what is 12 * 3".

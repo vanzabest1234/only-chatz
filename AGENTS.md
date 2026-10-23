@@ -90,9 +90,12 @@ Non-obvious things worth knowing before changing something:
   `startCoinClock` in `realtime.js` pays open sockets and emits `coins:update` to `user:<id>`,
   which `App.jsx` folds into `me.user.coins`. Spend through `spendCoins` / `settleBet` only: both
   check the balance in the same statement that moves it, so two tabs cannot spend one coin twice.
-  `users.royal_coins` is `BIGINT` because owners hold `OWNER_COINS` (999999999999999) — effectively
-  infinite: every read of an owner's wallet lifts it back to that balance, so no bet or spin drains
-  an owner. Everyone else lives off the drip alone.
+  `users.royal_coins` is `NUMERIC`: a purse can be handed a fortune past what `BIGINT` holds, and a
+  balance too large for a JS number travels to the client as a digit string (`walletValue` /
+  `coinText` in `coins.js`, `money` in `web/src/lib/format.js`) so nothing is rounded on the way out.
+  Owners hold `OWNER_COINS` (999999999999999) — effectively infinite: every read of an owner's
+  wallet lifts it back to that balance, so no bet or spin drains an owner, and a bigger purse is
+  left untouched. Everyone else lives off the drip alone.
 - **Four coin commands everyone can run** (`server/commands.js`, all `minRank: 0`):
   `/steal @user` takes a quarter of the target's purse on a 50/50 roll and pays the same amount
   when it fails; `/punch @user` silences them for 60 seconds but is refused while the target holds

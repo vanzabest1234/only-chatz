@@ -1,7 +1,7 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
-import { relativeTime, snippet } from '../lib/format'
+import { money, relativeTime, snippet } from '../lib/format'
 
 export default function Sidebar({
   me,
@@ -47,7 +47,7 @@ export default function Sidebar({
               <span className="hash">◉</span>
               <span className="nav-label">Royal vault</span>
               <span className="chip">
-                {Number(me.user.coins?.coins ?? 0).toLocaleString('en-US')}
+                {money(me.user.coins?.coins)}
               </span>
             </button>
             <button className="nav-row ladder-link" onClick={onOpenLeaders}>

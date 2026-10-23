@@ -8,7 +8,7 @@ import { OWNER_HOURS, completePass } from './pass.js'
 import { audit, cleanText } from './guard.js'
 import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
-import { accrueCoins, grantCoins, settleBet, spendCoins, topWallets } from './coins.js'
+import { accrueCoins, coinText, grantCoins, settleBet, spendCoins, topWallets } from './coins.js'
 import { MAX_BET, MIN_BET, gambleRoll, rollDice } from './casino.js'
 import { answerAi } from './ai.js'
 
@@ -490,7 +490,7 @@ const COMMANDS = [
         ? `${outcome.label} — ${payout.toLocaleString()} coins back`
         : `${outcome.label} — the whole stake is gone`
       return {
-        notice: `${actor.display_name} gambled ${wager.toLocaleString()} royal coins: ${result}. Balance ${state.coins.toLocaleString()}.`,
+        notice: `${actor.display_name} gambled ${wager.toLocaleString()} royal coins: ${result}. Balance ${coinText(state.coins)}.`,
       }
     },
   },
@@ -503,7 +503,7 @@ const COMMANDS = [
       const leaders = await topWallets()
       if (!leaders.length) return { error: 'The ladder is empty — the drip needs a few minutes to fill a purse.' }
       const lines = leaders
-        .map(person => `${person.rank}. ${person.displayName} ${person.coins.toLocaleString()}`)
+        .map(person => `${person.rank}. ${person.displayName} ${coinText(person.coins)}`)
         .join('  ·  ')
       return { notice: `Royal coin ladder — ${lines}` }
     },
@@ -572,7 +572,7 @@ const COMMANDS = [
       const joined = new Date(target.created_at).toISOString().slice(0, 10)
       const extras = [
         labelFor(target.role),
-        `${state.coins.toLocaleString()} royal coins`,
+        `${coinText(state.coins)} royal coins`,
         `joined ${joined}`,
         worn.length ? `wears ${worn.join(', ')}` : 'no flairs on',
       ]
@@ -594,7 +594,7 @@ const COMMANDS = [
       )
       const { messages, flairs } = counted.rows[0]
       return {
-        notice: `${actor.display_name} — ${state.coins.toLocaleString()} coins · ${messages} message${messages === 1 ? '' : 's'} · ${flairs} flair${flairs === 1 ? '' : 's'} · pass tier ${actor.pass_tier}`,
+        notice: `${actor.display_name} — ${coinText(state.coins)} coins · ${messages} message${messages === 1 ? '' : 's'} · ${flairs} flair${flairs === 1 ? '' : 's'} · pass tier ${actor.pass_tier}`,
       }
     },
   },
@@ -617,7 +617,7 @@ const COMMANDS = [
       )
       const { ahead, total } = rows[0]
       return {
-        notice: `${target.display_name} sits at #${ahead + 1} of ${total} purses with ${state.coins.toLocaleString()} royal coins.`,
+        notice: `${target.display_name} sits at #${ahead + 1} of ${total} purses with ${coinText(state.coins)} royal coins.`,
       }
     },
   },

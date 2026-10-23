@@ -126,8 +126,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_tokens INTEGER NOT NULL DEFAULT 
 -- Royal Coins: 100 drop every 10 minutes, a wheel turn costs 1000, the vault can double them.
 -- coins_claimed_at is the start of the current 10-minute window, so the accrual never drifts.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS royal_coins INTEGER NOT NULL DEFAULT 0;
--- Owners hold a near-limit fortune, which no 4-byte integer can hold, so the balance is BIGINT.
-ALTER TABLE users ALTER COLUMN royal_coins TYPE BIGINT;
+-- A purse can be handed a fortune far past what BIGINT holds, so the balance is NUMERIC.
+ALTER TABLE users ALTER COLUMN royal_coins TYPE NUMERIC;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 -- what the vault paid out, so the last few rolls can be shown back to the player
