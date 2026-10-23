@@ -198,15 +198,16 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
   return (
     <div className="msg">
       <FramedAvatar frame={message.authorFrame}>
-        <ProfileAvatar message={message} size={38} onOpenProfile={onOpenProfile} />
+        <ProfileAvatar message={message} size={40} onOpenProfile={onOpenProfile} />
       </FramedAvatar>
       <div className="msg-body">
+        {/* chatflux puts the name and its time on the same line; roles and flairs follow. */}
         <div className="msg-head">
           <span className="msg-name">{message.authorName}</span>
-          <RoleBadge role={message.authorRole} />
-          <FlairBadges flairs={message.authorFlairs} customTag={message.authorCustomTag} />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
           {message.editedAt && <span className="msg-edited">(edited)</span>}
+          <RoleBadge role={message.authorRole} />
+          <FlairBadges flairs={message.authorFlairs} customTag={message.authorCustomTag} />
         </div>
         <ReplyQuote replyTo={message.replyTo} />
         {editing ? (

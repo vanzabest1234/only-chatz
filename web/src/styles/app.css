@@ -6,7 +6,7 @@
   height: 100%;
   padding: 16px;
   display: grid;
-  grid-template-columns: 284px minmax(0, 1fr) 258px;
+  grid-template-columns: 284px minmax(0, 1fr) 280px;
   gap: 14px;
 }
 
@@ -277,10 +277,10 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 12px 4px;
+  padding: 4px 0 4px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
 }
 
 .empty {
@@ -292,12 +292,17 @@
 
 .msg {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 10px;
-  padding: 6px 10px;
-  border-radius: 15px;
+  padding: 9px 14px;
+  border-radius: 0;
   animation: msg-in 0.2s ease both;
   transition: background 0.18s ease;
+}
+
+/* chatflux's log is one flat list: a hairline between messages, nothing around system lines. */
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
 }
 
 .msg:hover {
@@ -312,7 +317,13 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  row-gap: 2px;
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.msg-head .msg-time {
+  flex: none;
 }
 
 .msg-name {
@@ -545,10 +556,11 @@
 
 .members-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 15px 14px 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .members-head h2 {
@@ -753,18 +765,18 @@
   }
 
   .messages {
-    padding: 10px 6px 2px;
+    padding: 4px 0 2px;
   }
 
   .msg {
-    grid-template-columns: 32px minmax(0, 1fr);
-    gap: 8px;
-    padding: 6px 8px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 9px;
+    padding: 8px 10px;
   }
 
   .msg .avatar {
-    width: 32px !important;
-    height: 32px !important;
+    width: 36px !important;
+    height: 36px !important;
     font-size: 12px !important;
   }
 
@@ -814,8 +826,8 @@
 
 @media (max-width: 420px) {
   .msg .avatar {
-    width: 30px !important;
-    height: 30px !important;
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .msg-name {

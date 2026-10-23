@@ -244,9 +244,27 @@ textarea:focus-visible,
   background: var(--panel-deep);
 }
 
+/* chatflux's log: a small name and time, then the message in the larger type. */
 .msg-name {
   font-weight: 400;
   color: var(--ink);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+}
+
+.msg-head .msg-time {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.msg-head .badge {
+  padding: 1px 5px;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+}
+
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top-color: var(--line-soft);
 }
 
 .msg-text {
@@ -375,6 +393,10 @@ textarea:focus-visible,
 .member-row,
 .friend-btn {
   border-radius: 0;
+}
+
+.members-head {
+  border-bottom: 1px solid var(--line);
 }
 
 .member-row:hover {
@@ -664,7 +686,7 @@ textarea:focus-visible,
 
 .msg-tools {
   position: absolute;
-  top: -8px;
+  top: 3px;
   right: 8px;
   display: none;
   gap: 1px;
