@@ -2,6 +2,8 @@ import { q } from './db.js'
 import { destroyUserSessions } from './auth.js'
 import { disconnectUser, emitAll, emitTo } from './realtime.js'
 import { ASSIGNABLE_ROLES, rankOf, labelFor, roleForRank } from './roles.js'
+import { CUSTOM_FLAIR, FLAIR_KEYS, FLAIRS, MAX_EQUIPPED, ensureCustomTag } from './flairs.js'
+import { OWNER_HOURS, completePass } from './pass.js'
 import { audit, cleanText } from './guard.js'
 import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
@@ -268,6 +270,65 @@ const COMMANDS = [
       emitAll('members:refresh')
       emitTo(`user:${target.id}`, 'profile:update')
       return { notice: `${target.display_name} got the bread.` }
+    },
+  },
+  {
+    name: 'flair',
+    usage: '/flair <flair> @user',
+    description: 'Owner only — hand someone a flair: a wheel one, bread or the custom tag.',
+    minRank: 4,
+    async run({ actor, args }) {
+      if (actor.role !== 'owner') return { error: 'Only the Owner can hand out flairs.' }
+      // `/flair @user <flair>` works too — the flair word is whichever one is known.
+      const keyArg = args.find(arg => FLAIR_KEYS.has(arg.toLowerCase()))
+      if (!keyArg) {
+        return { error: `Pick one of: ${[...FLAIR_KEYS].join(', ')} — /flair <flair> @user` }
+      }
+      const key = keyArg.toLowerCase()
+      const target = await findUser(args.find(arg => arg !== keyArg))
+      const problem = guardTarget(actor, target)
+      if (problem) return { error: problem }
+
+      const { rows: worn } = await q(
+        'SELECT count(*)::int AS n FROM user_flairs WHERE user_id = $1 AND equipped',
+        [target.id],
+      )
+      const { rows } = await q(
+        `INSERT INTO user_flairs (user_id, flair, equipped) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, flair) DO NOTHING RETURNING flair`,
+        [target.id, key, (worn[0]?.n ?? 0) < MAX_EQUIPPED],
+      )
+      if (key === CUSTOM_FLAIR) await ensureCustomTag(target.id)
+
+      audit('flair-granted', { actor: actor.username, target: target.username, flair: key })
+      emitAll('members:refresh')
+      emitTo(`user:${target.id}`, 'profile:update')
+      const label = FLAIRS.find(item => item.key === key)?.label ?? key
+      return {
+        notice: rows.length
+          ? `${target.display_name} now has ${label}.`
+          : `${target.display_name} already had ${label}.`,
+      }
+    },
+  },
+  {
+    name: 'pass',
+    usage: '/pass @user',
+    description: `Owner only — finish someone's season pass (${OWNER_HOURS} hours, every tier).`,
+    minRank: 4,
+    async run({ actor, args }) {
+      if (actor.role !== 'owner') return { error: 'Only the Owner can hand out the pass.' }
+      const target = await findUser(args[0])
+      const problem = guardTarget(actor, target)
+      if (problem) return { error: problem }
+
+      const state = await completePass(target.id)
+      if (!state) return { error: 'I could not finish that pass.' }
+      audit('pass-completed', { actor: actor.username, target: target.username, tier: state.tier })
+      emitTo(`user:${target.id}`, 'pass:update', state)
+      return {
+        notice: `${target.display_name} finished the season pass — tier ${state.tier} with ${OWNER_HOURS} hours in.`,
+      }
     },
   },
 ]

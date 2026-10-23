@@ -72,7 +72,12 @@ Non-obvious things worth knowing before changing something:
   `pass_season` = `YYYY-MM`), and tier rewards are derived from the tier, never stored: frames
   (`frame-ember|frost|void|aurora` in `console.css`) come from `frameFor(tier)` in the serializers,
   and extra tokens are granted idempotently from `pass_spin_awarded`. Owners hold the whole wheel
-  (`grantOwnerWheel`). Nothing here grants permissions — never wire a flair to a role check.
+  (`grantOwnerWheel`) and start every season finished — `ensureOwnerSeason` completes the track at
+  999 hours (`completePass`) the first time an owner's snapshot is loaded. Handing either out mirrors
+  `/role`: `/flair <flair> @user` and `/pass @user` are Owner-only (alongside `/bread @user`), and
+  the flair word is whichever argument is a known flair key, so `@user` may come first.
+  Nothing here grants permissions — never wire a flair to a role check.
+  The custom tag itself takes any characters up to 20 — only control/invisible ones are stripped.
 - **A mention is a ping, delivered over sockets.** Channel/DM posts parse `@username` in
   `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
   `user:<id>`; `App.jsx` answers with a chime and a toast whose room label comes from the payload,

@@ -6,10 +6,12 @@ import {
   CUSTOM_FLAIR,
   FLAIR_KEYS,
   MAX_EQUIPPED,
+  ensureCustomTag,
   flairCatalog,
   grantOwnerWheel,
   rollFlair,
 } from '../flairs.js'
+import { ensureOwnerSeason } from '../pass.js'
 
 const router = Router()
 
@@ -38,13 +40,9 @@ async function freshUser(userId) {
   return rows[0]
 }
 
-/** A won custom tag needs some words in it before it can be painted. */
-async function ensureCustomTag(userId) {
-  await q('UPDATE users SET custom_tag = COALESCE(custom_tag, \'tag\') WHERE id = $1', [userId])
-}
-
 router.get('/flairs', requireAuth, async (req, res) => {
   await grantOwnerWheel(req.user)
+  await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
   res.json({
     catalog: flairCatalog(),
@@ -59,6 +57,7 @@ router.get('/flairs', requireAuth, async (req, res) => {
 
 router.post('/flairs/spin', requireAuth, async (req, res) => {
   await grantOwnerWheel(req.user)
+  await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
 
   let nextSpinAt = null

@@ -47,7 +47,8 @@ export default function PassPanel({ pass, onClose }) {
         </div>
 
         <p className="pass-note">
-          {pass.xpPerMinute} xp for every minute a tab is open in the rooms · {pass.minutes} minutes
+          {pass.xpPerMinute} xp for every minute a tab is open in the rooms ·{' '}
+          {pass.minutes >= 120 ? `${Math.round(pass.minutes / 60)} hours` : `${pass.minutes} minutes`}{' '}
           this season · the clock stops the second you leave.
         </p>
 

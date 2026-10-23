@@ -45,15 +45,10 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
   }
 
   // The custom tag is a wheel reward: owning it is what allows the text to be set.
-  const customTagRaw = cleanText(req.body?.customTag ?? '', 17).replace(/\s+/g, ' ').trim()
-  if (customTagRaw && customTagRaw.length < 2) {
-    return res.status(400).json({ error: 'A custom tag needs at least 2 characters.' })
-  }
-  if (customTagRaw.length > 16) {
-    return res.status(400).json({ error: 'Keep your custom tag under 16 characters.' })
-  }
-  if (customTagRaw && !/^[\p{L}\p{N} _.\-!'?]{2,16}$/u.test(customTagRaw)) {
-    return res.status(400).json({ error: 'Letters, numbers and simple punctuation only.' })
+  // Its owner writes whatever they like in it — only control and invisible characters go.
+  const customTagRaw = cleanText(req.body?.customTag ?? '', 21).trim()
+  if (customTagRaw.length > 20) {
+    return res.status(400).json({ error: 'Keep your custom tag under 20 characters.' })
   }
   if (customTagRaw) {
     const owns = await q("SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = 'custom'", [

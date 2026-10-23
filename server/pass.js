@@ -114,3 +114,43 @@ export async function addPresenceMinutes(userId, minutes = 1) {
   )
   return passState(updated[0])
 }
+
+export const OWNER_HOURS = 999
+export const OWNER_MINUTES = OWNER_HOURS * 60
+
+/**
+ * Hand someone the finished pass: 999 hours on the clock clears every tier, and the
+ * tokens those tiers owe are paid once (same idempotent grant as the presence tick).
+ */
+export async function completePass(userId, minutes = OWNER_MINUTES) {
+  const season = currentSeason()
+  const { rows } = await q('SELECT pass_season, pass_spin_awarded FROM users WHERE id = $1', [userId])
+  if (!rows.length) return null
+
+  const row = rows[0]
+  const paid = row.pass_season === season ? Number(row.pass_spin_awarded ?? 0) : 0
+  const xp = Math.max(MAX_TIER * TIER_XP, minutes * XP_PER_MINUTE)
+  const owed = tokensUpTo(MAX_TIER)
+
+  const { rows: updated } = await q(
+    `UPDATE users
+        SET pass_season = $2,
+            pass_xp = $3,
+            pass_minutes = $4,
+            pass_tier = $5,
+            pass_spin_awarded = $6,
+            spin_tokens = spin_tokens + $7
+      WHERE id = $1
+      RETURNING *`,
+    [userId, season, xp, minutes, MAX_TIER, Math.max(paid, owed), Math.max(0, owed - paid)],
+  )
+  return passState(updated[0])
+}
+
+/** Owners start the season finished; this only fills in what is still missing. */
+export async function ensureOwnerSeason(user) {
+  if (user?.role !== 'owner') return null
+  const state = passState(user)
+  if (state.tier >= MAX_TIER && state.minutes >= OWNER_MINUTES) return null
+  return completePass(user.id)
+}

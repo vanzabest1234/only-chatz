@@ -87,3 +87,8 @@ export async function grantOwnerWheel(user) {
     [user.id],
   )
 }
+
+/** A won custom tag needs some words in it before it can be painted. */
+export async function ensureCustomTag(userId) {
+  await q("UPDATE users SET custom_tag = COALESCE(custom_tag, 'tag') WHERE id = $1", [userId])
+}

@@ -153,11 +153,13 @@ export default function SettingsModal({ user, onClose, onSaved }) {
               <span>Custom tag</span>
               <input
                 value={customTag}
-                maxLength={16}
+                maxLength={20}
                 placeholder="your word"
                 onChange={event => setCustomTag(event.target.value)}
               />
-              <em className="settings-count">the 0.01% wheel win · show it by equipping the tag</em>
+              <em className="settings-count">
+                the 0.01% wheel win · anything you like, up to 20 characters
+              </em>
             </label>
           )}
 

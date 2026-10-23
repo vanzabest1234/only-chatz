@@ -7,7 +7,7 @@ import { rankOf } from '../roles.js'
 import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
 import { grantOwnerWheel } from '../flairs.js'
-import { passState } from '../pass.js'
+import { ensureOwnerSeason, passState } from '../pass.js'
 
 const router = Router()
 
@@ -120,11 +120,14 @@ async function loadSnapshot(user) {
        ) AS owns_custom_tag`, [user.id]),
   ])
 
+  // Owners sit at the top of the pass; the fill-in only happens once per season.
+  const pass = (await ensureOwnerSeason(user)) ?? passState(user)
+
   return {
     user: {
       ...publicUser(user),
       ownsCustomTag: Boolean(tag.rows[0]?.owns_custom_tag),
-      pass: passState(user),
+      pass,
     },
     channels: channels.rows,
     members: members.rows.map(publicUser),
