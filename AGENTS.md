@@ -101,6 +101,13 @@ Non-obvious things worth knowing before changing something:
   four weighted outcomes (`GAMBLE_OUTCOMES` in `server/casino.js`, ~90.5% returned). Owners are
   immune to both `/steal` and `/punch`, and every balance change pushes `coins:update` to the
   affected accounts.
+- **Eight member commands hang off the same table** (`server/commands.js`, all `minRank: 0`):
+  `/8ball <question>`, `/flip`, `/roll [sides]` (2-1000, default d6) and `/quote` pick their line
+  server-side from `EIGHT_BALL` / `QUOTES`; `/whois @user`, `/stats` and `/rank [@user]` read the
+  database (purse, equipped flairs, message count, ladder position by `royal_coins`, banned accounts
+  left out) and change nothing; `/ai <command>` forwards to `answerAi` in `server/ai.js`, so the
+  Royal Aide answers in the room itself and `/ai` posts no line of its own. Every other command's
+  reply goes through `postSystem`, which is a system message — permanent, like the coin commands.
 - **The coin ladder is one query, two surfaces.** `topWallets` in `server/coins.js` reads the ten
   richest purses (`LEADERBOARD_SIZE`, highest first, banned accounts left off). `GET /api/leaderboard`
   feeds the panel (`LeaderboardPanel.jsx`, opened from the sidebar) and `/leaderboard` (minRank 0)

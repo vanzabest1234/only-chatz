@@ -10,6 +10,7 @@ import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
 import { accrueCoins, grantCoins, settleBet, spendCoins, topWallets } from './coins.js'
 import { MAX_BET, MIN_BET, gambleRoll, rollDice } from './casino.js'
+import { answerAi } from './ai.js'
 
 async function postSystem(channel, content) {
   const { rows } = await q(
@@ -65,6 +66,30 @@ function guardTarget(actor, target) {
   }
   return null
 }
+
+// Lines the fortune commands hand out. The pick happens server-side like every other roll,
+// and nothing about them is stored — each use is one system line in the room.
+const EIGHT_BALL = [
+  'it is certain.',
+  'signs point to yes.',
+  'ask again later.',
+  'do not count on it.',
+  'my reply is no.',
+  'the console says yes.',
+  'the output is unclear.',
+]
+
+const QUOTES = [
+  'the cursor blinks whether or not you type.',
+  'every packet is a small promise.',
+  'nothing floats forever, not even a flag.',
+  'the terminal remembers what you deleted.',
+  'green is only a colour until it is status.',
+]
+
+const pick = list => list[randomInt(list.length)]
+
+const FLAIR_LABELS = new Map(FLAIRS.map(flair => [flair.key, flair.label]))
 
 const COMMANDS = [
   {
@@ -481,6 +506,131 @@ const COMMANDS = [
         .map(person => `${person.rank}. ${person.displayName} ${person.coins.toLocaleString()}`)
         .join('  ·  ')
       return { notice: `Royal coin ladder — ${lines}` }
+    },
+  },
+  {
+    name: '8ball',
+    usage: '/8ball <question>',
+    description: 'Ask the ball a yes-or-no question and get its answer.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const question = cleanText(args.join(' '), 140).trim()
+      if (!question) return { error: 'Ask the ball something. Usage: /8ball <question>' }
+      return { notice: `${actor.display_name} asks "${question}" — ${pick(EIGHT_BALL)}` }
+    },
+  },
+  {
+    name: 'flip',
+    usage: '/flip',
+    description: 'Flip a royal coin: heads or tails.',
+    minRank: 0,
+    async run({ actor }) {
+      const side = randomInt(2) === 0 ? 'heads' : 'tails'
+      return { notice: `${actor.display_name} flipped a coin — ${side}.` }
+    },
+  },
+  {
+    name: 'roll',
+    usage: '/roll [sides]',
+    description: 'Roll a die — a d6 unless you name the sides.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const sides = args.length ? Math.floor(Number(args[0])) : 6
+      if (!Number.isFinite(sides) || sides < 2 || sides > 1000) {
+        return { error: 'A die needs between 2 and 1000 sides. Usage: /roll [sides]' }
+      }
+      return { notice: `${actor.display_name} rolled a d${sides} — ${randomInt(1, sides + 1)}.` }
+    },
+  },
+  {
+    name: 'quote',
+    usage: '/quote',
+    description: 'Draw a line from the console.',
+    minRank: 0,
+    async run({ actor }) {
+      return { notice: `${actor.display_name} draws a line — ${pick(QUOTES)}` }
+    },
+  },
+  {
+    name: 'whois',
+    usage: '/whois @user',
+    description: 'Show a short card for someone: role, purse, flairs and join date.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const target = await findUser(args[0])
+      if (!target) return { error: 'I could not find that person. Usage: /whois @user' }
+      if (target.ambiguous) return { error: 'More than one person has that name — use their @username.' }
+
+      const state = (await accrueCoins(target.id)).state
+      const { rows } = await q(
+        'SELECT flair FROM user_flairs WHERE user_id = $1 AND equipped = TRUE ORDER BY obtained_at',
+        [target.id],
+      )
+      const worn = rows.map(row => (row.flair === CUSTOM_FLAIR
+        ? target.custom_tag || 'custom tag'
+        : FLAIR_LABELS.get(row.flair) ?? row.flair))
+      const joined = new Date(target.created_at).toISOString().slice(0, 10)
+      const extras = [
+        labelFor(target.role),
+        `${state.coins.toLocaleString()} royal coins`,
+        `joined ${joined}`,
+        worn.length ? `wears ${worn.join(', ')}` : 'no flairs on',
+      ]
+      if (target.pronouns) extras.splice(1, 0, target.pronouns)
+      return { notice: `${target.display_name} (@${target.username}) · ${extras.join(' · ')}` }
+    },
+  },
+  {
+    name: 'stats',
+    usage: '/stats',
+    description: 'Your own numbers: coins, messages, flairs and pass tier.',
+    minRank: 0,
+    async run({ actor }) {
+      const state = (await accrueCoins(actor.id)).state
+      const counted = await q(
+        `SELECT (SELECT count(*) FROM messages WHERE author_id = $1)::int AS messages,
+                (SELECT count(*) FROM user_flairs WHERE user_id = $1)::int AS flairs`,
+        [actor.id],
+      )
+      const { messages, flairs } = counted.rows[0]
+      return {
+        notice: `${actor.display_name} — ${state.coins.toLocaleString()} coins · ${messages} message${messages === 1 ? '' : 's'} · ${flairs} flair${flairs === 1 ? '' : 's'} · pass tier ${actor.pass_tier}`,
+      }
+    },
+  },
+  {
+    name: 'rank',
+    usage: '/rank [@user]',
+    description: 'Where a purse sits on the coin ladder — yours unless you name someone.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const target = args.length ? await findUser(args[0]) : actor
+      if (!target) return { error: 'I could not find that person. Usage: /rank [@user]' }
+      if (target.ambiguous) return { error: 'More than one person has that name — use their @username.' }
+
+      const state = (await accrueCoins(target.id)).state
+      const { rows } = await q(
+        `SELECT count(*) FILTER (WHERE royal_coins > $1)::int AS ahead,
+                count(*)::int AS total
+         FROM users WHERE banned = FALSE`,
+        [state.coins],
+      )
+      const { ahead, total } = rows[0]
+      return {
+        notice: `${target.display_name} sits at #${ahead + 1} of ${total} purses with ${state.coins.toLocaleString()} royal coins.`,
+      }
+    },
+  },
+  {
+    name: 'ai',
+    usage: '/ai <command>',
+    description: 'Ask the Royal Aide — /ai help lists what it knows.',
+    minRank: 0,
+    async run({ actor, channel, args }) {
+      // The Aide answers in the room itself (as Royal Aide), so this command posts nothing.
+      const ask = cleanText(args.join(' '), 200).trim()
+      await answerAi({ actor, channel, content: ask ? `!ai ${ask}` : '!ai help' })
+      return { ok: true }
     },
   },
 ]
