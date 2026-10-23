@@ -19,23 +19,14 @@ function slicePath(start, end) {
   return `M100 100 L${from.x} ${from.y} A100 100 0 ${large} 1 ${to.x} ${to.y} Z`
 }
 
-function countdown(target, now) {
-  const left = target - now
-  if (left <= 0) return ''
-  const hours = Math.floor(left / 3_600_000)
-  const minutes = Math.floor((left % 3_600_000) / 60_000)
-  if (hours) return `${hours}h ${minutes}m`
-  const seconds = Math.ceil((left % 60_000) / 1000)
-  return minutes ? `${minutes}m ${seconds}s` : `${seconds}s`
-}
+const money = value => Number(value ?? 0).toLocaleString('en-US')
 
-export default function FlairWheel({ onClose, onChanged }) {
+export default function FlairWheel({ coins, onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [angle, setAngle] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [won, setWon] = useState(null)
   const [error, setError] = useState('')
-  const [now, setNow] = useState(Date.now())
 
   const wheel = useMemo(() => (data?.catalog ?? []).filter(item => item.wheel), [data])
   const owned = useMemo(
@@ -43,23 +34,20 @@ export default function FlairWheel({ onClose, onChanged }) {
     [data],
   )
   const seg = wheel.length ? 360 / wheel.length : 360
-  const readyAt = data?.nextSpinAt ? new Date(data.nextSpinAt).getTime() : 0
-  const wait = readyAt > now ? countdown(readyAt, now) : ''
   const tokens = data?.spinTokens ?? 0
-  // A banked pass token is spent instead of waiting out the daily cooldown.
-  const canSpin = Boolean(data) && !spinning && (!wait || tokens > 0)
+  // The live balance comes from the app (it is pushed over the socket as the drip pays);
+  // the copy fetched with the wheel is only a fallback for the first frame.
+  const wallet = coins ?? data?.coins ?? { coins: 0, spinCost: 1000 }
+  const cost = wallet.spinCost ?? 1000
+  // A banked pass token is a free turn; otherwise a turn is paid for in royal coins.
+  const affordable = tokens > 0 || (wallet.coins ?? 0) >= cost
+  const canSpin = Boolean(data) && !spinning && affordable
 
   useEffect(() => {
     api('/api/flairs')
       .then(setData)
       .catch(problem => setError(problem.message))
   }, [])
-
-  useEffect(() => {
-    if (!data?.nextSpinAt) return
-    const timer = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(timer)
-  }, [data?.nextSpinAt])
 
   // The landing slice is the one the server already rolled; the wheel only animates to it.
   const land = useCallback(
@@ -94,11 +82,10 @@ export default function FlairWheel({ onClose, onChanged }) {
               owned: result.owned,
               spinTokens: result.spinTokens ?? 0,
               customTag: result.customTag ?? previous.customTag,
-              nextSpinAt: result.nextSpinAt ? new Date(result.nextSpinAt).toISOString() : previous.nextSpinAt,
+              coins: result.coins ?? previous.coins,
             }
           : previous,
       )
-      setNow(Date.now())
       land(result.won, result.duplicate)
     } catch (problem) {
       setSpinning(false)
@@ -187,11 +174,9 @@ export default function FlairWheel({ onClose, onChanged }) {
           <button className="btn-primary" onClick={spin} disabled={!canSpin}>
             {spinning
               ? 'spinning…'
-              : wait
-                ? tokens > 0
-                  ? `spin again · ${tokens} token${tokens === 1 ? '' : 's'}`
-                  : `recharging · ${wait}`
-                : 'spin the wheel'}
+              : tokens > 0
+                ? `spin · ${tokens} free turn${tokens === 1 ? '' : 's'}`
+                : `spin · ${money(cost)} royal coins`}
           </button>
           {won && (
             <p className="wheel-result" style={{ '--flair': flairColor(won.key) }}>
@@ -203,8 +188,14 @@ export default function FlairWheel({ onClose, onChanged }) {
           )}
           {!won && !error && data && (
             <p className="wheel-hint">
-              {wait ? `next free spin in ${wait}` : 'one spin a day'} · vip 1% · mvp 0.1% · custom
-              tag 0.01%{tokens > 0 && ` · ${tokens} banked`}
+              you hold {money(wallet.coins)} coins · +100 every {wallet.tickMinutes ?? 10} min · vip
+              1% · mvp 0.1% · custom tag 0.01%
+            </p>
+          )}
+          {!won && !error && data && !affordable && (
+            <p className="wheel-hint">
+              need {money(cost - (wallet.coins ?? 0))} more — the royal drip pays 100 every 10
+              minutes
             </p>
           )}
           {error && <p className="auth-error">{error}</p>}

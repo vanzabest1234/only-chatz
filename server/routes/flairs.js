@@ -12,13 +12,9 @@ import {
   rollFlair,
 } from '../flairs.js'
 import { ensureOwnerSeason } from '../pass.js'
+import { SPIN_COST, accrueCoins, coinState, spendCoins } from '../coins.js'
 
 const router = Router()
-
-// One turn of the wheel a day is what keeps the 1% and 0.01% slices worth something.
-// The season pass can add tokens, which are spent instead of waiting.
-const COOLDOWN_HOURS = 24
-const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000
 
 async function ownedFlairs(userId) {
   const { rows } = await q(
@@ -32,9 +28,6 @@ async function ownedFlairs(userId) {
   }))
 }
 
-const readyAt = user =>
-  user.flair_spun_at ? new Date(new Date(user.flair_spun_at).getTime() + COOLDOWN_MS) : null
-
 async function freshUser(userId) {
   const { rows } = await q('SELECT * FROM users WHERE id = $1', [userId])
   return rows[0]
@@ -44,14 +37,14 @@ router.get('/flairs', requireAuth, async (req, res) => {
   await grantOwnerWheel(req.user)
   await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
+  const { state: coins } = await accrueCoins(user.id)
   res.json({
     catalog: flairCatalog(),
     owned: await ownedFlairs(user.id),
     maxEquipped: MAX_EQUIPPED,
     spinTokens: user.spin_tokens ?? 0,
     customTag: user.custom_tag ?? null,
-    nextSpinAt: readyAt(user)?.toISOString() ?? null,
-    cooldownHours: COOLDOWN_HOURS,
+    coins,
   })
 })
 
@@ -60,35 +53,26 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
   await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
 
-  let nextSpinAt = null
-  const wait = readyAt(user)
-  if (wait && wait.getTime() > Date.now()) {
-    // Out of turns for today: spend a pass token if one is banked, otherwise wait.
-    const spent = await q(
-      'UPDATE users SET spin_tokens = spin_tokens - 1 WHERE id = $1 AND spin_tokens > 0 RETURNING spin_tokens',
+  // A turn is paid for: a banked pass token is spent first, otherwise 1000 Royal Coins.
+  // The charge is claimed before the roll, so two open tabs cannot spend one payment twice.
+  await accrueCoins(user.id)
+  let coins = null
+  if ((user.spin_tokens ?? 0) > 0) {
+    const { rows: spent } = await q(
+      `UPDATE users SET spin_tokens = spin_tokens - 1
+        WHERE id = $1 AND spin_tokens > 0
+        RETURNING royal_coins, coins_claimed_at`,
       [user.id],
     )
-    if (!spent.rows.length) {
-      const minutes = Math.ceil((wait.getTime() - Date.now()) / 60_000)
-      return res.status(429).json({
-        error: `The wheel is recharging — try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
-        nextSpinAt: wait.toISOString(),
-      })
-    }
-    nextSpinAt = wait.getTime()
-  } else {
-    // Claim the turn before rolling, so two open tabs cannot both spin on one cooldown.
-    const cutoff = new Date(Date.now() - COOLDOWN_MS)
-    const claim = await q(
-      `UPDATE users SET flair_spun_at = now()
-        WHERE id = $1 AND (flair_spun_at IS NULL OR flair_spun_at <= $2)
-        RETURNING flair_spun_at`,
-      [user.id, cutoff],
-    )
-    if (!claim.rows.length) {
-      return res.status(429).json({ error: 'The wheel is still recharging.' })
-    }
-    nextSpinAt = new Date(claim.rows[0].flair_spun_at).getTime() + COOLDOWN_MS
+    if (spent.length) coins = coinState(spent[0])
+  }
+  if (!coins) coins = await spendCoins(user.id, SPIN_COST)
+  if (!coins) {
+    const { state } = await accrueCoins(user.id)
+    return res.status(402).json({
+      error: `A turn of the wheel costs ${SPIN_COST} royal coins — you hold ${state.coins}.`,
+      coins: state,
+    })
   }
 
   const won = rollFlair()
@@ -108,6 +92,7 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
 
   emitAll('members:refresh')
   emitTo(`user:${user.id}`, 'profile:update')
+  emitTo(`user:${user.id}`, 'coins:update', coinState(fresh))
 
   res.json({
     won: { key: won.key, label: won.label },
@@ -116,7 +101,7 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
     maxEquipped: MAX_EQUIPPED,
     spinTokens: fresh.spin_tokens ?? 0,
     customTag: fresh.custom_tag ?? null,
-    nextSpinAt,
+    coins: coinState(fresh),
   })
 })
 

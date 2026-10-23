@@ -8,6 +8,8 @@ import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
 import { grantOwnerWheel } from '../flairs.js'
 import { ensureOwnerSeason, passState } from '../pass.js'
+import { accrueCoins } from '../coins.js'
+import { answerAi, isAiMessage } from '../ai.js'
 
 const router = Router()
 
@@ -122,10 +124,13 @@ async function loadSnapshot(user) {
 
   // Owners sit at the top of the pass; the fill-in only happens once per season.
   const pass = (await ensureOwnerSeason(user)) ?? passState(user)
+  // Opening the app collects whatever the ten-minute clock owes, so the balance is current.
+  const { state: coins } = await accrueCoins(user.id)
 
   return {
     user: {
       ...publicUser(user),
+      coins,
       ownsCustomTag: Boolean(tag.rows[0]?.owns_custom_tag),
       pass,
     },
@@ -347,6 +352,15 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
     id: channelId,
     label: `#${channel.name}`,
   })
+
+  // "!ai …" is answered by the Royal Aide, in the room, under the question. The answer
+  // arrives over the socket like any other message, so this response does not wait for it.
+  if (isAiMessage(content) && take(`ai:${req.user.id}`, 6, 60_000).ok) {
+    answerAi({ actor: req.user, channel, content }).catch(error => {
+      console.error('ai reply failed', error)
+    })
+  }
+
   res.json({ message })
 })
 

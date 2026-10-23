@@ -82,6 +82,29 @@ Non-obvious things worth knowing before changing something:
   `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
   `user:<id>`; `App.jsx` answers with a chime and a toast whose room label comes from the payload,
   so tapping it can switch the view. Mentions are matched against `@username`, never display names.
+- **Royal Coins are the currency, and the clock is the wallet.** `server/coins.js` owns it:
+  `COIN_PER_TICK` (100) per `TICK_MINUTES` (10) is worked out from `users.coins_claimed_at`, so
+  nothing is paid by a timer alone — `accrueCoins` collects every whole window that has passed and
+  only advances the window it read (compared as `::text`, because a JS `Date` loses the microseconds
+  and would never match). A long absence collects at most an hour (six ticks); the 10s
+  `startCoinClock` in `realtime.js` pays open sockets and emits `coins:update` to `user:<id>`,
+  which `App.jsx` folds into `me.user.coins`. Spend through `spendCoins` / `settleBet` only: both
+  check the balance in the same statement that moves it, so two tabs cannot spend one coin twice.
+- **A turn of the wheel costs coins, not a day's wait.** `SPIN_COST` is 1000; a banked pass token
+  (`spin_tokens`) is spent first as a free turn, otherwise the coins are charged before the roll.
+  The `402` it returns carries the balance. `flair_spun_at` is still in the table but no longer read.
+- **The vault (`server/casino.js` + `routes/casino.js`) is the gambling table.** Four stakes,
+  each with a house edge: steady 75% ×1.25, even 50% ×1.9, bold 25% ×3.6, royal 10% ×8.5. The d100
+  roll happens server-side with `randomInt`, the stake and payout move in one `settleBet` statement,
+  and every roll lands in `coin_bets` so the panel can show the last few. Bets are rate-limited
+  (20 / 10s per account) and capped at `MAX_BET`; `wager` must be a whole number ≥ `MIN_BET`.
+  Never trust a roll, wager or result sent by the client.
+- **The Royal Aide answers `!ai …` (`server/ai.js`).** It is a local command table, not a model:
+  no external service is called and it costs nothing to run. `routes/chat.js` answers a channel
+  message matching `^!ai` (6 per minute per account) with a system message from `author_name`
+  `Royal Aide`, broadcast as `message:new`. Adding a command is one `{ name, usage, description,
+  run({ actor, channel, args }) }` entry in `AI_COMMANDS`; `run` returns the sentence to say or
+  `{ error }`. `!ai help` prints the table. System messages cannot be edited or deleted.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in

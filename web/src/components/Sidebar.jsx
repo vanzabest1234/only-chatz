@@ -16,6 +16,7 @@ export default function Sidebar({
   onOpenBoard,
   onOpenFlairs,
   onOpenPass,
+  onOpenCasino,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -41,6 +42,13 @@ export default function Sidebar({
 
         <div className="sidebar-scroll">
           <section className="section">
+            <button className="nav-row coin-link" onClick={onOpenCasino}>
+              <span className="hash">◉</span>
+              <span className="nav-label">Royal vault</span>
+              <span className="chip">
+                {Number(me.user.coins?.coins ?? 0).toLocaleString('en-US')}
+              </span>
+            </button>
             <button className="nav-row board-link" onClick={onOpenBoard}>
               <span className="live-dot" />
               <span className="nav-label">Who&apos;s online</span>

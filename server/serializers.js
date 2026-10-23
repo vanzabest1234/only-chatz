@@ -1,4 +1,5 @@
 import { frameFor } from './pass.js'
+import { coinState } from './coins.js'
 
 export function publicUser(row) {
   return {
@@ -16,6 +17,7 @@ export function publicUser(row) {
     customTag: row.custom_tag ?? null,
     passTier: Number(row.pass_tier ?? 0),
     frame: frameFor(Number(row.pass_tier ?? 0)),
+    coins: coinState(row),
   }
 }
 

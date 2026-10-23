@@ -12,6 +12,7 @@ import RulesGate from './components/RulesGate'
 import ProfileCard from './components/ProfileCard'
 import FlairWheel from './components/FlairWheel'
 import PassPanel from './components/PassPanel'
+import CasinoPanel from './components/CasinoPanel'
 import { playPing } from './lib/mentions'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
   const [boardOpen, setBoardOpen] = useState(false)
   const [flairOpen, setFlairOpen] = useState(false)
   const [passOpen, setPassOpen] = useState(false)
+  const [casinoOpen, setCasinoOpen] = useState(false)
   const [ping, setPing] = useState(null)
   const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
@@ -198,6 +200,11 @@ export default function App() {
       'pass:update': state =>
         setMe(previous =>
           previous ? { ...previous, user: { ...previous.user, pass: state } } : previous,
+        ),
+      // The ten-minute drip pays over the socket; the vault answers with the same shape.
+      'coins:update': state =>
+        setMe(previous =>
+          previous ? { ...previous, user: { ...previous.user, coins: state } } : previous,
         ),
       connect: shareRoom,
       'session:revoke': payload => {
@@ -420,6 +427,10 @@ export default function App() {
             setPassOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenCasino={() => {
+            setCasinoOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -471,8 +482,14 @@ export default function App() {
         )}
 
         {flairOpen && (
-          <FlairWheel onClose={() => setFlairOpen(false)} onChanged={() => load().catch(() => {})} />
+          <FlairWheel
+            coins={me.user.coins}
+            onClose={() => setFlairOpen(false)}
+            onChanged={() => load().catch(() => {})}
+          />
         )}
+
+        {casinoOpen && <CasinoPanel me={me} onClose={() => setCasinoOpen(false)} />}
 
         {passOpen && <PassPanel pass={me.user.pass} onClose={() => setPassOpen(false)} />}
 

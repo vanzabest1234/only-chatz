@@ -122,3 +122,22 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_spin_awarded INTEGER NOT NULL DE
 
 -- extra turns of the wheel, handed out by the season pass
 ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_tokens INTEGER NOT NULL DEFAULT 0;
+
+-- Royal Coins: 100 drop every 10 minutes, a wheel turn costs 1000, the vault can double them.
+-- coins_claimed_at is the start of the current 10-minute window, so the accrual never drifts.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS royal_coins INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+-- what the vault paid out, so the last few rolls can be shown back to the player
+CREATE TABLE IF NOT EXISTS coin_bets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  wager INTEGER NOT NULL,
+  risk TEXT NOT NULL,
+  roll INTEGER NOT NULL,
+  won BOOLEAN NOT NULL,
+  payout INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS coin_bets_user_idx ON coin_bets (user_id, id DESC);

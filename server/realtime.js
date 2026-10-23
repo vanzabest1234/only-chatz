@@ -3,6 +3,7 @@ import { q } from './db.js'
 import { sessionUser } from './auth.js'
 import { audit, take } from './guard.js'
 import { addPresenceMinutes } from './pass.js'
+import { accrueCoins } from './coins.js'
 
 let io = null
 const online = new Map()
@@ -90,10 +91,30 @@ function startPassClock() {
   return timer
 }
 
+/**
+ * Royal Coins drip while a socket is open: every ten seconds the online accounts are
+ * asked for anything the clock owes them, and only an actual payout is broadcast, so a
+ * quiet balance never causes a repaint.
+ */
+function startCoinClock() {
+  const timer = setInterval(() => {
+    for (const userId of [...online.keys()]) {
+      accrueCoins(userId)
+        .then(({ state, awarded }) => {
+          if (awarded) emitTo(`user:${userId}`, 'coins:update', state)
+        })
+        .catch(() => {})
+    }
+  }, 10_000)
+  timer.unref?.()
+  return timer
+}
+
 export function initRealtime(httpServer) {
   io = new Server(httpServer)
   startTypingSweep()
   startPassClock()
+  startCoinClock()
 
   io.use(async (socket, next) => {
     const forwarded = String(socket.handshake.headers?.['x-forwarded-for'] ?? '').split(',')[0].trim()
