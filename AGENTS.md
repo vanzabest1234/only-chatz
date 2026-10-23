@@ -62,6 +62,21 @@ Non-obvious things worth knowing before changing something:
   `{id, channelId, threadId}` and every client drops it from its list, so nothing re-renders from a
   stale payload. Unlike an edit, a delete is also audited (`message-deleted`) when the Owner removes
   someone else's message.
+- **Flairs, the wheel, and the season pass are cosmetics only.** `server/flairs.js` owns the wheel
+  weights (the roll happens there, never in the browser) and `MAX_EQUIPPED = 3` — owning a flair
+  never expires, but only three can be worn at once, so `POST /api/flairs/equip` refuses a fourth.
+  `bread` is off the wheel (`/bread`, Owner only); `custom` is the 0.01% slice that unlocks a
+  user-written tag in settings. One free spin a day (`users.flair_spun_at`), and a pass spin token is
+  spent instead of waiting — the client only enables the button when a token is banked.
+  `server/pass.js` turns one minute of an open socket into 2 XP (`pass_xp`/`pass_minutes`, reset by
+  `pass_season` = `YYYY-MM`), and tier rewards are derived from the tier, never stored: frames
+  (`frame-ember|frost|void|aurora` in `console.css`) come from `frameFor(tier)` in the serializers,
+  and extra tokens are granted idempotently from `pass_spin_awarded`. Owners hold the whole wheel
+  (`grantOwnerWheel`). Nothing here grants permissions — never wire a flair to a role check.
+- **A mention is a ping, delivered over sockets.** Channel/DM posts parse `@username` in
+  `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
+  `user:<id>`; `App.jsx` answers with a chime and a toast whose room label comes from the payload,
+  so tapping it can switch the view. Mentions are matched against `@username`, never display names.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in

@@ -45,7 +45,9 @@ export default function FlairWheel({ onClose, onChanged }) {
   const seg = wheel.length ? 360 / wheel.length : 360
   const readyAt = data?.nextSpinAt ? new Date(data.nextSpinAt).getTime() : 0
   const wait = readyAt > now ? countdown(readyAt, now) : ''
-  const canSpin = Boolean(data) && !spinning && !wait
+  const tokens = data?.spinTokens ?? 0
+  // A banked pass token is spent instead of waiting out the daily cooldown.
+  const canSpin = Boolean(data) && !spinning && (!wait || tokens > 0)
 
   useEffect(() => {
     api('/api/flairs')
@@ -90,7 +92,9 @@ export default function FlairWheel({ onClose, onChanged }) {
           ? {
               ...previous,
               owned: result.owned,
-              nextSpinAt: new Date(result.nextSpinAt).toISOString(),
+              spinTokens: result.spinTokens ?? 0,
+              customTag: result.customTag ?? previous.customTag,
+              nextSpinAt: result.nextSpinAt ? new Date(result.nextSpinAt).toISOString() : previous.nextSpinAt,
             }
           : previous,
       )
@@ -130,7 +134,7 @@ export default function FlairWheel({ onClose, onChanged }) {
         <header className="settings-head">
           <div>
             <h2>Flair wheel</h2>
-            <p>pure decoration · wear as many as you like</p>
+            <p>pure decoration · wear up to {data?.maxEquipped ?? 3} at once</p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close the wheel">
             <Icon name="close" />
@@ -181,17 +185,27 @@ export default function FlairWheel({ onClose, onChanged }) {
 
         <div className="wheel-actions">
           <button className="btn-primary" onClick={spin} disabled={!canSpin}>
-            {spinning ? 'spinning…' : wait ? `recharging · ${wait}` : 'spin the wheel'}
+            {spinning
+              ? 'spinning…'
+              : wait
+                ? tokens > 0
+                  ? `spin again · ${tokens} token${tokens === 1 ? '' : 's'}`
+                  : `recharging · ${wait}`
+                : 'spin the wheel'}
           </button>
           {won && (
             <p className="wheel-result" style={{ '--flair': flairColor(won.key) }}>
               {won.duplicate
                 ? `you rolled ${flairLabel(won.key)} again — already yours`
                 : `you won ${flairLabel(won.key)}`}
+              {won.key === 'custom' && !won.duplicate && ' — write your tag in settings'}
             </p>
           )}
-          {!won && !error && data && !wait && (
-            <p className="wheel-hint">one spin a day · vip 1% · mvp 0.1%</p>
+          {!won && !error && data && (
+            <p className="wheel-hint">
+              {wait ? `next free spin in ${wait}` : 'one spin a day'} · vip 1% · mvp 0.1% · custom
+              tag 0.01%{tokens > 0 && ` · ${tokens} banked`}
+            </p>
           )}
           {error && <p className="auth-error">{error}</p>}
         </div>
