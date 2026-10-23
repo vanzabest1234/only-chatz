@@ -46,6 +46,7 @@ export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
 
         <div className="board-list">
           {people.length === 0 && <p className="board-empty">Nobody else is floating here yet.</p>}
+          {people.length > 0 && <p className="board-group">online — {people.length}</p>}
           {people.map(person => (
             <button
               key={person.id}
@@ -60,7 +61,7 @@ export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
               <Avatar
                 name={person.displayName}
                 color={person.color}
-                size={34}
+                size={32}
                 online
                 src={person.avatarUrl}
               />
@@ -69,9 +70,11 @@ export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
                   {person.displayName}
                   {person.id === me.user.id ? ' (you)' : ''}
                 </span>
-                <span className="board-room">{roomLabel(where[person.id])}</span>
+                <span className="board-meta">
+                  <span className="board-room">{roomLabel(where[person.id])}</span>
+                  <RoleBadge role={person.role} />
+                </span>
               </span>
-              <RoleBadge role={person.role} />
             </button>
           ))}
         </div>

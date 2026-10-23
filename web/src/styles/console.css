@@ -381,6 +381,10 @@ textarea:focus-visible,
   background: var(--panel-deep);
 }
 
+.member-group .section-title {
+  background: var(--panel);
+}
+
 .member-name {
   color: var(--ink);
 }
@@ -609,8 +613,19 @@ textarea:focus-visible,
   border-bottom: 1px solid var(--line);
 }
 
+.board-row {
+  border-radius: 0;
+}
+
 .board-row:hover {
   background: var(--panel-deep);
+}
+
+.board-group {
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: lowercase;
 }
 
 .board-name {
@@ -983,7 +998,7 @@ textarea:focus-visible,
 }
 
 .member-avatar {
-  padding: 6px 0 6px 6px;
+  padding: 3px 0 3px 6px;
 }
 
 .avatar-btn:hover .avatar,
@@ -1104,12 +1119,11 @@ textarea:focus-visible,
   padding: 0 4px;
 }
 
-.member-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 3px;
-  max-width: 46%;
+.member-meta .flair-row,
+.board-meta .flair-row {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .wheel-modal {

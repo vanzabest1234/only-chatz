@@ -65,11 +65,9 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                         onClick={() => onOpenDm(member.id)}
                         title={`Message ${member.displayName}`}
                       >
-                        <span className="member-text">
-                          <span className="member-name">{member.displayName}</span>
+                        <span className="member-name">{member.displayName}</span>
+                        <span className="member-meta">
                           <span className="member-handle">@{member.username}</span>
-                        </span>
-                        <span className="member-tags">
                           <RoleBadge role={member.role} />
                           <FlairBadges
                             flairs={member.flairs}
