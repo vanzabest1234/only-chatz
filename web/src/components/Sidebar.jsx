@@ -14,6 +14,7 @@ export default function Sidebar({
   onOpenMembers,
   onOpenSettings,
   onOpenBoard,
+  onOpenFlairs,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -43,6 +44,11 @@ export default function Sidebar({
               <span className="live-dot" />
               <span className="nav-label">Who&apos;s online</span>
               <span className="chip">{me.online.length}</span>
+            </button>
+            <button className="nav-row flair-link" onClick={onOpenFlairs}>
+              <span className="hash">✦</span>
+              <span className="nav-label">Flair wheel</span>
+              <span className="chip">spin</span>
             </button>
           </section>
 

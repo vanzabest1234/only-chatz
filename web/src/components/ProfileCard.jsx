@@ -1,6 +1,7 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
+import FlairBadges from './FlairBadges'
 
 /** The banner that opens when someone taps another member's picture. */
 export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm }) {
@@ -32,6 +33,7 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
 
         <div className="profile-tags">
           <RoleBadge role={member.role} />
+          <FlairBadges flairs={member.flairs} />
           {member.pronouns && <span className="profile-pronouns">{member.pronouns}</span>}
           <span className={`profile-status ${online ? 'is-on' : ''}`}>
             {online ? 'online' : 'offline'}

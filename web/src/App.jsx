@@ -10,6 +10,7 @@ import SettingsModal from './components/SettingsModal'
 import OnlineBoard from './components/OnlineBoard'
 import RulesGate from './components/RulesGate'
 import ProfileCard from './components/ProfileCard'
+import FlairWheel from './components/FlairWheel'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -21,6 +22,7 @@ export default function App() {
   const [membersOpen, setMembersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [boardOpen, setBoardOpen] = useState(false)
+  const [flairOpen, setFlairOpen] = useState(false)
   const [where, setWhere] = useState({})
   const [replyTo, setReplyTo] = useState(null)
   const [profileId, setProfileId] = useState(null)
@@ -370,6 +372,10 @@ export default function App() {
             setBoardOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenFlairs={() => {
+            setFlairOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -418,6 +424,10 @@ export default function App() {
             onClose={() => setBoardOpen(false)}
             onOpenDm={openDm}
           />
+        )}
+
+        {flairOpen && (
+          <FlairWheel onClose={() => setFlairOpen(false)} onChanged={() => load().catch(() => {})} />
         )}
 
         {settingsOpen && (

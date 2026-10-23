@@ -1,6 +1,7 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
+import FlairBadges from './FlairBadges'
 
 const GROUPS = [
   { role: 'owner', label: 'Owner' },
@@ -68,7 +69,10 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                           <span className="member-name">{member.displayName}</span>
                           <span className="member-handle">@{member.username}</span>
                         </span>
-                        <RoleBadge role={member.role} />
+                        <span className="member-tags">
+                          <RoleBadge role={member.role} />
+                          <FlairBadges flairs={member.flairs} compact />
+                        </span>
                       </button>
                       {member.id !== me.user.id && (
                         <button

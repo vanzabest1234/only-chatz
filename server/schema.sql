@@ -81,6 +81,18 @@ CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id BIGINT REFERENCES messages(id) ON DELETE SET NULL;
 
+-- collectible cosmetic flairs: won on the wheel, worn next to your name, no powers at all
+CREATE TABLE IF NOT EXISTS user_flairs (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  flair TEXT NOT NULL,
+  equipped BOOLEAN NOT NULL DEFAULT TRUE,
+  obtained_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, flair)
+);
+
+-- when this account last turned the wheel (NULL = never spun)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS flair_spun_at TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS message_reactions (
   message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

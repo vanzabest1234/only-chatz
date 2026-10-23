@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar from './Avatar'
 import RoleBadge from './RoleBadge'
+import FlairBadges from './FlairBadges'
 import { snippet, timeShort } from '../lib/format'
 
 const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
@@ -177,6 +178,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
         <div className="msg-head">
           <span className="msg-name">{message.authorName}</span>
           <RoleBadge role={message.authorRole} />
+          <FlairBadges flairs={message.authorFlairs} />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
           {message.editedAt && <span className="msg-edited">(edited)</span>}
         </div>

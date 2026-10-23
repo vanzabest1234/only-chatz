@@ -10,6 +10,7 @@ import { limiter } from './guard.js'
 import authRoutes from './routes/auth.js'
 import chatRoutes from './routes/chat.js'
 import profileRoutes from './routes/profile.js'
+import flairRoutes from './routes/flairs.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
@@ -34,6 +35,7 @@ app.use(express.json({ limit: '1mb' }))
 app.use('/api', limiter('api', 1200, 60_000))
 app.use('/api/auth', authRoutes)
 app.use('/api', profileRoutes)
+app.use('/api', flairRoutes)
 app.use('/api', chatRoutes)
 
 // A release build serves the built site from this same origin (see Dockerfile).

@@ -249,6 +249,27 @@ const COMMANDS = [
       return { notice: `${target.display_name} is now ${labelFor(role)}.` }
     },
   },
+  {
+    name: 'bread',
+    usage: '/bread @user',
+    description: 'Owner only — hand someone the bread flair (it is not on the wheel).',
+    minRank: 4,
+    async run({ actor, args }) {
+      if (actor.role !== 'owner') return { error: 'Only the Owner can hand out bread.' }
+      const target = await findUser(args[0])
+      const problem = guardTarget(actor, target)
+      if (problem) return { error: problem }
+      await q(
+        `INSERT INTO user_flairs (user_id, flair, equipped) VALUES ($1, 'bread', TRUE)
+         ON CONFLICT (user_id, flair) DO NOTHING`,
+        [target.id],
+      )
+      audit('flair-granted', { actor: actor.username, target: target.username, flair: 'bread' })
+      emitAll('members:refresh')
+      emitTo(`user:${target.id}`, 'profile:update')
+      return { notice: `${target.display_name} got the bread.` }
+    },
+  },
 ]
 
 export function commandCatalog(rank) {

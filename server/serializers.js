@@ -10,6 +10,7 @@ export function publicUser(row) {
     pronouns: row.pronouns ?? '',
     mutedUntil: row.muted_until ?? null,
     rulesAccepted: Boolean(row.rules_accepted_at),
+    flairs: Array.isArray(row.flairs) ? row.flairs : [],
   }
 }
 
@@ -23,6 +24,7 @@ export function publicMessage(row) {
     authorRole: row.role ?? row.author_role ?? 'member',
     authorColor: row.color ?? '#93a0c9',
     authorAvatar: row.avatar_url ?? null,
+    authorFlairs: Array.isArray(row.author_flairs) ? row.author_flairs : [],
     content: row.content,
     system: Boolean(row.system),
     createdAt: row.created_at,

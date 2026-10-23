@@ -17,6 +17,12 @@ const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
 // Only identifiers this module chooses may be interpolated into SQL.
 const MESSAGE_COLUMNS = new Set(['channel_id', 'thread_id'])
 
+// The flairs someone is wearing ride along with their messages and member row, so the
+// client never has to fetch them separately.
+const EQUIPPED_FLAIRS = userExpr => `COALESCE(
+  (SELECT array_agg(f.flair ORDER BY f.obtained_at, f.flair)
+     FROM user_flairs f WHERE f.user_id = ${userExpr} AND f.equipped), '{}')`
+
 function readId(raw) {
   const id = Number(raw)
   return Number.isInteger(id) && id > 0 ? id : null
@@ -49,7 +55,10 @@ function overPostingLimit(user, res) {
 async function loadSnapshot(user) {
   const [channels, members, friends, threads] = await Promise.all([
     q('SELECT id, name, topic, slowmode, position, announce FROM channels ORDER BY position, id'),
-    q('SELECT * FROM users WHERE banned = FALSE ORDER BY id'),
+    q(
+      `SELECT *, ${EQUIPPED_FLAIRS('users.id')} AS flairs
+         FROM users WHERE banned = FALSE ORDER BY id`,
+    ),
     q('SELECT friend_id FROM friendships WHERE user_id = $1', [user.id]),
     q(
       `SELECT t.id AS thread_id,
@@ -154,7 +163,7 @@ async function withExtras(rows) {
 
 async function hydrateMessage(id) {
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.id = $1`,
     [id],
@@ -166,7 +175,7 @@ async function hydrateMessage(id) {
 async function listMessages(column, id) {
   if (!MESSAGE_COLUMNS.has(column)) throw new Error(`unknown message column: ${column}`)
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.${column} = $1
       ORDER BY m.id DESC
