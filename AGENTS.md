@@ -90,6 +90,9 @@ Non-obvious things worth knowing before changing something:
   `startCoinClock` in `realtime.js` pays open sockets and emits `coins:update` to `user:<id>`,
   which `App.jsx` folds into `me.user.coins`. Spend through `spendCoins` / `settleBet` only: both
   check the balance in the same statement that moves it, so two tabs cannot spend one coin twice.
+  `users.royal_coins` is `BIGINT` because owners sit on `OWNER_COINS` (999999999999999): every
+  read of an owner's wallet lifts them back to that balance, so gambling and spinning never leave
+  an owner short.
 - **A turn of the wheel costs coins, not a day's wait.** `SPIN_COST` is 1000; a banked pass token
   (`spin_tokens`) is spent first as a free turn, otherwise the coins are charged before the roll.
   The `402` it returns carries the balance. `flair_spun_at` is still in the table but no longer read.
