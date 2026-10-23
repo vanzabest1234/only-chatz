@@ -22,6 +22,34 @@ export const OWNER_COINS = 999999999999999
 // An hour of ticks is the most one visit can collect, however long the tab was shut.
 const MAX_CATCHUP_TICKS = 60 / TICK_MINUTES
 
+/** How many names the coin ladder shows. */
+export const LEADERBOARD_SIZE = 10
+
+/**
+ * The richest purses, highest first. Banned accounts are gone from the server, so they are
+ * gone from the ladder too; owners stay on it — the house balance they hold is real.
+ */
+export async function topWallets(limit = LEADERBOARD_SIZE) {
+  const { rows } = await q(
+    `SELECT id, username, display_name, role, color, avatar_url, royal_coins
+       FROM users
+      WHERE NOT banned
+      ORDER BY royal_coins DESC, display_name ASC
+      LIMIT $1`,
+    [limit],
+  )
+  return rows.map((row, index) => ({
+    rank: index + 1,
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    role: row.role,
+    color: row.color,
+    avatarUrl: row.avatar_url ?? null,
+    coins: Number(row.royal_coins),
+  }))
+}
+
 /** What the client paints: the balance, the drip rate, and when the next 100 lands. */
 export function coinState(row) {
   const last = row?.coins_claimed_at ? new Date(row.coins_claimed_at).getTime() : Date.now()

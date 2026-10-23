@@ -101,6 +101,10 @@ Non-obvious things worth knowing before changing something:
   four weighted outcomes (`GAMBLE_OUTCOMES` in `server/casino.js`, ~90.5% returned). Owners are
   immune to both `/steal` and `/punch`, and every balance change pushes `coins:update` to the
   affected accounts.
+- **The coin ladder is one query, two surfaces.** `topWallets` in `server/coins.js` reads the ten
+  richest purses (`LEADERBOARD_SIZE`, highest first, banned accounts left off). `GET /api/leaderboard`
+  feeds the panel (`LeaderboardPanel.jsx`, opened from the sidebar) and `/leaderboard` (minRank 0)
+  posts the same rows as a system message, so the two cannot drift.
 - **A turn of the wheel costs coins, not a day's wait.** `SPIN_COST` is 1000; a banked pass token
   (`spin_tokens`) is spent first as a free turn, otherwise the coins are charged before the roll.
   The `402` it returns carries the balance. `flair_spun_at` is still in the table but no longer read.

@@ -8,7 +8,7 @@ import { OWNER_HOURS, completePass } from './pass.js'
 import { audit, cleanText } from './guard.js'
 import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
-import { accrueCoins, grantCoins, settleBet, spendCoins } from './coins.js'
+import { accrueCoins, grantCoins, settleBet, spendCoins, topWallets } from './coins.js'
 import { MAX_BET, MIN_BET, gambleRoll, rollDice } from './casino.js'
 
 async function postSystem(channel, content) {
@@ -467,6 +467,20 @@ const COMMANDS = [
       return {
         notice: `${actor.display_name} gambled ${wager.toLocaleString()} royal coins: ${result}. Balance ${state.coins.toLocaleString()}.`,
       }
+    },
+  },
+  {
+    name: 'leaderboard',
+    usage: '/leaderboard',
+    description: 'Show the ten richest purses on the server.',
+    minRank: 0,
+    async run() {
+      const leaders = await topWallets()
+      if (!leaders.length) return { error: 'The ladder is empty — the drip needs a few minutes to fill a purse.' }
+      const lines = leaders
+        .map(person => `${person.rank}. ${person.displayName} ${person.coins.toLocaleString()}`)
+        .join('  ·  ')
+      return { notice: `Royal coin ladder — ${lines}` }
     },
   },
 ]

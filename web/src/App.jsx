@@ -13,6 +13,7 @@ import ProfileCard from './components/ProfileCard'
 import FlairWheel from './components/FlairWheel'
 import PassPanel from './components/PassPanel'
 import CasinoPanel from './components/CasinoPanel'
+import LeaderboardPanel from './components/LeaderboardPanel'
 import { playPing } from './lib/mentions'
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
   const [flairOpen, setFlairOpen] = useState(false)
   const [passOpen, setPassOpen] = useState(false)
   const [casinoOpen, setCasinoOpen] = useState(false)
+  const [leadersOpen, setLeadersOpen] = useState(false)
   const [ping, setPing] = useState(null)
   const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
@@ -431,6 +433,10 @@ export default function App() {
             setCasinoOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenLeaders={() => {
+            setLeadersOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -490,6 +496,8 @@ export default function App() {
         )}
 
         {casinoOpen && <CasinoPanel me={me} onClose={() => setCasinoOpen(false)} />}
+
+        {leadersOpen && <LeaderboardPanel me={me} onClose={() => setLeadersOpen(false)} />}
 
         {passOpen && <PassPanel pass={me.user.pass} onClose={() => setPassOpen(false)} />}
 

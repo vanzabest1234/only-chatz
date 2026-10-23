@@ -1794,6 +1794,63 @@ textarea:focus-visible,
   }
 }
 
+/* ---------- royal coin ladder ---------- */
+
+.ladder-link .hash {
+  color: #ffd166;
+}
+
+.ladder-link .chip {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+.ladder {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  animation: rise 0.22s ease both;
+}
+
+.ladder-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+}
+
+.ladder-row.is-me {
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.ladder-rank {
+  flex: none;
+  width: 20px;
+  font-size: 11px;
+  text-align: right;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.ladder-rank.is-podium {
+  color: #ffd166;
+}
+
+.ladder-rank.is-1 {
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.6);
+}
+
+.ladder-coins {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #ffd166;
+}
+
 @keyframes ping-pulse {
   50% {
     opacity: 0.25;
