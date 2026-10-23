@@ -1876,3 +1876,156 @@ textarea:focus-visible,
     opacity: 0.25;
   }
 }
+
+/* ---------- welcome chrome: a brand bar over the room, centred sign-in ---------- */
+
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app .shell {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #0d141a;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--phosphor);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  text-shadow: 0 0 14px rgba(116, 240, 166, 0.28);
+}
+
+.topbar-glyph {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.topbar-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.topbar-live:hover {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.topbar-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--phosphor);
+  box-shadow: 0 0 10px var(--phosphor);
+}
+
+/* The bar carries the wordmark now; the drawer keeps its own header on touch sizes. */
+@media (min-width: 901px) {
+  .sidebar .brand {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 9px 12px;
+  }
+}
+
+/* ---------- sign-in: logo, welcome line and form in one centred column ---------- */
+
+.auth-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 28px;
+}
+
+.auth-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: auto;
+  width: min(430px, 100%);
+}
+
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.auth-wordmark {
+  margin: 2px 0 0;
+  color: var(--phosphor);
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: lowercase;
+  text-shadow: 0 0 22px rgba(116, 240, 166, 0.38);
+}
+
+.auth-welcome {
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+}
+
+.auth-lede {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.auth-stack .auth-card {
+  width: 100%;
+  padding: 18px 20px 16px;
+}
+
+.auth-foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-foot .text-btn {
+  font-size: 12px;
+  padding: 0;
+}

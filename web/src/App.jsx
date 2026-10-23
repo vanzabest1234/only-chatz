@@ -385,7 +385,24 @@ export default function App() {
   return (
     <>
       <Background />
-      <div className="shell">
+      <div className="app">
+        <header className="topbar">
+          <span className="topbar-brand">
+            <span className="brand-glyph topbar-glyph">◍</span>
+            only chatz
+          </span>
+          <button
+            type="button"
+            className="topbar-live"
+            onClick={() => setBoardOpen(true)}
+            aria-label="Who is online"
+          >
+            <span className="topbar-dot" />
+            {me.online.length} online
+          </button>
+        </header>
+
+        <div className="shell">
         {notice && <p className="toast">{notice}</p>}
 
         {ping && (
@@ -540,6 +557,7 @@ export default function App() {
             onOpenDm={openDm}
           />
         )}
+        </div>
       </div>
     </>
   )

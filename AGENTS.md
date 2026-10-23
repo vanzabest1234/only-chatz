@@ -180,11 +180,21 @@ Non-obvious things worth knowing before changing something:
   `about:blank`); when popups are blocked the anchor's own `/chat` href loads the room in this tab.
   With the script gone both plain `/chat` hrefs still work. Never hardcode a sandbox host: `/chat` is
   relative to whatever site serves the file.
-  The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
-  remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
-  Its room list and "Channels" line are hand-written copy, not fetched: update them whenever
-  `server/seed.js` gains or loses a room (they must list `#general`, `#announcements`, `#random`, in
-  the room order the seed sets).
+  It is a centred welcome column in the console theme (phosphor on void, inline CSS only, no remote
+  assets): wordmark, "welcome to the room", one line of copy, the filled "enter the chat" link and a
+  "new here? register now" link, with the new-tab link in the footer. The layout follows a reference
+  chat site the Owner asked to mirror; the branding, copy, icons and palette are all ours — never
+  paste the reference site's wordmark, text or images here.
+- **The signed-in app sits under a brand bar.** `App.jsx` wraps the three-column `.shell` in `.app`
+  with a `.topbar` (wordmark left, a live "N online" chip on the right that opens the who's-online
+  board). On desktop `console.css` hides the sidebar's own `.brand` block (`min-width: 901px`)
+  because the bar carries it; the drawer keeps that block on touch sizes. `.app .shell { flex: 1;
+  height: auto }` is what keeps the columns filling the space under the bar — drop it and the shell
+  overflows the bottom of the viewport.
+- **Sign-in is a centred welcome stack.** `AuthScreen.jsx` renders a hero (glyph, wordmark,
+  "welcome to the room", one line of copy), then the card with the sign-in/join tabs and form, then
+  a "new here? join the room" toggle. `.auth-stack { margin: auto }` is what keeps the top of the
+  stack reachable when it is taller than the viewport.
 - **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
   after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
   and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
