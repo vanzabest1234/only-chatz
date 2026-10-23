@@ -28,3 +28,22 @@ export function rollDice(chance) {
 }
 
 export const payoutFor = (risk, wager) => Math.floor(wager * risk.multiplier)
+
+// `/gamble <amount>` is the quick table: one roll, four outcomes. The weights return
+// about 90.5% of the stake, so the house still wins in the long run.
+export const GAMBLE_OUTCOMES = [
+  { key: 'big-win', label: 'BIG WIN', weight: 10, multiplier: 3 },
+  { key: 'small-win', label: 'SMALL WIN', weight: 30, multiplier: 1.2 },
+  { key: 'small-loss', label: 'SMALL LOSS', weight: 35, multiplier: 0.7 },
+  { key: 'big-loss', label: 'BIG LOSS', weight: 25, multiplier: 0 },
+]
+
+export function gambleRoll() {
+  const total = GAMBLE_OUTCOMES.reduce((sum, outcome) => sum + outcome.weight, 0)
+  let ticket = randomInt(1, total + 1)
+  for (const outcome of GAMBLE_OUTCOMES) {
+    ticket -= outcome.weight
+    if (ticket <= 0) return outcome
+  }
+  return GAMBLE_OUTCOMES[GAMBLE_OUTCOMES.length - 1]
+}

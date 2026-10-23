@@ -1,4 +1,5 @@
 import { q } from './db.js'
+import { randomInt } from 'node:crypto'
 import { destroyUserSessions } from './auth.js'
 import { disconnectUser, emitAll, emitTo } from './realtime.js'
 import { ASSIGNABLE_ROLES, rankOf, labelFor, roleForRank } from './roles.js'
@@ -7,6 +8,8 @@ import { OWNER_HOURS, completePass } from './pass.js'
 import { audit, cleanText } from './guard.js'
 import { checkDisplayName } from './names.js'
 import { publicMessage } from './serializers.js'
+import { accrueCoins, grantCoins, settleBet, spendCoins } from './coins.js'
+import { MAX_BET, MIN_BET, gambleRoll, rollDice } from './casino.js'
 
 async function postSystem(channel, content) {
   const { rows } = await q(
@@ -34,6 +37,23 @@ async function findUser(token) {
   const byDisplay = await q('SELECT * FROM users WHERE lower(display_name) = lower($1) LIMIT 2', [name])
   if (byDisplay.rows.length > 1) return { ambiguous: name }
   return byDisplay.rows[0] ?? null
+}
+
+/** A single other account, for the commands that need no target of their own. */
+async function randomOther(actorId) {
+  const { rows } = await q(
+    'SELECT display_name FROM users WHERE id <> $1 ORDER BY random() LIMIT 1',
+    [actorId],
+  )
+  return rows[0] ?? null
+}
+
+function chemistryLine(score) {
+  if (score >= 90) return 'soulmates, apparently.'
+  if (score >= 70) return 'sparks are flying.'
+  if (score >= 45) return 'a slow burn.'
+  if (score >= 20) return 'friends, at best.'
+  return 'absolutely nothing there.'
 }
 
 function guardTarget(actor, target) {
@@ -328,6 +348,124 @@ const COMMANDS = [
       emitTo(`user:${target.id}`, 'pass:update', state)
       return {
         notice: `${target.display_name} finished the season pass — tier ${state.tier} with ${OWNER_HOURS} hours in.`,
+      }
+    },
+  },
+  {
+    name: 'steal',
+    usage: '/steal @user',
+    description: 'Try to lift a quarter of someone’s coins — you win it or you pay it.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const target = await findUser(args[0])
+      if (!target) return { error: 'I could not find that person. Usage: /steal @user' }
+      if (target.ambiguous) return { error: 'More than one person has that name — use their @username.' }
+      if (target.id === actor.id) return { error: 'You cannot steal from yourself.' }
+      if (target.role === 'owner') return { error: 'Owners are immune to stealing.' }
+
+      // Both purses are brought up to date first, so the cut is taken from real coins.
+      const mine = (await accrueCoins(actor.id)).state.coins
+      const theirs = (await accrueCoins(target.id)).state.coins
+      if (theirs < 1) return { error: `${target.display_name} has no coins to steal.` }
+      const cut = Math.max(1, Math.floor(theirs / 4))
+
+      if (rollDice(50).won) {
+        const taken = await spendCoins(target.id, cut)
+        if (!taken) return { error: `${target.display_name} slipped away with their coins.` }
+        const state = await grantCoins(actor.id, cut)
+        emitTo(`user:${target.id}`, 'coins:update', taken)
+        if (state) emitTo(`user:${actor.id}`, 'coins:update', state)
+        audit('coins-stolen', { actor: actor.username, target: target.username, amount: cut })
+        return {
+          notice: `${actor.display_name} picked ${target.display_name}’s pocket for ${cut.toLocaleString()} royal coins.`,
+        }
+      }
+
+      const stake = Math.min(cut, mine)
+      if (stake < 1) return { error: 'You have no coins to lose — come back with a purse.' }
+      const paid = await spendCoins(actor.id, stake)
+      if (!paid) return { error: 'The steal went wrong — try again.' }
+      const state = await grantCoins(target.id, stake)
+      emitTo(`user:${actor.id}`, 'coins:update', paid)
+      if (state) emitTo(`user:${target.id}`, 'coins:update', state)
+      audit('coins-stolen', { actor: actor.username, target: target.username, amount: -stake })
+      return {
+        notice: `${actor.display_name} fumbled the steal and handed ${target.display_name} ${stake.toLocaleString()} royal coins.`,
+      }
+    },
+  },
+  {
+    name: 'punch',
+    usage: '/punch @user',
+    description: 'Silence someone for 60 seconds — only if you hold more coins than them.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const target = await findUser(args[0])
+      if (!target) return { error: 'I could not find that person. Usage: /punch @user' }
+      if (target.ambiguous) return { error: 'More than one person has that name — use their @username.' }
+      if (target.id === actor.id) return { error: 'You cannot punch yourself.' }
+      if (target.role === 'owner') return { error: 'Owners are immune to punches.' }
+
+      const mine = (await accrueCoins(actor.id)).state.coins
+      const theirs = (await accrueCoins(target.id)).state.coins
+      if (theirs > mine) {
+        return { error: `${target.display_name} holds more coins than you — you cannot punch them.` }
+      }
+
+      // Never shortens a longer mute: the later of the two moments wins.
+      await q(
+        `UPDATE users
+            SET muted_until = GREATEST(now() + interval '60 seconds', COALESCE(muted_until, now()))
+          WHERE id = $1`,
+        [target.id],
+      )
+      emitTo(`user:${target.id}`, 'profile:update')
+      audit('punched', { actor: actor.username, target: target.username })
+      return { notice: `${actor.display_name} punched ${target.display_name} — silenced for 60 seconds.` }
+    },
+  },
+  {
+    name: 'crush',
+    usage: '/crush',
+    description: 'Check your chemistry with a random person.',
+    minRank: 0,
+    async run({ actor }) {
+      const other = await randomOther(actor.id)
+      if (!other) return { error: 'There is nobody else here to crush on yet.' }
+      const score = randomInt(0, 101)
+      return {
+        notice: `${actor.display_name} ♥ ${other.display_name} — ${score}% chemistry, ${chemistryLine(score)}`,
+      }
+    },
+  },
+  {
+    name: 'gamble',
+    usage: '/gamble <amount>',
+    description: 'Stake royal coins: win big, win small, lose small or lose big.',
+    minRank: 0,
+    async run({ actor, args }) {
+      const wager = Math.floor(Number(args[0]))
+      if (!Number.isFinite(wager) || wager < MIN_BET) {
+        return { error: `Stake at least ${MIN_BET} coins. Usage: /gamble <amount>` }
+      }
+      if (wager > MAX_BET) {
+        return { error: `The table caps a single stake at ${MAX_BET.toLocaleString()} coins.` }
+      }
+
+      await accrueCoins(actor.id)
+      const outcome = gambleRoll()
+      const payout = Math.floor(wager * outcome.multiplier)
+      // Stake and payout move in one statement, so a refused stake rolls nothing.
+      const state = await settleBet(actor.id, wager, payout)
+      if (!state) return { error: `You need ${wager.toLocaleString()} coins to stake that.` }
+
+      emitTo(`user:${actor.id}`, 'coins:update', state)
+      audit('gambled', { actor: actor.username, wager, outcome: outcome.key, payout })
+      const result = payout
+        ? `${outcome.label} — ${payout.toLocaleString()} coins back`
+        : `${outcome.label} — the whole stake is gone`
+      return {
+        notice: `${actor.display_name} gambled ${wager.toLocaleString()} royal coins: ${result}. Balance ${state.coins.toLocaleString()}.`,
       }
     },
   },

@@ -93,6 +93,14 @@ Non-obvious things worth knowing before changing something:
   `users.royal_coins` is `BIGINT` because owners hold `OWNER_COINS` (999999999999999) — effectively
   infinite: every read of an owner's wallet lifts it back to that balance, so no bet or spin drains
   an owner. Everyone else lives off the drip alone.
+- **Four coin commands everyone can run** (`server/commands.js`, all `minRank: 0`):
+  `/steal @user` takes a quarter of the target's purse on a 50/50 roll and pays the same amount
+  when it fails; `/punch @user` silences them for 60 seconds but is refused while the target holds
+  more coins than you; `/crush` names a random other account and rolls a chemistry score;
+  `/gamble <amount>` stakes between `MIN_BET` and `MAX_BET` through `settleBet` and returns one of
+  four weighted outcomes (`GAMBLE_OUTCOMES` in `server/casino.js`, ~90.5% returned). Owners are
+  immune to both `/steal` and `/punch`, and every balance change pushes `coins:update` to the
+  affected accounts.
 - **A turn of the wheel costs coins, not a day's wait.** `SPIN_COST` is 1000; a banked pass token
   (`spin_tokens`) is spent first as a free turn, otherwise the coins are charged before the roll.
   The `402` it returns carries the balance. `flair_spun_at` is still in the table but no longer read.
