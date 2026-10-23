@@ -15,6 +15,10 @@ export const TICK_MINUTES = 10
 export const TICK_MS = TICK_MINUTES * 60 * 1000
 export const SPIN_COST = 1000
 
+// Owners are the house: effectively infinite coins. Their wallet is lifted back to this
+// balance on every read, so no bet or spin can ever leave an owner short.
+export const OWNER_COINS = 999999999999999
+
 // An hour of ticks is the most one visit can collect, however long the tab was shut.
 const MAX_CATCHUP_TICKS = 60 / TICK_MINUTES
 
@@ -38,11 +42,22 @@ export async function accrueCoins(userId) {
   // `::text` keeps the timestamp at the database's full precision: a JS Date only holds
   // milliseconds, and comparing that back would never match a `now()` stamp.
   const { rows } = await q(
-    'SELECT royal_coins, coins_claimed_at, coins_claimed_at::text AS claimed_text FROM users WHERE id = $1',
+    'SELECT royal_coins, role, coins_claimed_at, coins_claimed_at::text AS claimed_text FROM users WHERE id = $1',
     [userId],
   )
-  const row = rows[0]
+  let row = rows[0]
   if (!row) return { state: coinState(null), awarded: false }
+
+  // Owners never run dry: the wallet refills on every read.
+  if (row.role === 'owner' && Number(row.royal_coins) < OWNER_COINS) {
+    const { rows: topped } = await q(
+      `UPDATE users SET royal_coins = $2
+        WHERE id = $1 AND royal_coins < $2
+        RETURNING royal_coins, role, coins_claimed_at, coins_claimed_at::text AS claimed_text`,
+      [userId, OWNER_COINS],
+    )
+    if (topped.length) row = topped[0]
+  }
 
   const last = new Date(row.coins_claimed_at).getTime()
   const ticks = Math.min(MAX_CATCHUP_TICKS, Math.floor((Date.now() - last) / TICK_MS))
