@@ -202,10 +202,6 @@
   display: none;
 }
 
-.hamburger {
-  display: grid;
-}
-
 /* ---------- chat ---------- */
 
 .chat {
@@ -688,59 +684,40 @@
 
 /* ---------- responsive ---------- */
 
+/* Every PC width keeps the three columns of the reference — rooms, the room, the people.
+   They narrow rather than disappear, so the people list is never behind a toggle. */
 @media (max-width: 1180px) {
   .shell {
-    grid-template-columns: 268px minmax(0, 1fr);
-  }
-
-  .members-toggle {
-    display: flex;
-  }
-
-  .members {
-    position: fixed;
-    top: 12px;
-    bottom: 12px;
-    right: 12px;
-    width: min(280px, 84vw);
-    z-index: 60;
-    transform: translateX(calc(100% + 24px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .members.open {
-    transform: none;
-  }
-
-  .members-close {
-    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr) 232px;
   }
 }
 
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr) 168px;
     padding: 8px;
     gap: 8px;
   }
 
-  .sidebar {
-    position: fixed;
-    top: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: min(300px, 86vw);
-    z-index: 60;
-    transform: translateX(calc(-100% - 24px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* the side columns drop their second line so a name still fits */
+  .sidebar .dm-time,
+  .sidebar .chip,
+  .sidebar .dm-row .badge,
+  .me-card .meta .badge,
+  .member-meta {
+    display: none;
   }
 
-  .sidebar.open {
-    transform: none;
+  .members-head {
+    padding: 10px 8px;
   }
 
-  .drawer-close {
-    display: grid;
+  .members-head h2 {
+    font-size: 12.5px;
+  }
+
+  .members-head p {
+    display: none;
   }
 
   .chat {
@@ -815,12 +792,56 @@
     padding: 5px 4px 0;
     font-size: 10px;
   }
+}
+
+/* Past this the columns cannot give any more width, so they become drawers and the
+   quick bar carries the rooms and shortcuts above the chat. */
+@media (max-width: 660px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hamburger {
+    display: grid;
+  }
+
+  .members-toggle {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: min(300px, 86vw);
+    z-index: 60;
+    transform: translateX(calc(-100% - 24px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.open {
+    transform: none;
+  }
+
+  .drawer-close,
+  .members-close {
+    display: grid;
+  }
 
   .members {
-    width: min(300px, 88vw);
+    position: fixed;
     top: 8px;
     bottom: 8px;
     right: 8px;
+    width: min(300px, 88vw);
+    z-index: 60;
+    transform: translateX(calc(100% + 24px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .members.open {
+    transform: none;
   }
 }
 
@@ -1113,8 +1134,8 @@
 
 /* ---------- quick bar ---------- */
 
-/* Under 900px the columns collapse, so the rooms, the DMs and the shortcuts
-   ride an up-bar beneath the top bar instead of a column beside the chat. */
+/* Under 660px the columns collapse into drawers, so the rooms, the DMs and the
+   shortcuts ride an up-bar beneath the top bar instead of a column beside the chat. */
 .quick-bar {
   display: none;
 }
@@ -1123,7 +1144,19 @@
   display: none;
 }
 
+/* once the people column is narrow, the settings avatar keeps its corner spot */
 @media (max-width: 900px) {
+  .chat-me {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 660px) {
   .quick-bar {
     flex: none;
     display: flex;
@@ -1171,15 +1204,5 @@
 
   .qb-dm {
     padding: 0 10px 0 5px;
-  }
-
-  /* my profile and settings ride in the chat's top-right corner */
-  .chat-me {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
   }
 }

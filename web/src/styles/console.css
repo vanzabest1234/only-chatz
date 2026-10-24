@@ -2066,7 +2066,7 @@ textarea:focus-visible,
 }
 
 /* The bar carries the wordmark now; the drawer keeps its own header on touch sizes. */
-@media (min-width: 901px) {
+@media (min-width: 661px) {
   .sidebar .brand {
     display: none;
   }

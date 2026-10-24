@@ -198,10 +198,16 @@ Non-obvious things worth knowing before changing something:
   never paste a reference site's wordmark, text or images here.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the three-column `.shell` in `.app`
   with a `.topbar` (wordmark left, a live "N online" chip on the right that opens the who's-online
-  board). On desktop `console.css` hides the sidebar's own `.brand` block (`min-width: 901px`)
-  because the bar carries it; the drawer keeps that block on touch sizes. `.app .shell { flex: 1;
-  height: auto }` is what keeps the columns filling the space under the bar — drop it and the shell
-  overflows the bottom of the viewport.
+  board). On every PC width `console.css` hides the sidebar's own `.brand` block (`min-width:
+  661px`) because the bar carries it; the drawer keeps that block on phone sizes. `.app .shell {
+  flex: 1; height: auto }` is what keeps the columns filling the space under the bar — drop it and
+  the shell overflows the bottom of the viewport.
+- **The three columns stay docked at every PC width** — rooms, room, people, as in the reference
+  room the Owner pointed at. `app.css` narrows them rather than collapsing them: `284/280` above
+  1180px, `240/232` to 900px, `180/168` to 661px (the side lists drop their second line there —
+  `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px do both columns become drawers and the
+  `QuickBar` appears above the chat, so `membersOpen`/`sidebarOpen` mean nothing on a desktop: the
+  people list is simply always on screen.
 - **Sign-in is a centred welcome stack.** `AuthScreen.jsx` renders a hero (glyph, wordmark,
   "welcome to the room", one line of copy), then the card with the sign-in/join tabs and form, then
   a "new here? join the room" toggle. `.auth-stack { margin: auto }` is what keeps the top of the
