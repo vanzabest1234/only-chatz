@@ -203,15 +203,19 @@ Non-obvious things worth knowing before changing something:
   `.drawer-close` everywhere (the old `min-width: 661px` rule that hid `.sidebar .brand` is gone).
   `.app .shell { flex: 1; height: auto }` is what keeps the panels filling the space under the bar —
   drop it and the shell overflows the bottom of the viewport.
-- **The rooms panel is a drawer; the room and the people list stay docked.** `.sidebar` is
-  `position: fixed` at every width, parked off-screen with `translateX(calc(-100% - 24px))` and
-  slid in by `.sidebar.open { transform: none }` — the top bar's three-line button (and the chat
-  header's `.hamburger` at ≤660px) set `sidebarOpen`, and `openChannel` / `openDm` / every sidebar
-  shortcut set it back to false, so picking a room shuts the panel. Because it is out of flow the
-  shell is a two-column grid: `minmax(0, 1fr) 280px`, `… 232px` to 1000px, `… 168px` to 900px (the
-  people list drops its second line there — `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px
-  does the people list also become a drawer (`membersOpen`) and the `QuickBar` appears above the
-  chat.
+- **The rooms panel is a drop-down; the room and the people list stay docked.** `.sidebar` is
+  `position: fixed` at every width, hanging under the bar at `top: calc(var(--topbar-h) + 4px)`
+  (`--topbar-h` is 55px, 51px at ≤900px — the bar's padding plus the 32px icon button), clamped by
+  `max-height: calc(100dvh - var(--topbar-h) - 22px)` so its own `.sidebar-scroll` scrolls instead
+  of the page. It is hidden with `opacity: 0; pointer-events: none; translateY(-8px)` and opened by
+  `.sidebar.open { opacity: 1; pointer-events: auto; transform: none }` — a 160ms fade, not a slide.
+  The top bar's three-line button (and the chat header's `.hamburger` at ≤660px) set `sidebarOpen`,
+  and `openChannel` / `openDm` / every sidebar shortcut set it back to false, so picking a room
+  shuts the panel; the scrim behind it closes it too. Because it is out of flow the shell is a
+  two-column grid: `minmax(0, 1fr) 280px`, `… 232px` to 1000px, `… 168px` to 900px (the people list
+  drops its second line there — `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px does the people
+  list also become a drawer (`membersOpen`, sliding in from the right) and the `QuickBar` appears
+  above the chat.
 - **The room's vertical edges carry the seam.** `app.css` ends with `--seam`
   (`rgba(116, 240, 166, 0.45)`) applied to `.shell .chat`'s left and right border at ≥661px; the
   `.shell` prefix is only there to beat the card border in `console.css`, which is imported last.

@@ -58,20 +58,30 @@
   color: #9aa0c4;
 }
 
-/* The rooms panel is a drawer at every width: the top bar's three-line button slides
-   it in over the room, and the chat keeps the space when it is shut. */
+/* The rooms panel hangs off the top bar as a drop-down menu at every width: it opens
+   under the three-line button, over the room, and the chat keeps the space when shut.
+   `--topbar-h` is the bar's own height (its padding plus the 32px icon button). */
+:root {
+  --topbar-h: 55px;
+}
+
 .sidebar {
   position: fixed;
-  top: 8px;
-  bottom: 8px;
+  top: calc(var(--topbar-h) + 4px);
   left: 8px;
   width: min(300px, 86vw);
+  height: auto;
+  max-height: calc(100dvh - var(--topbar-h) - 22px);
   z-index: 60;
-  transform: translateX(calc(-100% - 24px));
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
 .sidebar.open {
+  opacity: 1;
+  pointer-events: auto;
   transform: none;
 }
 
@@ -722,6 +732,10 @@
 }
 
 @media (max-width: 900px) {
+  :root {
+    --topbar-h: 51px;
+  }
+
   .shell {
     grid-template-columns: minmax(0, 1fr) 168px;
     padding: 8px;
