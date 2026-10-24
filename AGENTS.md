@@ -196,18 +196,25 @@ Non-obvious things worth knowing before changing something:
   footer. Inline CSS only, no remote assets, every call to action a plain anchor. The layout follows
   two reference sites the Owner asked to blend; the branding, copy, icons and palette are all ours —
   never paste a reference site's wordmark, text or images here.
-- **The signed-in app sits under a brand bar.** `App.jsx` wraps the three-column `.shell` in `.app`
-  with a `.topbar` (wordmark left, a live "N online" chip on the right that opens the who's-online
-  board). On every PC width `console.css` hides the sidebar's own `.brand` block (`min-width:
-  661px`) because the bar carries it; the drawer keeps that block on phone sizes. `.app .shell {
-  flex: 1; height: auto }` is what keeps the columns filling the space under the bar — drop it and
-  the shell overflows the bottom of the viewport.
-- **The three columns stay docked at every PC width** — rooms, room, people, as in the reference
-  room the Owner pointed at. `app.css` narrows them rather than collapsing them: `284/280` above
-  1180px, `240/232` to 900px, `180/168` to 661px (the side lists drop their second line there —
-  `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px do both columns become drawers and the
-  `QuickBar` appears above the chat, so `membersOpen`/`sidebarOpen` mean nothing on a desktop: the
-  people list is simply always on screen.
+- **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
+  with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
+  wordmark, and a live "N online" chip on the right that opens the who's-online board. The button
+  opens the rooms drawer at every width, so the drawer keeps its own `.brand` header and
+  `.drawer-close` everywhere (the old `min-width: 661px` rule that hid `.sidebar .brand` is gone).
+  `.app .shell { flex: 1; height: auto }` is what keeps the panels filling the space under the bar —
+  drop it and the shell overflows the bottom of the viewport.
+- **The rooms panel is a drawer; the room and the people list stay docked.** `.sidebar` is
+  `position: fixed` at every width, parked off-screen with `translateX(calc(-100% - 24px))` and
+  slid in by `.sidebar.open { transform: none }` — the top bar's three-line button (and the chat
+  header's `.hamburger` at ≤660px) set `sidebarOpen`, and `openChannel` / `openDm` / every sidebar
+  shortcut set it back to false, so picking a room shuts the panel. Because it is out of flow the
+  shell is a two-column grid: `minmax(0, 1fr) 280px`, `… 232px` to 1000px, `… 168px` to 900px (the
+  people list drops its second line there — `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px
+  does the people list also become a drawer (`membersOpen`) and the `QuickBar` appears above the
+  chat.
+- **The room's vertical edges carry the seam.** `app.css` ends with `--seam`
+  (`rgba(116, 240, 166, 0.45)`) applied to `.shell .chat`'s left and right border at ≥661px; the
+  `.shell` prefix is only there to beat the card border in `console.css`, which is imported last.
 - **Sign-in is a centred welcome stack.** `AuthScreen.jsx` renders a hero (glyph, wordmark,
   "welcome to the room", one line of copy), then the card with the sign-in/join tabs and form, then
   a "new here? join the room" toggle. `.auth-stack { margin: auto }` is what keeps the top of the

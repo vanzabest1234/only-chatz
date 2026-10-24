@@ -2065,13 +2065,6 @@ textarea:focus-visible,
   box-shadow: 0 0 10px var(--phosphor);
 }
 
-/* The bar carries the wordmark now; the drawer keeps its own header on touch sizes. */
-@media (min-width: 661px) {
-  .sidebar .brand {
-    display: none;
-  }
-}
-
 @media (max-width: 900px) {
   .topbar {
     padding: 9px 12px;

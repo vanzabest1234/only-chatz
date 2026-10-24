@@ -6,8 +6,21 @@
   height: 100%;
   padding: 16px;
   display: grid;
-  grid-template-columns: 284px minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 14px;
+}
+
+/* The top bar opens the rooms panel, so the wordmark and its three-line button
+   travel together on the left while the live chip stays on the right. */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topbar-menu {
+  color: var(--phosphor);
 }
 
 .sidebar,
@@ -43,6 +56,23 @@
 .brand p {
   font-size: 11px;
   color: #9aa0c4;
+}
+
+/* The rooms panel is a drawer at every width: the top bar's three-line button slides
+   it in over the room, and the chat keeps the space when it is shut. */
+.sidebar {
+  position: fixed;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  width: min(300px, 86vw);
+  z-index: 60;
+  transform: translateX(calc(-100% - 24px));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.open {
+  transform: none;
 }
 
 .sidebar-scroll {
@@ -196,7 +226,6 @@
   transform: translateY(-1px);
 }
 
-.drawer-close,
 .members-close,
 .hamburger {
   display: none;
@@ -688,13 +717,13 @@
    They narrow rather than disappear, so the people list is never behind a toggle. */
 @media (max-width: 1180px) {
   .shell {
-    grid-template-columns: 240px minmax(0, 1fr) 232px;
+    grid-template-columns: minmax(0, 1fr) 232px;
   }
 }
 
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: 180px minmax(0, 1fr) 168px;
+    grid-template-columns: minmax(0, 1fr) 168px;
     padding: 8px;
     gap: 8px;
   }
@@ -809,22 +838,6 @@
     display: flex;
   }
 
-  .sidebar {
-    position: fixed;
-    top: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: min(300px, 86vw);
-    z-index: 60;
-    transform: translateX(calc(-100% - 24px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .sidebar.open {
-    transform: none;
-  }
-
-  .drawer-close,
   .members-close {
     display: grid;
   }

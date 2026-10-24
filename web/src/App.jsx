@@ -6,6 +6,7 @@ import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
 import QuickBar from './components/QuickBar'
 import ChatPane from './components/ChatPane'
+import Icon from './components/Icon'
 import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
 import OnlineBoard from './components/OnlineBoard'
@@ -390,10 +391,20 @@ export default function App() {
       <Background />
       <div className="app">
         <header className="topbar">
-          <span className="topbar-brand">
-            <span className="brand-glyph topbar-glyph">◍</span>
-            only chatz
-          </span>
+          <div className="topbar-left">
+            <button
+              type="button"
+              className="icon-btn topbar-menu"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open your rooms"
+            >
+              <Icon name="menu" />
+            </button>
+            <span className="topbar-brand">
+              <span className="brand-glyph topbar-glyph">◍</span>
+              only chatz
+            </span>
+          </div>
           <button
             type="button"
             className="topbar-live"
