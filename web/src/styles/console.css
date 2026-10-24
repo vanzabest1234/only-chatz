@@ -2280,3 +2280,168 @@ textarea:focus-visible,
   font-size: 10px;
   letter-spacing: 0.16em;
 }
+
+/* ---------- the reference room ----------
+   Both reference sites (chatflux.tech and drawspace.online) put a rounded, softly raised
+   card on a plain charcoal wall: a dark band across the top with a bold white title, white
+   message names, outline pill tags and one filled green action button. This pass brings
+   that language into the room — a deeper wall, the chat standing on it as a card, the
+   header as the band, heavy white names, pill tags, and the filled green send pill. The
+   type stays monospace and the palette stays ours. */
+
+:root {
+  --wall: #1e2226;
+  --card: #2b2f34;
+  --card-deep: #24282c;
+  --band: #23272b;
+  --edge: #3a4046;
+  --name: #f2f6fa;
+}
+
+body {
+  background: var(--wall);
+}
+
+.sky {
+  background-color: var(--wall);
+  background-image:
+    radial-gradient(1100px 520px at 50% -18%, rgba(124, 240, 174, 0.09), transparent 62%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+
+/* the room is the card; the wall shows around it on every width */
+.chat {
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  box-shadow:
+    0 26px 64px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* the band across the top */
+.chat-header {
+  padding: 12px 14px;
+  background: var(--band);
+  border-bottom: 1px solid var(--edge);
+  border-radius: 18px 18px 0 0;
+}
+
+.chat-title h2 {
+  color: var(--name);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.hash-big {
+  color: var(--phosphor);
+}
+
+.chat-topic {
+  color: #8a949e;
+}
+
+.members-toggle {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--edge);
+}
+
+.members-count {
+  color: var(--name);
+}
+
+/* the log: white heavy names, quiet time, hairlines between rows */
+.msg {
+  padding: 10px 14px;
+}
+
+.msg:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.msg-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--name);
+}
+
+.msg-time {
+  color: #79838d;
+}
+
+.msg-text {
+  color: #dde5ec;
+  line-height: 1.55;
+}
+
+.msg-image {
+  border-color: var(--edge);
+  border-radius: 10px;
+}
+
+/* tags read as outline pills, like the reference tag rows */
+.badge,
+.chip {
+  border-radius: 999px;
+}
+
+/* composer: one soft pill with the prompt, and the filled green send */
+.composer-wrap {
+  padding: 10px 14px 12px;
+}
+
+.composer {
+  padding: 6px 6px 6px 12px;
+  border-radius: 20px;
+  background: var(--card-deep);
+  border: 1px solid var(--edge);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+}
+
+.composer:focus-within {
+  border-color: rgba(124, 240, 174, 0.6);
+  box-shadow: 0 0 0 3px rgba(124, 240, 174, 0.12);
+}
+
+.composer::before {
+  color: #6fe0a2;
+}
+
+.send {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: #102a1c;
+  background: var(--phosphor);
+  border: 1px solid var(--phosphor);
+  box-shadow: 0 8px 18px rgba(124, 240, 174, 0.22);
+}
+
+.send:hover:not(:disabled) {
+  color: #102a1c;
+  background: var(--phosphor-bright);
+  border-color: var(--phosphor-bright);
+}
+
+.attach {
+  border-radius: 999px;
+}
+
+.composer-foot {
+  color: #79838d;
+}
+
+/* direct messages keep the bubble, one step rounder than the row */
+.bubble {
+  border-radius: 12px;
+}
