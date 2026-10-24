@@ -43,51 +43,6 @@ export default function Sidebar({
 
         <div className="sidebar-scroll">
           <section className="section">
-            <button className="nav-row coin-link" onClick={onOpenCasino}>
-              <span className="hash">◉</span>
-              <span className="nav-label">Royal vault</span>
-              <span className="chip">
-                {money(me.user.coins?.coins)}
-              </span>
-            </button>
-            <button className="nav-row ladder-link" onClick={onOpenLeaders}>
-              <span className="hash">≡</span>
-              <span className="nav-label">Coin leaderboard</span>
-              <span className="chip">top 10</span>
-            </button>
-            <button className="nav-row board-link" onClick={onOpenBoard}>
-              <span className="live-dot" />
-              <span className="nav-label">Who&apos;s online</span>
-              <span className="chip">{me.online.length}</span>
-            </button>
-            <button className="nav-row flair-link" onClick={onOpenFlairs}>
-              <span className="hash">✦</span>
-              <span className="nav-label">Flair wheel</span>
-              <span className="chip">spin</span>
-            </button>
-            <button className="nav-row pass-link" onClick={onOpenPass}>
-              <span className="hash">▮</span>
-              <span className="nav-label">Season pass</span>
-              <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
-            </button>
-          </section>
-
-          <section className="section">
-            <h2 className="section-title">Text Channels</h2>
-            {me.channels.map(channel => (
-              <button
-                key={channel.id}
-                className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
-                onClick={() => onPickChannel(channel)}
-              >
-                <span className="hash">#</span>
-                <span className="nav-label">{channel.name}</span>
-                {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
-              </button>
-            ))}
-          </section>
-
-          <section className="section">
             <h2 className="section-title">Direct Messages</h2>
 
             <h3 className="sub-title">Friends</h3>
@@ -139,6 +94,51 @@ export default function Sidebar({
             <button className="nav-row ghost" onClick={onOpenMembers}>
               <Icon name="plus" size={16} />
               <span className="nav-label">Start a conversation</span>
+            </button>
+          </section>
+
+          <section className="section">
+            <h2 className="section-title">Text Channels</h2>
+            {me.channels.map(channel => (
+              <button
+                key={channel.id}
+                className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
+                onClick={() => onPickChannel(channel)}
+              >
+                <span className="hash">#</span>
+                <span className="nav-label">{channel.name}</span>
+                {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
+              </button>
+            ))}
+          </section>
+
+          <section className="section">
+            <button className="nav-row coin-link" onClick={onOpenCasino}>
+              <span className="hash">◉</span>
+              <span className="nav-label">Royal vault</span>
+              <span className="chip">
+                {money(me.user.coins?.coins)}
+              </span>
+            </button>
+            <button className="nav-row ladder-link" onClick={onOpenLeaders}>
+              <span className="hash">≡</span>
+              <span className="nav-label">Coin leaderboard</span>
+              <span className="chip">top 10</span>
+            </button>
+            <button className="nav-row board-link" onClick={onOpenBoard}>
+              <span className="live-dot" />
+              <span className="nav-label">Who&apos;s online</span>
+              <span className="chip">{me.online.length}</span>
+            </button>
+            <button className="nav-row flair-link" onClick={onOpenFlairs}>
+              <span className="hash">✦</span>
+              <span className="nav-label">Flair wheel</span>
+              <span className="chip">spin</span>
+            </button>
+            <button className="nav-row pass-link" onClick={onOpenPass}>
+              <span className="hash">▮</span>
+              <span className="nav-label">Season pass</span>
+              <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
             </button>
           </section>
         </div>

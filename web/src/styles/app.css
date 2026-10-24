@@ -824,6 +824,73 @@
   }
 }
 
+/* Wider touch screens keep the rail docked, so DMs and the rooms sit top-left. */
+@media (min-width: 621px) and (max-width: 900px) {
+  .shell {
+    grid-template-columns: minmax(196px, 236px) minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    z-index: auto;
+    width: auto;
+    height: 100%;
+    transform: none;
+    transition: none;
+  }
+
+  /* The top bar already carries the wordmark, and there is no drawer to close. */
+  .sidebar .brand,
+  .drawer-close,
+  .hamburger {
+    display: none;
+  }
+
+  /* A narrower rail: drop the decorative chips and let the labels keep their room. */
+  .sidebar .nav-row {
+    gap: 7px;
+    padding: 7px 8px;
+  }
+
+  .sidebar .nav-label,
+  .dm-text .nav-label {
+    font-size: 12.5px;
+  }
+
+  .sidebar .chip {
+    font-size: 9.5px;
+    padding: 1px 5px;
+  }
+
+  .ladder-link .chip,
+  .flair-link .chip {
+    display: none;
+  }
+
+  /* A fortune would swallow the "royal vault" label at this width. */
+  .sidebar .coin-link .chip {
+    max-width: 64px;
+  }
+
+  .me-card {
+    gap: 7px;
+    padding: 9px 8px;
+  }
+
+  .me-card .badge {
+    display: none;
+  }
+
+  .me-card .name {
+    font-size: 12px;
+  }
+
+  .me-card .icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
 @media (max-width: 420px) {
   .msg .avatar {
     width: 34px !important;
