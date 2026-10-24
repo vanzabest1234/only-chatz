@@ -190,11 +190,12 @@ Non-obvious things worth knowing before changing something:
   `about:blank`); when popups are blocked the anchor's own `/chat` href loads the room in this tab.
   With the script gone both plain `/chat` hrefs still work. Never hardcode a sandbox host: `/chat` is
   relative to whatever site serves the file.
-  It is a centred welcome column in the console theme (phosphor on void, inline CSS only, no remote
-  assets): wordmark, "welcome to the room", one line of copy, the filled "enter the chat" link and a
-  "new here? register now" link, with the new-tab link in the footer. The layout follows a reference
-  chat site the Owner asked to mirror; the branding, copy, icons and palette are all ours — never
-  paste the reference site's wordmark, text or images here.
+  It is a light card standing on the chat's slate (a study-portal-style card — badge, wordmark,
+  heading, one line of copy, four rounded shortcuts, a two-column "what is inside" table, the filled
+  green "enter the chat" button and a "new here? register now" link), with the new-tab link in the
+  footer. Inline CSS only, no remote assets, every call to action a plain anchor. The layout follows
+  two reference sites the Owner asked to blend; the branding, copy, icons and palette are all ours —
+  never paste a reference site's wordmark, text or images here.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the three-column `.shell` in `.app`
   with a `.topbar` (wordmark left, a live "N online" chip on the right that opens the who's-online
   board). On desktop `console.css` hides the sidebar's own `.brand` block (`min-width: 901px`)
@@ -205,11 +206,14 @@ Non-obvious things worth knowing before changing something:
   "welcome to the room", one line of copy), then the card with the sign-in/join tabs and form, then
   a "new here? join the room" toggle. `.auth-stack { margin: auto }` is what keeps the top of the
   stack reachable when it is taller than the viewport.
-- **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
-  after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
-  and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
-  instead of editing component CSS, and keep its `border-radius: 0` rules after the media-query radius
-  rules in `app.css` (later import order is what lets them win).
+- **The chat's look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
+  after `base.css` and `app.css`. It owns the palette, radii, blur and type; `app.css` still owns all
+  layout, so restyle there instead of editing component CSS. Its root tokens are a slate room
+  (`--void #2e3339`, panels `#373d44`) with phosphor green kept as the accent, and the trailing
+  "blended front door" block rounds the surfaces, fills the send button and turns `.auth-card` into
+  the launcher's light card — that block sits last on purpose so it wins over the older flat-console
+  rules above it. Keep any `border-radius: 0` leftovers after the media-query radius rules in
+  `app.css` (later import order is what lets them win).
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so

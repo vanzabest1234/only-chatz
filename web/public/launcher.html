@@ -21,9 +21,11 @@
         margin: 0;
       }
 
+      /* A slate room (the chat's own colour) with a light card standing in it:
+         a study-portal card, dropped into the talk room. */
       body {
-        background: #0a0f14;
-        color: #8fa3b0;
+        background: #31363b;
+        color: #6c757d;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
         font-size: 13px;
         line-height: 1.65;
@@ -32,83 +34,178 @@
       }
 
       .page {
-        position: relative;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
-        border-top: 1px solid #1d2a33;
-        border-bottom: 1px solid #1d2a33;
-        overflow: hidden;
-      }
-
-      .page:before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-          linear-gradient(rgba(116, 240, 166, 0.045) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(116, 240, 166, 0.045) 1px, transparent 1px);
-        background-size: 24px 24px;
-        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% -10%, rgba(116, 240, 166, 0.09), transparent 55%),
+          linear-gradient(#33383d, #2c3136);
       }
 
       .welcome {
-        position: relative;
-        z-index: 1;
         flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 18px;
-        padding: 48px 24px 40px;
+        gap: 16px;
+        padding: 34px 16px 30px;
+      }
+
+      .card {
+        width: min(600px, 100%);
+        padding: 24px 24px 22px;
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 20px 46px rgba(0, 0, 0, 0.4);
         text-align: center;
       }
 
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: #eef2f5;
+        color: #5b6b7b;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+      }
+
+      .badge:before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #3fae6a;
+      }
+
       .wordmark {
-        margin: 0;
-        color: #74f0a6;
-        font-size: clamp(24px, 6vw, 32px);
-        font-weight: 400;
-        letter-spacing: 0.3em;
-        text-shadow: 0 0 22px rgba(116, 240, 166, 0.4);
+        margin: 10px 0 0;
+        color: #2c7a52;
+        font-size: clamp(24px, 6vw, 31px);
+        font-weight: 700;
+        letter-spacing: 0.22em;
         line-height: 1.2;
+        text-shadow: 0 0 20px rgba(63, 174, 106, 0.3);
       }
 
       .headline {
-        margin: 0;
-        color: #e6f1f7;
-        font-size: clamp(17px, 4vw, 21px);
-        font-weight: 400;
-        letter-spacing: 0.12em;
-      }
-
-      .headline:after {
-        content: '_';
-        color: #74f0a6;
-        margin-left: 4px;
-        animation: blink 1.1s steps(1) infinite;
+        margin: 6px 0 0;
+        color: #162a4a;
+        font-size: clamp(18px, 4.4vw, 23px);
+        font-weight: 700;
+        letter-spacing: 0.04em;
       }
 
       .lede {
-        margin: 0;
-        max-width: 46ch;
-        color: #b7c7d1;
-        font-size: 13.5px;
+        margin: 8px auto 0;
+        max-width: 52ch;
+        color: #6c757d;
+        font-size: 12.5px;
         line-height: 1.75;
       }
 
-      .go {
-        display: inline-flex;
+      /* the row of chunky shortcuts */
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin: 18px 0 0;
+      }
+
+      .tile {
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
-        margin-top: 4px;
-        padding: 12px 26px;
-        border: 1px solid #74f0a6;
-        background: #74f0a6;
-        color: #0a0f14;
+        gap: 4px;
+        padding: 10px 6px;
+        border: 1px solid #d7e0e8;
+        border-radius: 9px;
+        background: #f5f8fa;
+        color: #162a4a;
         font: inherit;
-        letter-spacing: 0.16em;
+        font-size: 11.5px;
+        letter-spacing: 0.04em;
+        text-decoration: none;
+        transition:
+          border-color 0.15s ease,
+          background 0.15s ease,
+          color 0.15s ease;
+      }
+
+      .tile:hover {
+        border-color: #3fae6a;
+        background: #ffffff;
+        color: #2c7a52;
+      }
+
+      .tile-ic {
+        color: #3fae6a;
+        font-size: 15px;
+        line-height: 1;
+      }
+
+      /* the two-column guide table */
+      .guide {
+        margin: 16px 0 0;
+        border: 1px solid #d7e0e8;
+        border-radius: 9px;
+        overflow: hidden;
+        text-align: left;
+      }
+
+      .guide-head {
+        padding: 7px 12px;
+        background: #1a365d;
+        color: #ffffff;
+        font-size: 10px;
+        letter-spacing: 0.18em;
+      }
+
+      .guide-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid #e4ebf1;
+      }
+
+      .guide-row > div {
+        padding: 9px 12px;
+      }
+
+      .guide-row > div + div {
+        border-left: 1px solid #e4ebf1;
+      }
+
+      .guide-row strong {
+        display: block;
+        color: #162a4a;
+        font-weight: 700;
+      }
+
+      .guide-row span {
+        display: block;
+        color: #8a969f;
+        font-size: 11px;
+      }
+
+      .go {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        width: 100%;
+        margin: 18px 0 0;
+        padding: 12px 20px;
+        border: 1px solid #2f9e57;
+        border-radius: 9px;
+        background: #2f9e57;
+        color: #ffffff;
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
         text-decoration: none;
         transition:
           background 0.15s ease,
@@ -116,19 +213,12 @@
       }
 
       .go:hover {
-        background: #8ff7b9;
-        box-shadow: 0 0 22px rgba(116, 240, 166, 0.4);
+        background: #37b463;
+        box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.16);
       }
 
       .go:active {
-        background: #4fc884;
-      }
-
-      .go:focus-visible,
-      .alt a:focus-visible,
-      .foot a:focus-visible {
-        outline: 2px solid #8fa3b0;
-        outline-offset: 3px;
+        background: #28894a;
       }
 
       .go svg {
@@ -137,40 +227,94 @@
         fill: currentColor;
       }
 
+      .go:focus-visible,
+      .alt a:focus-visible,
+      .foot a:focus-visible,
+      .tile:focus-visible {
+        outline: 2px solid #3fae6a;
+        outline-offset: 3px;
+      }
+
       .alt {
-        margin: 0;
-        color: #5d717e;
+        margin: 12px 0 0;
+        color: #8a969f;
+        font-size: 11.5px;
       }
 
       .alt a {
-        color: #e6f1f7;
+        color: #162a4a;
+        font-weight: 700;
         text-decoration: none;
-        border-bottom: 1px solid #3a4c58;
+        border-bottom: 1px solid #b9c6d1;
       }
 
       .alt a:hover {
+        color: #2c7a52;
+        border-color: #2c7a52;
+      }
+
+      /* below the card: the room's own pitch, still on the slate */
+      .below {
+        width: min(600px, 100%);
+        color: #c3ccd3;
+      }
+
+      .kicker {
+        margin: 0;
         color: #74f0a6;
-        border-color: #74f0a6;
+        font-size: 10px;
+        letter-spacing: 0.22em;
+      }
+
+      .below h3 {
+        margin: 4px 0 0;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+      }
+
+      .below p {
+        margin: 6px 0 0;
+        font-size: 12px;
+        line-height: 1.75;
+        color: #aab6be;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .chips li {
+        padding: 4px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        color: #c3ccd3;
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
       }
 
       .foot {
-        position: relative;
-        z-index: 1;
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
         align-items: center;
         gap: 10px;
         padding: 14px 20px 18px;
-        border-top: 1px solid #1d2a33;
-        background: #0d141a;
-        color: #5d717e;
-        font-size: 11.5px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: #2a2f34;
+        color: #8a969f;
+        font-size: 11px;
         letter-spacing: 0.08em;
       }
 
       .foot a {
-        color: #8fa3b0;
+        color: #c3ccd3;
         text-decoration: none;
       }
 
@@ -179,18 +323,21 @@
       }
 
       .sep {
-        color: #3a4c58;
+        color: #5d6a72;
       }
 
-      @keyframes blink {
-        50% {
-          opacity: 0;
+      @media (max-width: 430px) {
+        .tiles {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
-      }
 
-      @media (prefers-reduced-motion: reduce) {
-        .headline:after {
-          animation: none;
+        .guide-row {
+          grid-template-columns: 1fr;
+        }
+
+        .guide-row > div + div {
+          border-left: 0;
+          border-top: 1px solid #e4ebf1;
         }
       }
     </style>
@@ -198,19 +345,69 @@
   <body>
     <div class="page">
       <main class="welcome">
-        <h1 class="wordmark">only chatz</h1>
-        <h2 class="headline">Welcome to the room</h2>
-        <p class="lede">
-          A small real-time chatroom where everyone floats together. Live channels, direct messages,
-          real roles, royal coins to gamble with and a board that shows who is online right now.
-        </p>
+        <div class="card">
+          <span class="badge">live chatroom</span>
+          <h1 class="wordmark">only chatz</h1>
+          <h2 class="headline">welcome to the room</h2>
+          <p class="lede">
+            Channels, direct messages, real roles, royal coins to gamble with and a board that shows
+            who is floating where — all in one room.
+          </p>
 
-        <a class="go" href="/chat" data-room>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h11l-3.2-3.2 1.1-1.1L15.2 8l-5.3 4.3-1.1-1.1L12 8H1z" /></svg>
-          enter the chat
-        </a>
+          <nav class="tiles" aria-label="What is inside">
+            <a class="tile" href="/chat" data-room><span class="tile-ic">#</span> general</a>
+            <a class="tile" href="/chat" data-room><span class="tile-ic">!</span> announcements</a>
+            <a class="tile" href="/chat" data-room><span class="tile-ic">~</span> random</a>
+            <a class="tile" href="/chat" data-room><span class="tile-ic">◍</span> who's online</a>
+          </nav>
 
-        <p class="alt">new here? <a href="/chat" data-room>register now</a></p>
+          <div class="guide">
+            <div class="guide-head">what is inside</div>
+            <div class="guide-row">
+              <div>
+                <strong>channels</strong>
+                <span>general · announcements · random</span>
+              </div>
+              <div>
+                <strong>direct messages</strong>
+                <span>one to one, live both ways</span>
+              </div>
+            </div>
+            <div class="guide-row">
+              <div>
+                <strong>royal coins</strong>
+                <span>earned by staying · spent in the vault</span>
+              </div>
+              <div>
+                <strong>flair wheel</strong>
+                <span>cosmetics you can wear, no powers</span>
+              </div>
+            </div>
+          </div>
+
+          <a class="go" href="/chat" data-room>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h11l-3.2-3.2 1.1-1.1L15.2 8l-5.3 4.3-1.1-1.1L12 8H1z" /></svg>
+            enter the chat
+          </a>
+
+          <p class="alt">new here? <a href="/chat" data-room>register now</a></p>
+        </div>
+
+        <section class="below">
+          <p class="kicker">only chatz</p>
+          <h3>one room, real people, live the whole time</h3>
+          <p>
+            Sign in and the room picks up where it left off: messages, replies and pictures land as
+            they are sent, and the board on the right keeps up with everyone floating in.
+          </p>
+          <ul class="chips">
+            <li>real-time</li>
+            <li>roles</li>
+            <li>coins</li>
+            <li>season pass</li>
+            <li>pictures</li>
+          </ul>
+        </section>
       </main>
 
       <footer class="foot">

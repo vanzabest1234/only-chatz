@@ -34,6 +34,7 @@ export default function AuthScreen({ onAuthed, notice }) {
     <div className="auth-wrap">
       <div className="auth-stack">
         <div className="auth-hero">
+          <span className="auth-badge">live chatroom</span>
           <div className="brand-glyph">◍</div>
           <h1 className="auth-wordmark">Only Chatz</h1>
           <p className="auth-welcome">Welcome to the room</p>

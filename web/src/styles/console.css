@@ -4,17 +4,20 @@
    Imported after base.css and app.css so it wins without rewriting them. */
 
 :root {
-  --void: #0a0f14;
-  --panel: #111a20;
-  --panel-deep: #0d141a;
-  --line: #1d2a33;
-  --line-soft: #16222a;
-  --phosphor: #74f0a6;
-  --phosphor-bright: #a6ffcb;
+  /* The room is a slate grey (a talk-room grey, not the old near-black), with the
+     phosphor green kept as the accent — close to the reference chat sites in
+     surface and action colour, still its own thing in type and glow. */
+  --void: #2e3339;
+  --panel: #373d44;
+  --panel-deep: #31373d;
+  --line: #4a535b;
+  --line-soft: #414a52;
+  --phosphor: #7cf0ae;
+  --phosphor-bright: #adffcd;
   --phosphor-dim: #4fc884;
-  --slate: #8fa3b0;
-  --ink: #c4d3dc;
-  --muted: #5d717e;
+  --slate: #c6d1d9;
+  --ink: #eaf1f6;
+  --muted: #9aabb5;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
 }
 
@@ -57,8 +60,8 @@ textarea:focus-visible,
 .sky {
   background-color: var(--void);
   background-image:
-    linear-gradient(rgba(116, 240, 166, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(116, 240, 166, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -2014,7 +2017,7 @@ textarea:focus-visible,
   gap: 12px;
   padding: 11px 20px;
   border-bottom: 1px solid var(--line);
-  background: #0d141a;
+  background: var(--panel-deep);
 }
 
 .topbar-brand {
@@ -2140,4 +2143,140 @@ textarea:focus-visible,
 .auth-foot .text-btn {
   font-size: 12px;
   padding: 0;
+}
+
+/* ---------- the blended front door ----------
+   Drawspace's light centred card and chatflux's slate room in one palette: the chat keeps
+   the phosphor type and glow, the surfaces sit on a talk-room grey instead of near-black,
+   corners round off, and the sign-in card is the light card from the front page. Every
+   rule here is later in the file than the flat-console pass, so it wins without edits
+   above. */
+
+.glass,
+.chat,
+.auth-card,
+.settings,
+.board,
+.board-card,
+.cmd-menu,
+.composer,
+.composer-attach,
+.msg-edit,
+.msg-edit textarea,
+.system-line,
+.bubble,
+.reply-quote,
+.msg-image,
+.composer-attach img {
+  border-radius: 10px;
+}
+
+.send,
+.attach,
+.attach-cancel,
+.btn-primary,
+.btn,
+.pill-btn,
+.icon-btn,
+.msg-tool,
+.reaction,
+.cmd-item,
+.field input,
+.field textarea,
+.chip,
+.toast,
+.ping-toast {
+  border-radius: 8px;
+}
+
+/* the action button is filled, like both reference sites */
+.send {
+  color: #102a1c;
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.send:hover:not(:disabled) {
+  color: #102a1c;
+  background: var(--phosphor-bright);
+  border-color: var(--phosphor-bright);
+}
+
+/* sign-in sits in the same light card as the front page */
+.auth-card {
+  background: #f7f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
+}
+
+.auth-card .auth-tabs {
+  background: #eaeff4;
+  border: 1px solid #d7e0e8;
+}
+
+.auth-card .auth-tabs button {
+  color: #64707b;
+}
+
+.auth-card .auth-tabs button.active {
+  color: #162a4a;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #c9d5e0;
+}
+
+.auth-card .field span {
+  color: #4b5a6b;
+  letter-spacing: 0.14em;
+}
+
+.auth-card .field input,
+.auth-card .field textarea {
+  color: #162a4a;
+  background: #ffffff;
+  border: 1px solid #cfd8e0;
+}
+
+.auth-card .field input::placeholder,
+.auth-card .field textarea::placeholder {
+  color: #9aa7b0;
+}
+
+.auth-card .field input:focus,
+.auth-card .field textarea:focus {
+  border-color: #2f9e57;
+  box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.16);
+}
+
+.auth-card .btn-primary {
+  color: #ffffff;
+  background: #2f9e57;
+  letter-spacing: 0.1em;
+}
+
+.auth-card .btn-primary:hover:not(:disabled) {
+  color: #ffffff;
+  background: #37b463;
+  box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.18);
+}
+
+.auth-card .auth-note {
+  color: #8a6a1f;
+  background: #fdf6e3;
+  border-color: #ecdcae;
+}
+
+.auth-card .auth-error {
+  color: #a3313f;
+  background: #fdeef0;
+  border-color: #f0c8cf;
+}
+
+/* the pill above the sign-in wordmark, matching the front page's badge */
+.auth-badge {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--slate);
+  font-size: 10px;
+  letter-spacing: 0.16em;
 }
