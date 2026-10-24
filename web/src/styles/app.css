@@ -1206,3 +1206,21 @@
     padding: 0 10px 0 5px;
   }
 }
+
+/* ---------- column boundaries ----------
+   The room is the middle of three columns, so its two vertical edges are drawn on
+   purpose: a brighter, green-tinted hairline where the rooms list ends and where the
+   people list begins, instead of the same card border every panel carries. Phones
+   stack the columns, so no seam is drawn there. The `.shell` prefix is what lets this
+   beat the card border in `console.css`, which is imported last. */
+
+:root {
+  --seam: rgba(116, 240, 166, 0.45);
+}
+
+@media (min-width: 661px) {
+  .shell .chat {
+    border-left-color: var(--seam);
+    border-right-color: var(--seam);
+  }
+}
