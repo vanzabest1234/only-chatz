@@ -324,6 +324,14 @@ free Postgres, with `DATABASE_URL` injected by `fromDatabase`. Render supplies `
 blueprint sets no port. Free plan sleeps when idle and the free database expires 30 days after
 creation — say so whenever a URL is handed out.
 
+**Deploy on push is `main` only.** `render.yaml` pins `branch: main` and
+`autoDeployTrigger: commit`, so Render releases every merge by itself. Hosts without a native Git
+connection are covered by `.github/workflows/deploy.yml`, which `POST`s the `DEPLOY_HOOK_URL`
+repository secret on a push to `main` (and on manual dispatch); without that secret the job exits
+0, so it is safe to leave enabled next to Render's own integration. Work arrives on a working
+branch through a pull request, so nothing deploys from a feature branch. `vercel.json` is the
+third path (Vercel's own git integration, no workflow involved) — it is not exercised here.
+
 Release and sandbox wiring differ on purpose: the sandbox runs a Vite dev server proxying to a
 separate API on :8000, a release serves both from Express on one port. Keep `SERVE_WEB` unset in
 `docker-compose.base44.yml` so the preview keeps serving live source, and never point the preview at

@@ -52,6 +52,22 @@ Free plan, so expect two things: the site sleeps after ~15 minutes idle and take
 wake on the next visit, and the free database expires 30 days after creation (14-day grace period
 before its data is deleted). Upgrade the database when the room should last.
 
+### Deploy on push
+
+The branch that ships is **`main`**, and a push to it releases without anyone pressing a button:
+
+- **Render** — handled by Render itself. `render.yaml` sets `branch: main` and
+  `autoDeployTrigger: commit`, so every merge rebuilds the image, runs the boot migration and swaps
+  the service over. Nothing to configure.
+- **Any other host** — add its deploy hook as a repository secret named `DEPLOY_HOOK_URL`
+  (Render's *Deploy Hook* URL, Coolify's webhook, or any endpoint that takes a `POST`). Merging to
+  `main` then calls it from `.github/workflows/deploy.yml`, which also has a manual **Run workflow**
+  button. With no secret set the job logs that and exits successfully, so it never clashes with a
+  host that already watches the repository itself.
+
+Feature work lands on a branch and goes in through a pull request, so `main` is always what is
+live — an unreviewed push to a working branch never deploys.
+
 ### Managed hosting
 
 The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can build the
