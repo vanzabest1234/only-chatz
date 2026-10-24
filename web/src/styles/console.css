@@ -2445,3 +2445,34 @@ body {
 .bubble {
   border-radius: 12px;
 }
+
+/* ---------- the reference room, part two ----------
+   The room the Owner pointed at uses round portraits, roomier rows and a pill around
+   every @mention. Taken as shape only: ours keeps its own green, its hairlines and its
+   monospace, and nothing about how the room works changes. */
+
+.avatar,
+.avatar-img,
+.avatar-frame,
+.avatar-dot {
+  border-radius: 50%;
+}
+
+.msg {
+  padding: 11px 14px;
+}
+
+.msg-mention {
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--phosphor-bright);
+  background: rgba(124, 240, 174, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(124, 240, 174, 0.3);
+}
+
+.msg-mention.is-me {
+  color: #102a1c;
+  font-weight: 600;
+  background: var(--phosphor);
+  box-shadow: none;
+}
