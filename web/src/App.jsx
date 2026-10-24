@@ -4,6 +4,7 @@ import { socket } from './socket'
 import Background from './components/Background'
 import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
+import QuickBar from './components/QuickBar'
 import ChatPane from './components/ChatPane'
 import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
@@ -404,6 +405,19 @@ export default function App() {
           </button>
         </header>
 
+        <QuickBar
+          me={me}
+          channelId={channel?.id}
+          threadId={thread?.id}
+          onPickChannel={openChannel}
+          onOpenDm={openDm}
+          onOpenBoard={() => setBoardOpen(true)}
+          onOpenCasino={() => setCasinoOpen(true)}
+          onOpenLeaders={() => setLeadersOpen(true)}
+          onOpenFlairs={() => setFlairOpen(true)}
+          onOpenPass={() => setPassOpen(true)}
+        />
+
         <div className="shell">
         {notice && <p className="toast">{notice}</p>}
 
@@ -471,6 +485,7 @@ export default function App() {
             onSend={send}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenMembers={() => setMembersOpen(value => !value)}
+            onOpenSettings={() => setSettingsOpen(true)}
             replyTo={replyTo}
             onReply={startReply}
             onCancelReply={() => setReplyTo(null)}

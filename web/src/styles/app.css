@@ -824,73 +824,6 @@
   }
 }
 
-/* Wider touch screens keep the rail docked, so DMs and the rooms sit top-left. */
-@media (min-width: 621px) and (max-width: 900px) {
-  .shell {
-    grid-template-columns: minmax(196px, 236px) minmax(0, 1fr);
-  }
-
-  .sidebar {
-    position: static;
-    z-index: auto;
-    width: auto;
-    height: 100%;
-    transform: none;
-    transition: none;
-  }
-
-  /* The top bar already carries the wordmark, and there is no drawer to close. */
-  .sidebar .brand,
-  .drawer-close,
-  .hamburger {
-    display: none;
-  }
-
-  /* A narrower rail: drop the decorative chips and let the labels keep their room. */
-  .sidebar .nav-row {
-    gap: 7px;
-    padding: 7px 8px;
-  }
-
-  .sidebar .nav-label,
-  .dm-text .nav-label {
-    font-size: 12.5px;
-  }
-
-  .sidebar .chip {
-    font-size: 9.5px;
-    padding: 1px 5px;
-  }
-
-  .ladder-link .chip,
-  .flair-link .chip {
-    display: none;
-  }
-
-  /* A fortune would swallow the "royal vault" label at this width. */
-  .sidebar .coin-link .chip {
-    max-width: 64px;
-  }
-
-  .me-card {
-    gap: 7px;
-    padding: 9px 8px;
-  }
-
-  .me-card .badge {
-    display: none;
-  }
-
-  .me-card .name {
-    font-size: 12px;
-  }
-
-  .me-card .icon-btn {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 @media (max-width: 420px) {
   .msg .avatar {
     width: 34px !important;
@@ -1176,4 +1109,77 @@
   background: #4ee6cf;
   box-shadow: 0 0 10px #4ee6cf;
   margin-left: 3px;
+}
+
+/* ---------- quick bar ---------- */
+
+/* Under 900px the columns collapse, so the rooms, the DMs and the shortcuts
+   ride an up-bar beneath the top bar instead of a column beside the chat. */
+.quick-bar {
+  display: none;
+}
+
+.chat-me {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .quick-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    scrollbar-width: none;
+  }
+
+  .quick-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .qb-item {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: #a7b0bd;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .qb-item.active {
+    color: #fff;
+    border-color: rgba(116, 240, 166, 0.5);
+    background: rgba(116, 240, 166, 0.14);
+  }
+
+  .qb-mark {
+    color: #74f0a6;
+  }
+
+  .qb-coin .qb-mark {
+    color: #ffd166;
+  }
+
+  .qb-dm {
+    padding: 0 10px 0 5px;
+  }
+
+  /* my profile and settings ride in the chat's top-right corner */
+  .chat-me {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+  }
 }

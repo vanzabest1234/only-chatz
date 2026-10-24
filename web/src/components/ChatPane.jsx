@@ -19,6 +19,7 @@ export default function ChatPane({
   onSend,
   onOpenSidebar,
   onOpenMembers,
+  onOpenSettings,
   replyTo,
   onReply,
   onCancelReply,
@@ -71,6 +72,22 @@ export default function ChatPane({
             <p className="chat-topic">{subtitle}</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="chat-me"
+          onClick={onOpenSettings}
+          aria-label="My profile and settings"
+          title="My profile and settings"
+        >
+          <Avatar
+            name={me.user.displayName}
+            color={me.user.color}
+            size={28}
+            online
+            src={me.user.avatarUrl}
+          />
+        </button>
 
         <button className="icon-btn members-toggle" onClick={onOpenMembers} aria-label="Open members">
           <Icon name="users" />
