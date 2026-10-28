@@ -177,12 +177,14 @@ Non-obvious things worth knowing before changing something:
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
-- **The room is the front door; the launcher is a side door and part of the built site.** `/` answers
-  a 302 straight to `/chat`, query string kept, so a preview token survives the hop — that redirect
-  is the `launcherAtRoot` plugin in `web/vite.config.js` in dev and the `SERVE_WEB` block in
-  `server/index.js` in a release. `web/public/launcher.html` is served statically at `/launcher.html`
-  (Vite `publicDir` in dev, `web/dist` in releases). Do not move it back to the repo root: nothing
-  outside `web/` is served, so it would silently 404 into the chat app. `/royal-angel.html` and
+- **The room is the front door and no path stops at a splash.** `/`, `/launcher.html`,
+  `/royal-angel.html` and `/royal-angel` all answer a 302 straight to `/chat`, query string kept, so a
+  preview token survives the hop — the `frontDoorToChat` plugin in `web/vite.config.js` does it in dev
+  and the `SERVE_WEB` block in `server/index.js` in a release (`ENTRY_PATHS` in both; the release
+  route is registered before `express.static`, so it wins over the file on disk). The launcher card
+  still lives at `web/public/launcher.html`, still links into `/chat` and is still built, but no path
+  serves it any more — put one back in `ENTRY_PATHS` if it should return. Keep it inside `web/`:
+  nothing outside that directory is served. `/royal-angel.html` and
   `/royal-angel` are alternate front doors that render that same file: the paths live in
   `LAUNCHER_PATHS`, once in `web/vite.config.js` and once in `server/index.js`, so there is no
   second launcher to keep in sync — a launcher edit shows up on them immediately (dev) or on the

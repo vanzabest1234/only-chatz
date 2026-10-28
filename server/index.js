@@ -16,9 +16,9 @@ import leaderboardRoutes from './routes/leaderboard.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
-// The alternate front doors, all showing the one launcher file (`/` itself redirects to
-// /chat). Mirrors LAUNCHER_PATHS in web/vite.config.js so dev and release agree.
-const LAUNCHER_PATHS = new Set(['/launcher.html', '/royal-angel', '/royal-angel.html'])
+// Every front door, all answering a 302 to /chat. Mirrors ENTRY_PATHS in
+// web/vite.config.js so dev and release agree.
+const ENTRY_PATHS = ['/', '/launcher.html', '/royal-angel', '/royal-angel.html']
 
 const app = express()
 app.disable('x-powered-by')
@@ -49,17 +49,17 @@ app.use('/api', chatRoutes)
 // A release build serves the built site from this same origin (see Dockerfile).
 // The sandbox preview leaves this off and Vite serves the source instead.
 if (process.env.SERVE_WEB === '1') {
-  // The room is the front door: `/` goes straight to /chat, keeping any query string.
-  app.get('/', (req, res) => {
+  // Every front door goes straight to /chat, keeping any query string. Registered before
+  // express.static so it wins over the launcher file on disk.
+  app.get(ENTRY_PATHS, (req, res) => {
     const q = req.originalUrl.indexOf('?')
     res.redirect(302, q === -1 ? '/chat' : `/chat${req.originalUrl.slice(q)}`)
   })
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()
-    // `/` and the alternate front doors (`/royal-angel.html`, `/royal-angel`) show the
-    // launcher; every other path (including /chat) is the room.
-    res.sendFile(path.join(WEB_DIR, LAUNCHER_PATHS.has(req.path) ? 'launcher.html' : 'index.html'))
+    // Everything else (including /chat) renders the room.
+    res.sendFile(path.join(WEB_DIR, 'index.html'))
   })
 }
 

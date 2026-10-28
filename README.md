@@ -97,15 +97,14 @@ change their limits, so check the current offering before relying on one.
 
 ### Launcher page and `/chat`
 
-The room is the front door. `/` answers a 302 straight to `/chat` (any query string comes along, so
-a preview's access token survives the hop), and there is no client-side router, so every path ends
-up rendering the same app. The redirect lives in `web/vite.config.js` for dev and in
-`server/index.js` for releases.
+The room is the front door. `/`, `/launcher.html`, `/royal-angel.html` and `/royal-angel` all answer a
+302 straight to `/chat` (any query string comes along, so a preview's access token survives the hop),
+and there is no client-side router, so every path ends up rendering the same app. The redirect lives
+in `web/vite.config.js` for dev and in `server/index.js` for releases.
 
-`web/public/launcher.html` is the optional splash card, reached at `/launcher.html`,
-`/royal-angel.html` and `/royal-angel`. Its buttons are plain `/chat` anchors, so they work on
-whatever site serves the file and need no configuration. It is a single file — the extra paths are
-URL mappings, not copies, so editing it updates all three.
+`web/public/launcher.html` is the splash card those paths used to show. It is kept in the repo and
+still links into `/chat`, but nothing serves it now — point a path back at it if the card should
+return.
 
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.
