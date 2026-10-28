@@ -52,6 +52,26 @@ Free plan, so expect two things: the site sleeps after ~15 minutes idle and take
 wake on the next visit, and the free database expires 30 days after creation (14-day grace period
 before its data is deleted). Upgrade the database when the room should last.
 
+### A public link with no account anywhere
+
+No sign-up, no card, no domain, no open port: Cloudflare's quick tunnel dials out from the machine
+running the stack and hands back a random `https://` address.
+
+```bash
+cp deploy.env.example .env                        # set POSTGRES_PASSWORD (any random text)
+docker compose -f docker-compose.prod.yml --profile public up -d --build
+docker compose -f docker-compose.prod.yml logs tunnel | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
+```
+
+Open that link on any device — the site, the API and the WebSocket all arrive through it. Two things
+to know: the address is **random and changes every time the stack starts**, and it **lasts only while
+the `tunnel` container runs** (stop it, or sleep the machine, and the link dies). That makes it the
+right tool for showing the room to people today; for a link that never moves, point a domain at the
+machine and use the `https` profile above — still no third-party account.
+
+Leave `APP_PORT` alone unless 3000 is taken locally (the tunnel talks to the app container directly,
+so the published port only matters for your own machine).
+
 ### Deploy on push
 
 The branch that ships is **`main`**, and a push to it releases without anyone pressing a button:

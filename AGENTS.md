@@ -332,6 +332,23 @@ repository secret on a push to `main` (and on manual dispatch); without that sec
 branch through a pull request, so nothing deploys from a feature branch. `vercel.json` is the
 third path (Vercel's own git integration, no workflow involved) — it is not exercised here.
 
+**`--profile public` is the zero-account public URL.** That profile adds a `cloudflare/cloudflared`
+quick tunnel (`tunnel --no-autoupdate --url http://app:3000`), so the release stack gets a random
+`https://<words>.trycloudflare.com` address with no Cloudflare account, no domain and no inbound port.
+Read it with `docker compose -f docker-compose.prod.yml logs tunnel | grep -o
+'https://[a-z0-9-]*\.trycloudflare\.com'`. Verified in the sandbox: `/` and `/chat` answer 200,
+`/api/me` answers 401, and an engine.io WebSocket connects through the tunnel (`0{"sid":…}`) — so
+realtime survives the proxy. It is a forwarding hop, so the app's `trust proxy` count of 1 still
+matches. The address is ephemeral by design: random per start, dead when the container stops, so never
+hand it out as the app's permanent home — for that, the `https` profile (Caddy + Let's Encrypt) or
+Render.
+
+**`POSTGRES_PASSWORD` is fixed when the volume is first created.** Change it in `.env` later and the
+db container keeps the old credentials while the app tries the new ones, which surfaces as
+`database never became reachable` from `waitForDb` (`server/db.js`) — the real cause is the
+`password authentication failed` line in `logs db`. Keep the original value, or `down -v` the prod
+stack to start over (that wipes the accounts and messages).
+
 Release and sandbox wiring differ on purpose: the sandbox runs a Vite dev server proxying to a
 separate API on :8000, a release serves both from Express on one port. Keep `SERVE_WEB` unset in
 `docker-compose.base44.yml` so the preview keeps serving live source, and never point the preview at
