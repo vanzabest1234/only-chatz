@@ -67,22 +67,75 @@
 
 .sidebar {
   position: fixed;
-  top: calc(var(--topbar-h) + 4px);
-  left: 8px;
-  width: min(300px, 86vw);
+  top: calc(var(--topbar-h) + 1px);
+  left: 10px;
+  width: min(276px, 86vw);
   height: auto;
-  max-height: calc(100dvh - var(--topbar-h) - 22px);
+  max-height: min(640px, calc(100dvh - var(--topbar-h) - 32px));
   z-index: 60;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-8px);
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: 26px 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
 .sidebar.open {
   opacity: 1;
   pointer-events: auto;
   transform: none;
+}
+
+/* The menu drops off the button instead of filling the side of the room: a shadowed
+   sheet, a caret pointing back at the three-line button, and menu-density rows. */
+.app .sidebar {
+  overflow: visible;
+  border-radius: 14px;
+  box-shadow: 0 22px 48px -16px rgba(0, 0, 0, 0.8), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 11px;
+  height: 11px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 2px 0 0 0;
+  transform: rotate(45deg);
+}
+
+.app .sidebar .brand {
+  padding: 11px 12px 9px;
+}
+
+.app .sidebar .brand h1 {
+  font-size: 13px;
+}
+
+.app .sidebar .brand p {
+  font-size: 10.5px;
+}
+
+.app .sidebar .sidebar-scroll {
+  padding: 0 8px 8px;
+}
+
+.app .sidebar .nav-row {
+  padding: 7px 9px;
+}
+
+.app .sidebar .section + .section {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.app .sidebar .me-card {
+  border-radius: 0 0 14px 14px;
 }
 
 .sidebar-scroll {

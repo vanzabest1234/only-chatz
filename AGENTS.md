@@ -207,8 +207,12 @@ Non-obvious things worth knowing before changing something:
   `position: fixed` at every width, hanging under the bar at `top: calc(var(--topbar-h) + 4px)`
   (`--topbar-h` is 55px, 51px at ≤900px — the bar's padding plus the 32px icon button), clamped by
   `max-height: calc(100dvh - var(--topbar-h) - 22px)` so its own `.sidebar-scroll` scrolls instead
-  of the page. It is hidden with `opacity: 0; pointer-events: none; translateY(-8px)` and opened by
-  `.sidebar.open { opacity: 1; pointer-events: auto; transform: none }` — a 160ms fade, not a slide.
+  of the page. It is hidden with `opacity: 0; pointer-events: none; translateY(-6px) scale(0.97)`
+  and opened by `.sidebar.open { opacity: 1; pointer-events: auto; transform: none }` — a 140ms drop,
+  not a slide. It reads as a menu, not a docked column: 276px wide, capped at 640px tall so the sheet
+  scrolls rather than filling the viewport, rounded 14px with a drop shadow, and a `.sidebar::before`
+  caret pointing at the three-line button (`.app .sidebar` sets `overflow: visible` and the matching
+  radius on `.me-card` so that caret is not clipped). Sections are separated by a hairline.
   The top bar's three-line button (and the chat header's `.hamburger` at ≤660px) set `sidebarOpen`,
   and `openChannel` / `openDm` / every sidebar shortcut set it back to false, so picking a room
   shuts the panel; the scrim behind it closes it too. Because it is out of flow the shell is a
