@@ -16,6 +16,9 @@ import leaderboardRoutes from './routes/leaderboard.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
+// `/` plus the alternate front doors, all showing the one launcher file. Mirrors
+// LAUNCHER_PATHS in web/vite.config.js so dev and release agree.
+const LAUNCHER_PATHS = new Set(['/', '/royal-angel', '/royal-angel.html'])
 
 const app = express()
 app.disable('x-powered-by')
@@ -49,8 +52,9 @@ if (process.env.SERVE_WEB === '1') {
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()
-    // `/` is the launcher; every other path (including /chat) is the room.
-    res.sendFile(path.join(WEB_DIR, req.path === '/' ? 'launcher.html' : 'index.html'))
+    // `/` and the alternate front doors (`/royal-angel.html`, `/royal-angel`) show the
+    // launcher; every other path (including /chat) is the room.
+    res.sendFile(path.join(WEB_DIR, LAUNCHER_PATHS.has(req.path) ? 'launcher.html' : 'index.html'))
   })
 }
 
