@@ -177,32 +177,18 @@ Non-obvious things worth knowing before changing something:
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
-- **The room is the front door and no path stops at a splash.** `/`, `/launcher.html`,
-  `/royal-angel.html` and `/royal-angel` all answer a 302 straight to `/chat`, query string kept, so a
-  preview token survives the hop — the `frontDoorToChat` plugin in `web/vite.config.js` does it in dev
-  and the `SERVE_WEB` block in `server/index.js` in a release (`ENTRY_PATHS` in both; the release
-  route is registered before `express.static`, so it wins over the file on disk). The launcher card
-  still lives at `web/public/launcher.html`, still links into `/chat` and is still built, but no path
-  serves it any more — put one back in `ENTRY_PATHS` if it should return. Keep it inside `web/`:
-  nothing outside that directory is served. `/royal-angel.html` and
-  `/royal-angel` are alternate front doors that render that same file: the paths live in
-  `LAUNCHER_PATHS`, once in `web/vite.config.js` and once in `server/index.js`, so there is no
-  second launcher to keep in sync — a launcher edit shows up on them immediately (dev) or on the
-  next release build. Do not add a copied `royal-angel.html`; edit `launcher.html`. It is deliberately dependency-free:
-  both buttons are plain `<a href="/chat">` anchors, so the room opens even where scripted
-  `window.open` / iframe handling is blocked (the old embedded-iframe and `APP_URL`-detection versions
-  left the buttons dead inside the preview pane). The script copies the current query string — a
-  hosted preview's access token — onto those hrefs, and the "Open in a new tab" button opens its tab
-  with `window.open` instead of `target="_blank"` (a sandboxed frame resolves `_blank` to
-  `about:blank`); when popups are blocked the anchor's own `/chat` href loads the room in this tab.
-  With the script gone both plain `/chat` hrefs still work. Never hardcode a sandbox host: `/chat` is
-  relative to whatever site serves the file.
-  It is a light card standing on the chat's slate (a study-portal-style card — badge, wordmark,
-  heading, one line of copy, four rounded shortcuts, a two-column "what is inside" table, the filled
-  green "enter the chat" button and a "new here? register now" link), with the new-tab link in the
-  footer. Inline CSS only, no remote assets, every call to action a plain anchor. The layout follows
-  two reference sites the Owner asked to blend; the branding, copy, icons and palette are all ours —
-  never paste a reference site's wordmark, text or images here.
+- **The room is the front door; no path stops at a splash.** `/`, `/launcher.html`,
+  `/royal-angel.html` and `/royal-angel` all render the app in place: the `frontDoorToChat` plugin in
+  `web/vite.config.js` rewrites them to `index.html` in dev, and the `SERVE_WEB` block in
+  `server/index.js` answers them with the built `index.html` registered before `express.static` (so
+  the file on disk never wins). Both read the same `ENTRY_PATHS` list. **Do not make this a 302** —
+  a preview host treats a redirect on the root document as a routing failure and shows a "not found"
+  page instead. The address bar gets to `/chat` from `web/src/main.jsx`, which runs
+  `history.replaceState` on load with the query string kept, so a preview token survives.
+  `web/public/launcher.html` still exists — the old light card, inline CSS only, plain
+  `<a href="/chat">` anchors, no remote assets — but no path serves it any more; put it back in
+  `ENTRY_PATHS` if the card should return. Keep it inside `web/`: nothing outside that directory is
+  served.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
   with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
   wordmark, and a live "N online" chip on the right that opens the who's-online board. The button

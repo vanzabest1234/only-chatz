@@ -10,22 +10,21 @@ if (process.env.BASE44_PREVIEW_MODE === '1' && process.env.BASE44_SANDBOX_HOST_D
   allowedHosts.push(`.${process.env.BASE44_SANDBOX_HOST_DOMAIN}`)
 }
 
-// Every front door opens the room: `/` plus the old launcher paths all answer a 302
-// straight to /chat, query string kept so a preview's access token comes along. Every
-// other path renders the app via the SPA fallback. The release server does the same in
-// server/index.js — keep this list identical to ENTRY_PATHS there.
+// Every front door opens the room: `/` plus the old launcher paths render the app in
+// place. No HTTP redirect — a preview host treats a 302 on the root document as a routing
+// failure, so the client rewrites the address bar to /chat instead (web/src/main.jsx).
+// The release server does the same in server/index.js — keep this list identical to
+// ENTRY_PATHS there.
 const ENTRY_PATHS = new Set(['/', '/launcher.html', '/royal-angel', '/royal-angel.html'])
 
 function frontDoorToChat() {
   return {
     name: 'front-door-to-chat',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        if (req.method !== 'GET') return next()
-        const [pathname, query] = (req.url ?? '/').split('?')
-        if (ENTRY_PATHS.has(pathname)) {
-          res.writeHead(302, { Location: `/chat${query ? `?${query}` : ''}` })
-          return res.end()
+      server.middlewares.use((req, _res, next) => {
+        if (req.method === 'GET') {
+          const [pathname, query] = (req.url ?? '/').split('?')
+          if (ENTRY_PATHS.has(pathname)) req.url = '/index.html' + (query ? `?${query}` : '')
         }
         next()
       })

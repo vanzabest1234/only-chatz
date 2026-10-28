@@ -97,10 +97,11 @@ change their limits, so check the current offering before relying on one.
 
 ### Launcher page and `/chat`
 
-The room is the front door. `/`, `/launcher.html`, `/royal-angel.html` and `/royal-angel` all answer a
-302 straight to `/chat` (any query string comes along, so a preview's access token survives the hop),
-and there is no client-side router, so every path ends up rendering the same app. The redirect lives
-in `web/vite.config.js` for dev and in `server/index.js` for releases.
+The room is the front door. `/`, `/launcher.html`, `/royal-angel.html` and `/royal-angel` all render the
+app immediately — no splash to click through — and the address bar is pointed at `/chat` on load,
+query string kept so a preview's access token survives. There is no client-side router, so every path
+ends up rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
+`server/index.js` for releases, and the client's URL fix-up in `web/src/main.jsx`.
 
 `web/public/launcher.html` is the splash card those paths used to show. It is kept in the repo and
 still links into `/chat`, but nothing serves it now — point a path back at it if the card should

@@ -49,12 +49,9 @@ app.use('/api', chatRoutes)
 // A release build serves the built site from this same origin (see Dockerfile).
 // The sandbox preview leaves this off and Vite serves the source instead.
 if (process.env.SERVE_WEB === '1') {
-  // Every front door goes straight to /chat, keeping any query string. Registered before
-  // express.static so it wins over the launcher file on disk.
-  app.get(ENTRY_PATHS, (req, res) => {
-    const q = req.originalUrl.indexOf('?')
-    res.redirect(302, q === -1 ? '/chat' : `/chat${req.originalUrl.slice(q)}`)
-  })
+  // Every front door renders the app in place, no redirect (the client moves the address
+  // bar to /chat). Registered before express.static so the launcher file on disk never wins.
+  app.get(ENTRY_PATHS, (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')))
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()
