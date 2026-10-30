@@ -241,7 +241,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
           onReact={onReact}
           onReply={onReply}
           onEdit={() => setEditing(true)}
-          onDelete={() => onDelete(message)}
+          onDelete={() => onDelete(message.id)}
         />
       )}
     </div>
@@ -312,7 +312,7 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProf
           onReact={onReact}
           onReply={onReply}
           onEdit={() => setEditing(true)}
-          onDelete={() => onDelete(message)}
+          onDelete={() => onDelete(message.id)}
         />
       )}
     </div>
