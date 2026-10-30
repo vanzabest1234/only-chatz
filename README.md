@@ -98,9 +98,11 @@ change their limits, so check the current offering before relying on one.
 ### Launcher page and `/chat`
 
 The room is the front door. `/`, `/launcher.html`, `/royal-angel.html` and `/royal-angel` all render the
-app immediately — no splash to click through — and the address bar is pointed at `/chat` on load,
-query string kept so a preview's access token survives. There is no client-side router, so every path
-ends up rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
+app immediately — no splash to click through — and, in a release build, the address bar is pointed
+at `/chat` on load, query string kept so an access token survives. The dev server (the sandbox
+preview) leaves the address bar alone: its host only resolves the document path it served, so a
+rewritten `/chat` there answers "not found". There is no client-side router, so every path ends up
+rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
 `server/index.js` for releases, and the client's URL fix-up in `web/src/main.jsx`.
 
 `web/public/launcher.html` is the splash card those paths used to show. It is kept in the repo and

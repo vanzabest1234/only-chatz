@@ -12,9 +12,10 @@ if (process.env.BASE44_PREVIEW_MODE === '1' && process.env.BASE44_SANDBOX_HOST_D
 
 // Every front door opens the room: `/` plus the old launcher paths render the app in
 // place. No HTTP redirect — a preview host treats a 302 on the root document as a routing
-// failure, so the client rewrites the address bar to /chat instead (web/src/main.jsx).
-// The release server does the same in server/index.js — keep this list identical to
-// ENTRY_PATHS there.
+// failure — and no address-bar rewrite either: the preview only answers documents on the
+// path it served, so the dev server leaves the URL alone (web/src/main.jsx rewrites it in a
+// release build only). The release server does the same in server/index.js — keep this list
+// identical to ENTRY_PATHS there.
 const ENTRY_PATHS = new Set(['/', '/launcher.html', '/royal-angel', '/royal-angel.html'])
 
 function frontDoorToChat() {

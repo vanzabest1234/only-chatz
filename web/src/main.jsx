@@ -9,7 +9,10 @@ import './styles/console.css'
 // address bar is pointed at /chat from the client — a server redirect on the root document
 // reads as a routing failure in some hosts. The query string (a preview's access token)
 // is kept.
-if (window.location.pathname !== '/chat') {
+// Only the release build does this. The sandbox preview is a Vite dev server whose host
+// only resolves documents on the path it served, so rewriting the address bar there leaves
+// the pane asking for /chat and answering "not found".
+if (!import.meta.env.DEV && window.location.pathname !== '/chat') {
   window.history.replaceState(null, '', `/chat${window.location.search}${window.location.hash}`)
 }
 

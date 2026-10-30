@@ -183,8 +183,11 @@ Non-obvious things worth knowing before changing something:
   `server/index.js` answers them with the built `index.html` registered before `express.static` (so
   the file on disk never wins). Both read the same `ENTRY_PATHS` list. **Do not make this a 302** —
   a preview host treats a redirect on the root document as a routing failure and shows a "not found"
-  page instead. The address bar gets to `/chat` from `web/src/main.jsx`, which runs
-  `history.replaceState` on load with the query string kept, so a preview token survives.
+  page instead. In a release build the address bar gets to `/chat` from `web/src/main.jsx`, which runs
+  `history.replaceState` on load with the query string kept, so a token survives. **The dev server
+  skips that rewrite** (`!import.meta.env.DEV`): the preview host only answers documents on the path
+  it served, so a rewritten `/chat` comes back as a "not found" pane even though `curl /chat` is
+  200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
   `web/public/launcher.html` still exists — the old light card, inline CSS only, plain
   `<a href="/chat">` anchors, no remote assets — but no path serves it any more; put it back in
   `ENTRY_PATHS` if the card should return. Keep it inside `web/`: nothing outside that directory is
