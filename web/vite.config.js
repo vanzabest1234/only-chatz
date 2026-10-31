@@ -16,7 +16,9 @@ if (process.env.BASE44_PREVIEW_MODE === '1' && process.env.BASE44_SANDBOX_HOST_D
 // path it served, so the dev server leaves the URL alone (web/src/main.jsx rewrites it in a
 // release build only). The release server does the same in server/index.js — keep this list
 // identical to ENTRY_PATHS there.
-const ENTRY_PATHS = new Set(['/', '/launcher.html', '/royal-angel', '/royal-angel.html'])
+// `/launcher.html` is deliberately not here: it is its own file in web/public (the two-choice
+// page that opens the room in about:blank or an iframe), so it must reach the browser untouched.
+const ENTRY_PATHS = new Set(['/', '/royal-angel', '/royal-angel.html'])
 
 function frontDoorToChat() {
   return {

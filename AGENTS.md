@@ -188,10 +188,16 @@ Non-obvious things worth knowing before changing something:
   skips that rewrite** (`!import.meta.env.DEV`): the preview host only answers documents on the path
   it served, so a rewritten `/chat` comes back as a "not found" pane even though `curl /chat` is
   200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
-  `web/public/launcher.html` still exists — the old light card, inline CSS only, plain
-  `<a href="/chat">` anchors, no remote assets — but no path serves it any more; put it back in
-  `ENTRY_PATHS` if the card should return. Keep it inside `web/`: nothing outside that directory is
-  served.
+  `web/public/launcher.html` is the exception and **is not in `ENTRY_PATHS`**: it is a real file
+  served from `web/public` in dev and from `web/dist` in a release, and it must stay out of both
+  lists or the built `index.html` wins. It is the two-choice page: "open in about:blank" writes a
+  full-bleed `<iframe>` of `/` into a blank tab with `document.write` (the address bar stays
+  about:blank; about:blank inherits this origin, so the session comes along), and "open in iframe"
+  swaps the card for the same room inside this page with a `×` to get back. Both use one absolute
+  `ROOM` URL, and the card's own link goes to `/`. **The logic is `/launcher.js`, not an inline
+  `<script>`:** inline scripts do not run in the sandbox preview (the tag's text is rendered instead),
+  so the page loads it with `<script src="/launcher.js" defer>`. Keep it inside `web/`: nothing
+  outside that directory is served.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
   with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
   wordmark, and a live "N online" chip on the right that opens the who's-online board. The button

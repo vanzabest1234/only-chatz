@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <title>Only Chatz</title>
+    <title>Only Chatz — open the room</title>
     <meta
       name="description"
-      content="A small real-time chatroom: channels, direct messages, real roles and a live who's-online board."
+      content="Open the Only Chatz room in a bare about:blank tab or right inside this page."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style>
@@ -21,42 +21,29 @@
         margin: 0;
       }
 
-      /* A slate room (the chat's own colour) with a light card standing in it:
-         a study-portal card, dropped into the talk room. */
+      /* The chat's slate room with a light card standing in it. */
       body {
-        background: #31363b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        padding: 24px 16px;
+        background:
+          radial-gradient(circle at 50% -10%, rgba(116, 240, 166, 0.09), transparent 55%),
+          linear-gradient(#33383d, #2c3136);
         color: #6c757d;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
         font-size: 13px;
         line-height: 1.65;
-        font-weight: 400;
         text-transform: lowercase;
       }
 
-      .page {
-        min-height: 100dvh;
-        display: flex;
-        flex-direction: column;
-        background:
-          radial-gradient(circle at 50% -10%, rgba(116, 240, 166, 0.09), transparent 55%),
-          linear-gradient(#33383d, #2c3136);
-      }
-
-      .welcome {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        padding: 34px 16px 30px;
-      }
-
       .card {
-        width: min(600px, 100%);
-        padding: 24px 24px 22px;
-        background: #ffffff;
+        width: min(520px, 100%);
+        padding: 26px 24px 22px;
         border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 12px;
+        border-radius: 14px;
+        background: #ffffff;
         box-shadow: 0 20px 46px rgba(0, 0, 0, 0.4);
         text-align: center;
       }
@@ -81,7 +68,7 @@
         background: #3fae6a;
       }
 
-      .wordmark {
+      h1 {
         margin: 10px 0 0;
         color: #2c7a52;
         font-size: clamp(24px, 6vw, 31px);
@@ -91,113 +78,26 @@
         text-shadow: 0 0 20px rgba(63, 174, 106, 0.3);
       }
 
-      .headline {
-        margin: 6px 0 0;
-        color: #162a4a;
-        font-size: clamp(18px, 4.4vw, 23px);
-        font-weight: 700;
-        letter-spacing: 0.04em;
-      }
-
       .lede {
         margin: 8px auto 0;
-        max-width: 52ch;
+        max-width: 40ch;
         color: #6c757d;
         font-size: 12.5px;
         line-height: 1.75;
       }
 
-      /* the row of chunky shortcuts */
-      .tiles {
+      .choices {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
+        gap: 9px;
         margin: 18px 0 0;
-      }
-
-      .tile {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        padding: 10px 6px;
-        border: 1px solid #d7e0e8;
-        border-radius: 9px;
-        background: #f5f8fa;
-        color: #162a4a;
-        font: inherit;
-        font-size: 11.5px;
-        letter-spacing: 0.04em;
-        text-decoration: none;
-        transition:
-          border-color 0.15s ease,
-          background 0.15s ease,
-          color 0.15s ease;
-      }
-
-      .tile:hover {
-        border-color: #3fae6a;
-        background: #ffffff;
-        color: #2c7a52;
-      }
-
-      .tile-ic {
-        color: #3fae6a;
-        font-size: 15px;
-        line-height: 1;
-      }
-
-      /* the two-column guide table */
-      .guide {
-        margin: 16px 0 0;
-        border: 1px solid #d7e0e8;
-        border-radius: 9px;
-        overflow: hidden;
-        text-align: left;
-      }
-
-      .guide-head {
-        padding: 7px 12px;
-        background: #1a365d;
-        color: #ffffff;
-        font-size: 10px;
-        letter-spacing: 0.18em;
-      }
-
-      .guide-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        border-top: 1px solid #e4ebf1;
-      }
-
-      .guide-row > div {
-        padding: 9px 12px;
-      }
-
-      .guide-row > div + div {
-        border-left: 1px solid #e4ebf1;
-      }
-
-      .guide-row strong {
-        display: block;
-        color: #162a4a;
-        font-weight: 700;
-      }
-
-      .guide-row span {
-        display: block;
-        color: #8a969f;
-        font-size: 11px;
       }
 
       .go {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 9px;
         width: 100%;
-        margin: 18px 0 0;
-        padding: 12px 20px;
+        padding: 13px 18px;
         border: 1px solid #2f9e57;
         border-radius: 9px;
         background: #2f9e57;
@@ -206,10 +106,11 @@
         font-size: 12.5px;
         font-weight: 700;
         letter-spacing: 0.12em;
-        text-decoration: none;
+        cursor: pointer;
         transition:
           background 0.15s ease,
-          box-shadow 0.15s ease;
+          box-shadow 0.15s ease,
+          color 0.15s ease;
       }
 
       .go:hover {
@@ -221,256 +122,117 @@
         background: #28894a;
       }
 
-      .go svg {
-        width: 15px;
-        height: 15px;
-        fill: currentColor;
+      .go.alt {
+        border-color: #d7e0e8;
+        background: #f5f8fa;
+        color: #162a4a;
+      }
+
+      .go.alt:hover {
+        border-color: #3fae6a;
+        background: #ffffff;
+        color: #2c7a52;
+        box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.12);
       }
 
       .go:focus-visible,
-      .alt a:focus-visible,
-      .foot a:focus-visible,
-      .tile:focus-visible {
+      .foot a:focus-visible {
         outline: 2px solid #3fae6a;
         outline-offset: 3px;
       }
 
-      .alt {
+      .hint {
         margin: 12px 0 0;
+        min-height: 1.6em;
         color: #8a969f;
+        font-size: 11.5px;
+        line-height: 1.7;
+      }
+
+      .hint.bad {
+        color: #b23b3b;
+      }
+
+      .foot {
+        margin: 14px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid #e4ebf1;
         font-size: 11.5px;
       }
 
-      .alt a {
-        color: #162a4a;
+      .foot a {
+        color: #2c7a52;
         font-weight: 700;
         text-decoration: none;
         border-bottom: 1px solid #b9c6d1;
       }
 
-      .alt a:hover {
-        color: #2c7a52;
+      .foot a:hover {
         border-color: #2c7a52;
       }
 
-      /* below the card: the room's own pitch, still on the slate */
-      .below {
-        width: min(600px, 100%);
-        color: #c3ccd3;
-      }
-
-      .kicker {
-        margin: 0;
-        color: #74f0a6;
-        font-size: 10px;
-        letter-spacing: 0.22em;
-      }
-
-      .below h3 {
-        margin: 4px 0 0;
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 400;
-        letter-spacing: 0.04em;
-      }
-
-      .below p {
-        margin: 6px 0 0;
-        font-size: 12px;
-        line-height: 1.75;
-        color: #aab6be;
-      }
-
-      .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-        margin: 12px 0 0;
+      /* the in-page room fills the whole viewport once it is chosen */
+      body.staged {
         padding: 0;
-        list-style: none;
+        background: #2e3339;
       }
 
-      .chips li {
-        padding: 4px 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 999px;
+      body.staged .card {
+        display: none;
+      }
+
+      .stage {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #2e3339;
+      }
+
+      .close {
+        position: fixed;
+        top: 10px;
+        right: 12px;
+        z-index: 2;
+        width: 30px;
+        height: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        background: rgba(20, 24, 27, 0.72);
         color: #c3ccd3;
-        font-size: 10.5px;
-        letter-spacing: 0.08em;
+        font: inherit;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
       }
 
-      .foot {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 20px 18px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        background: #2a2f34;
-        color: #8a969f;
-        font-size: 11px;
-        letter-spacing: 0.08em;
-      }
-
-      .foot a {
-        color: #c3ccd3;
-        text-decoration: none;
-      }
-
-      .foot a:hover {
+      .close:hover {
         color: #74f0a6;
-      }
-
-      .sep {
-        color: #5d6a72;
-      }
-
-      @media (max-width: 430px) {
-        .tiles {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .guide-row {
-          grid-template-columns: 1fr;
-        }
-
-        .guide-row > div + div {
-          border-left: 0;
-          border-top: 1px solid #e4ebf1;
-        }
+        border-color: #3fae6a;
       }
     </style>
   </head>
   <body>
-    <div class="page">
-      <main class="welcome">
-        <div class="card">
-          <span class="badge">live chatroom</span>
-          <h1 class="wordmark">only chatz</h1>
-          <h2 class="headline">welcome to the room</h2>
-          <p class="lede">
-            Channels, direct messages, real roles, royal coins to gamble with and a board that shows
-            who is floating where — all in one room.
-          </p>
+    <main class="card">
+      <span class="badge">live chatroom</span>
+      <h1>only chatz</h1>
+      <p class="lede">pick how the room opens — both choices land you in the chat.</p>
 
-          <nav class="tiles" aria-label="What is inside">
-            <a class="tile" href="/chat" data-room><span class="tile-ic">#</span> general</a>
-            <a class="tile" href="/chat" data-room><span class="tile-ic">!</span> announcements</a>
-            <a class="tile" href="/chat" data-room><span class="tile-ic">~</span> random</a>
-            <a class="tile" href="/chat" data-room><span class="tile-ic">◍</span> who's online</a>
-          </nav>
+      <div class="choices">
+        <button type="button" class="go" id="blank">open in about:blank</button>
+        <button type="button" class="go alt" id="frame">open in iframe</button>
+      </div>
 
-          <div class="guide">
-            <div class="guide-head">what is inside</div>
-            <div class="guide-row">
-              <div>
-                <strong>channels</strong>
-                <span>general · announcements · random</span>
-              </div>
-              <div>
-                <strong>direct messages</strong>
-                <span>one to one, live both ways</span>
-              </div>
-            </div>
-            <div class="guide-row">
-              <div>
-                <strong>royal coins</strong>
-                <span>earned by staying · spent in the vault</span>
-              </div>
-              <div>
-                <strong>flair wheel</strong>
-                <span>cosmetics you can wear, no powers</span>
-              </div>
-            </div>
-          </div>
+      <p class="hint" id="hint">
+        about:blank opens a bare tab with nothing in the address bar. iframe keeps the room on this
+        page.
+      </p>
 
-          <a class="go" href="/chat" data-room>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h11l-3.2-3.2 1.1-1.1L15.2 8l-5.3 4.3-1.1-1.1L12 8H1z" /></svg>
-            enter the chat
-          </a>
+      <p class="foot"><a href="/">just open the room →</a></p>
+    </main>
 
-          <p class="alt">new here? <a href="/chat" data-room>register now</a></p>
-        </div>
-
-        <section class="below">
-          <p class="kicker">only chatz</p>
-          <h3>one room, real people, live the whole time</h3>
-          <p>
-            Sign in and the room picks up where it left off: messages, replies and pictures land as
-            they are sent, and the board on the right keeps up with everyone floating in.
-          </p>
-          <ul class="chips">
-            <li>real-time</li>
-            <li>roles</li>
-            <li>coins</li>
-            <li>season pass</li>
-            <li>pictures</li>
-          </ul>
-        </section>
-      </main>
-
-      <footer class="foot">
-        <span>2026 © only chatz</span>
-        <span class="sep">·</span>
-        <a href="/chat" data-room id="room-newtab">open in a new tab</a>
-      </footer>
-    </div>
-
-    <script>
-      // Carry the current query string (a hosted preview's access token) onto the
-      // room links. Without it the plain /chat href still loads the room.
-      (function () {
-        var links = document.querySelectorAll('[data-room]');
-        if (location.search) {
-          for (var i = 0; i < links.length; i++) {
-            links[i].setAttribute('href', '/chat' + location.search);
-          }
-        }
-
-        // The new-tab link: a sandboxed frame turns `target="_blank"` into about:blank,
-        // so the tab is opened from script and, when popups are blocked, the plain href
-        // simply takes this tab to the room. The tab gets the bare /chat path — the
-        // session lives in localStorage, so it needs none of the preview's long token URL.
-        var newTab = document.getElementById('room-newtab');
-        if (!newTab) return;
-        newTab.setAttribute('href', '/chat');
-
-        newTab.addEventListener('click', function (event) {
-          var opened = null;
-          try {
-            opened = window.open('/chat', '_blank');
-          } catch (error) {
-            opened = null;
-          }
-          if (!opened || opened.closed) return; // blocked: let the anchor do the work
-          try {
-            opened.opener = null;
-          } catch (error) {
-            /* already detached */
-          }
-
-          // Some sandboxed frames hand back a tab that stays on about:blank. Rather than
-          // leaving the person on a blank page, drop that tab and open the room here.
-          setTimeout(function () {
-            var stuck = false;
-            try {
-              stuck = opened.closed || opened.location.href === 'about:blank';
-            } catch (error) {
-              stuck = false;
-            }
-            if (!stuck) return;
-            try {
-              opened.close();
-            } catch (error) {
-              /* already gone */
-            }
-            location.assign('/chat');
-          }, 400);
-
-          event.preventDefault();
-        });
-      })();
-    </script>
+    <!-- Logic lives in /launcher.js: this preview does not run inline scripts. -->
+    <script src="/launcher.js" defer></script>
   </body>
 </html>
