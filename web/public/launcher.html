@@ -1,205 +1,197 @@
 <!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>K-12 Study Portal | Maths, Science, English &amp; Grammar</title>
-<meta name="description" content="K-12 school study portal for maths, science, English grammar, reading, writing, biology, chemistry, physics, arithmetic, algebra, geometry, homework, revision, lessons, worksheets and practice questions.">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-<link rel="icon" href="/landing/icon.png" type="image/png" />
-<link rel="stylesheet" type="text/css" href="/landing/awesome/css/all.min.css" />
-<link rel="stylesheet" type="text/css" href="/landing/main.css" />
-<link rel="stylesheet" type="text/css" href="/landing/login.css" />
-<link id="gradient_sheet" rel="stylesheet" type="text/css" href="/landing/colors.css" />
-<link id="actual_theme" rel="stylesheet" type="text/css" href="/landing/theme.css" />
-<link rel="stylesheet" type="text/css" href="/landing/responsive.css" />
-<link rel="stylesheet" type="text/css" href="/landing/custom.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>K-12 Study Portal | Maths, Science &amp; English</title>
+<meta name="description" content="A K-12 study portal with maths, science and English notes, worked examples, revision topics and practice questions for elementary through high school." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/landing/portal.css" />
 </head>
 <body>
-<div id="login_wrap" class="back_login education_login" role="main" aria-label="K-12 school study portal login">
-	<div id="intro_top" class="btable">
-		<div class="bcell_mid">
-			<div id="login_all" class="pad30" role="region" aria-labelledby="portal_title">
-				<div class="education_badge" aria-label="Education category">
-					<i class="fa fa-graduation-cap" aria-hidden="true"></i>
-					K-12 EDUCATION
-				</div>
 
-				<div class="centered_element">
-					<img id="login_logo" src="/landing/logo.png" alt="K-12 Study Portal logo" title="K-12 Study Portal"/>
-				</div>
+<div class="sp-hero">
+	<div class="sp-card">
+		<div class="sp-badge">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11v4c0 1.7 2.2 3 5 3s5-1.3 5-3v-4"/></svg>
+			K-12 Education
+		</div>
 
-				<div class="login_text vpad20 centered_element">
-					<h1 class="bold text_xlarge bpad10" id="portal_title">K-12 Study Portal</h1>
-					<p class="portal_lead">
-						School learning and study material for <strong>Maths</strong>, <strong>Science</strong>,
-						<strong>English Grammar</strong>, reading and writing—from elementary through high school.
-					</p>
-				</div>
+		<img class="sp-logo" src="/landing/logo.svg" alt="Study Hub" width="300" height="64" />
 
-				<div class="subject_strip" aria-label="Core school subjects">
-					<span><i class="fa fa-square-root-alt" aria-hidden="true"></i> Maths</span>
-					<span><i class="fa fa-flask" aria-hidden="true"></i> Science</span>
-					<span><i class="fa fa-spell-check" aria-hidden="true"></i> Grammar</span>
-					<span><i class="fa fa-book-reader" aria-hidden="true"></i> Reading</span>
-				</div>
+		<h1 class="sp-title">K-12 Study Portal</h1>
+		<p class="sp-lead">
+			Lessons, revision notes and practice for <strong>maths</strong>, <strong>science</strong> and
+			<strong>English</strong> — for elementary school right through to high school.
+		</p>
 
-				<div class="study_material_preview" aria-label="Study material available after login">
-					<div class="study_preview_title">School Study Material</div>
-					<div class="study_preview_grid">
-						<div><strong>Mathematics</strong><small>Arithmetic · Fractions · Algebra · Geometry</small></div>
-						<div><strong>Science</strong><small>Biology · Chemistry · Physics · Earth Science</small></div>
-						<div><strong>English</strong><small>Grammar · Vocabulary · Writing · Comprehension</small></div>
-						<div><strong>Practice</strong><small>Lessons · Worksheets · Revision · Questions</small></div>
-					</div>
-				</div>
+		<div class="sp-subjects" aria-label="Core subjects">
+			<span>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7.5h8"/><path d="M8 12.5h.01M12 12.5h.01M16 12.5h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg>
+				Maths
+			</span>
+			<span>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M8 14h8"/></svg>
+				Science
+			</span>
+			<span>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17L8.6 6l4.6 11"/><path d="M5.8 13.2h5.6"/><path d="M16.5 17V9.5h2.2a3.2 3.2 0 0 1 0 6.4h-2.2"/></svg>
+				Grammar
+			</span>
+			<span>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.4 5 8.2 4.3 6 4.3H4.5v14H6c2.2 0 4.4.7 6 2.2 1.6-1.5 3.8-2.2 6-2.2h1.5v-14H18c-2.2 0-4.4.7-6 2.2z"/><path d="M12 6.5v13.9"/></svg>
+				Reading
+			</span>
+		</div>
 
-				<div class="centered_element vpad15 login_actions">
-					<a href="/chat" data-chat class="intro_login_btn large_button_rounded ok_btn btnshadow" aria-label="Student or teacher login">
-						<i class="fa fa-user-graduate" aria-hidden="true"></i> Student / Teacher Login
-					</a>
-					<div class="clear"></div>
-				</div>
-
-				<div class="centered_element registration_prompt">
-					<p class="text_xsmall">Need a student account?</p>
-					<a href="/chat" data-chat class="text_med bold bclick tpad5 registration_link" aria-label="Create a student account">
-						Create Student Account
-					</a>
-				</div>
-
-				<div class="education_scope" aria-label="Supported grade levels and learning resources">
-					<strong>Grades K-12</strong>
-					<span>Elementary School</span><span>Middle School</span><span>High School</span>
-					<span>Homework Help</span><span>Revision</span><span>Practice Questions</span>
-				</div>
+		<div class="sp-material" aria-label="What you can study">
+			<div class="sp-material-title">Study Material</div>
+			<div class="sp-material-grid">
+				<div><strong>Mathematics</strong><small>Arithmetic · Fractions · Algebra · Geometry</small></div>
+				<div><strong>Science</strong><small>Biology · Chemistry · Physics · Earth Science</small></div>
+				<div><strong>English</strong><small>Grammar · Vocabulary · Writing · Comprehension</small></div>
+				<div><strong>Practice</strong><small>Lessons · Worksheets · Revision · Questions</small></div>
 			</div>
 		</div>
-	</div>
 
-	<section class="mw-section" aria-labelledby="study-heading">
-	<header class="mw-head">
-		<span class="section_kicker">K-12 SCHOOL LEARNING</span>
-		<h2 id="study-heading">Study Material by Subject</h2>
-		<p>Straightforward school resources organized around the subjects students actually study: explanations, examples, revision topics, worksheets and practice questions.</p>
+		<a href="/chat" data-chat class="sp-cta">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6"/></svg>
+			Student / Teacher Login
+		</a>
+
+		<div class="sp-signup">
+			<p>New here?</p>
+			<a href="/chat" data-chat>Create a student account</a>
+		</div>
+
+		<div class="sp-grades" aria-label="Supported stages">
+			<strong>Grades K-12</strong>
+			<span>Elementary</span><span>Middle school</span><span>High school</span>
+			<span>Homework</span><span>Revision</span><span>Practice</span>
+		</div>
+	</div>
+</div>
+
+<main class="sp-main">
+	<header class="sp-head">
+		<span class="sp-kicker">K-12 SCHOOL LEARNING</span>
+		<h2>Study Material by Subject</h2>
+		<p>Pick a subject to work through explanations, worked examples, revision notes and practice questions.</p>
 	</header>
 
-	<div class="bento-grid" role="list">
-		<article class="bento-box subject_math span-2" role="listitem">
-			<div class="bento-icon" aria-hidden="true"><i class="fa fa-calculator"></i></div>
-			<div class="grade_label">MATHEMATICS</div>
+	<div class="sp-grid">
+		<article class="sp-box wide">
+			<div class="sp-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7.5h8"/><path d="M8 12.5h.01M12 12.5h.01M16 12.5h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg>
+			</div>
+			<div class="sp-label">MATHEMATICS</div>
 			<h3>Maths Lessons &amp; Practice</h3>
-			<p>Number sense, arithmetic, multiplication, division, fractions, decimals, percentages, ratios, algebra, equations, geometry, measurement, graphs and problem solving.</p>
-			<ul class="topic_list">
+			<p>Whole numbers, the four operations, fractions and decimals, percentages, ratios, algebra, equations, geometry, measurement, graphs and word problems.</p>
+			<ul class="sp-topics">
 				<li>Worked examples</li><li>Formula review</li><li>Practice questions</li><li>Step-by-step revision</li>
 			</ul>
 		</article>
 
-		<article class="bento-box subject_science" role="listitem">
-			<div class="bento-icon" aria-hidden="true"><i class="fa fa-atom"></i></div>
-			<div class="grade_label">SCIENCE</div>
+		<article class="sp-box">
+			<div class="sp-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><ellipse cx="12" cy="12" rx="9" ry="4.2"/><ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(120 12 12)"/></svg>
+			</div>
+			<div class="sp-label">SCIENCE</div>
 			<h3>Science Study Notes</h3>
-			<p>Life science, biology, chemistry, physics, matter, forces, energy, cells, ecosystems, the human body, Earth and space.</p>
+			<p>Living things and biology, chemistry, physics, matter, forces, energy, cells, ecosystems, the human body, Earth and space.</p>
 		</article>
 
-		<article class="bento-box subject_english" role="listitem">
-			<div class="bento-icon" aria-hidden="true"><i class="fa fa-font"></i></div>
-			<div class="grade_label">ENGLISH LANGUAGE ARTS</div>
+		<article class="sp-box">
+			<div class="sp-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 11h12M4 16h8"/></svg>
+			</div>
+			<div class="sp-label">ENGLISH LANGUAGE ARTS</div>
 			<h3>Grammar, Reading &amp; Writing</h3>
-			<p>Parts of speech, sentence structure, tenses, punctuation, spelling, vocabulary, reading comprehension, paragraph writing and essay skills.</p>
+			<p>Word classes, sentence building, tenses, punctuation, spelling, vocabulary, reading comprehension, paragraph writing and essay skills.</p>
 		</article>
 
-		<article class="bento-box span-2" role="listitem">
-			<div class="bento-icon" aria-hidden="true"><i class="fa fa-school"></i></div>
-			<div class="grade_label">GRADES K-12</div>
+		<article class="sp-box wide">
+			<div class="sp-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10l9-5 9 5v10"/><path d="M9 20v-6h6v6"/></svg>
+			</div>
+			<div class="sp-label">GRADES K-12</div>
 			<h3>School-Level Learning Path</h3>
-			<p>Material is framed for elementary, middle and high school learning, with core-topic review for homework, classroom study, revision and independent practice.</p>
-			<div class="grade_chips" aria-label="Grade ranges">
+			<p>Material is grouped by school stage, so homework, classroom revision and independent practice all start from the right level.</p>
+			<div class="sp-chips" aria-label="Grade ranges">
 				<span>Kindergarten</span><span>Grades 1-5</span><span>Grades 6-8</span><span>Grades 9-12</span>
 			</div>
 		</article>
 	</div>
 
-	<section class="lesson_samples" aria-labelledby="sample-lessons-heading">
-		<header class="lesson_samples_head">
-			<span>REAL STUDY-MATERIAL PREVIEW</span>
-			<h3 id="sample-lessons-heading">Quick Lesson Notes</h3>
-		</header>
+	<section class="sp-samples" aria-labelledby="samples-heading">
+		<span class="sp-kicker">SAMPLE STUDY NOTES</span>
+		<h3 id="samples-heading">Quick Lesson Notes</h3>
 
-		<div class="lesson_sample_grid">
-			<article class="study_example">
-				<div class="study_example_header">
+		<div class="sp-sample-grid">
+			<article class="sp-note">
+				<div class="sp-note-head">
 					<span>MATHS · FRACTIONS</span>
-					<h4>Adding Unlike Denominators</h4>
+					<h4>Adding Fractions with Different Denominators</h4>
 				</div>
-				<div class="study_example_body">
-					<p><strong>Rule:</strong> Rewrite both fractions using a common denominator before adding.</p>
-					<div class="equation_line" aria-label="One third plus one fourth equals seven twelfths">1/3 + 1/4 = 4/12 + 3/12 = <strong>7/12</strong></div>
+				<div class="sp-note-body">
+					<p><strong>Rule:</strong> give both fractions the same denominator before you add them.</p>
+					<div class="sp-band maths">1/2 + 1/3 = 3/6 + 2/6 = <strong>5/6</strong></div>
 					<ol>
-						<li>Find a common denominator: 12.</li>
-						<li>Convert each fraction to twelfths.</li>
-						<li>Add the numerators: 4 + 3 = 7.</li>
+						<li>The lowest common denominator of 2 and 3 is 6.</li>
+						<li>Rewrite each fraction in sixths.</li>
+						<li>Add the numerators: 3 + 2 = 5.</li>
 					</ol>
-					<p class="practice_prompt"><strong>Practice:</strong> Solve 2/5 + 1/3.</p>
+					<p class="sp-practice"><strong>Practice:</strong> try 3/4 + 1/6.</p>
 				</div>
 			</article>
 
-			<article class="study_example science_note">
-				<div class="study_example_header">
+			<article class="sp-note science">
+				<div class="sp-note-head">
 					<span>SCIENCE · BIOLOGY</span>
 					<h4>Photosynthesis</h4>
 				</div>
-				<div class="study_example_body">
-					<p><strong>Key idea:</strong> Green plants use light energy to make glucose from carbon dioxide and water.</p>
-					<div class="formula_text">carbon dioxide + water → glucose + oxygen</div>
+				<div class="sp-note-body">
+					<p><strong>Key idea:</strong> green plants use light to turn carbon dioxide and water into glucose, releasing oxygen.</p>
+					<div class="sp-band science">carbon dioxide + water → glucose + oxygen</div>
 					<ul>
-						<li>Chlorophyll absorbs light energy.</li>
-						<li>Carbon dioxide enters through leaf stomata.</li>
-						<li>Oxygen is released as a product.</li>
+						<li>Chlorophyll in the leaves captures light.</li>
+						<li>Carbon dioxide enters through tiny pores in the leaf.</li>
+						<li>Oxygen leaves the plant as a by-product.</li>
 					</ul>
-					<p class="practice_prompt"><strong>Check:</strong> Name the pigment that absorbs light.</p>
+					<p class="sp-practice"><strong>Check:</strong> which gas do plants give off during photosynthesis?</p>
 				</div>
 			</article>
 
-			<article class="study_example grammar_note">
-				<div class="study_example_header">
+			<article class="sp-note grammar">
+				<div class="sp-note-head">
 					<span>ENGLISH · GRAMMAR</span>
-					<h4>Subject–Verb Agreement</h4>
+					<h4>Making Subjects and Verbs Agree</h4>
 				</div>
-				<div class="study_example_body">
-					<p><strong>Rule:</strong> A singular subject normally takes a singular verb; a plural subject takes a plural verb.</p>
-					<div class="grammar_examples">
-						<span>✓ The student <strong>writes</strong>.</span>
-						<span>✓ The students <strong>write</strong>.</span>
+				<div class="sp-note-body">
+					<p><strong>Rule:</strong> a singular subject takes a singular verb; a plural subject takes a plural verb.</p>
+					<div class="sp-band grammar">
+						<span>✓ The teacher <strong>explains</strong>.</span>
+						<span>✓ The teachers <strong>explain</strong>.</span>
 					</div>
-					<p>Ignore words in a prepositional phrase when identifying the main subject.</p>
-					<p class="practice_prompt"><strong>Practice:</strong> “The box of pencils ___ on the desk.” Choose <em>is</em> or <em>are</em>.</p>
+					<p>Words inside a prepositional phrase do not change the subject.</p>
+					<p class="sp-practice"><strong>Practice:</strong> “The basket of apples ___ on the table.” Pick <em>is</em> or <em>are</em>.</p>
 				</div>
 			</article>
 		</div>
 	</section>
+</main>
 
-	<footer class="mw-footer-links">
-		<nav aria-label="Study portal navigation">
-			<a href="/chat" data-chat>Student Registration</a>
-			<a href="/chat" data-chat>Student Login</a>
-			<a href="#study-heading">Subjects</a>
-		</nav>
-		<p class="copyright">K-12 Study Portal · Maths · Science · English Grammar · School Study Resources</p>
-	</footer>
-</section>
-	<div class="foot vpad25 hpad15 centered_element" id="main_footer">
-	<div id="menu_main_footer">
-		<ul>
-			<li>2026 ©<span class="theme_color"> student learning portal</span></li>
-			<li class="bclick"><a href="/">Home</a></li>
-			<li class="bclick"><a href="#">Terms of Use</a></li>
-			<li class="bclick"><a href="#">Privacy Policy</a></li>
-			<li class="bclick"><a href="#">Rules</a></li>
-			<li class="bclick"><a href="#">Contact us</a></li>
-			<li class="bclick"><i class="fa fa-language"></i> Language</li>
-		</ul>
-	</div>
-</div></div>
+<footer class="sp-foot">
+	<nav aria-label="Study portal navigation">
+		<a href="/chat" data-chat>Student registration</a>
+		<a href="/chat" data-chat>Student login</a>
+		<a href="#samples-heading">Subjects</a>
+		<a href="#">Terms</a>
+		<a href="#">Privacy</a>
+		<a href="#">Contact</a>
+	</nav>
+	<p class="sp-copy">Study Hub · maths, science and English study resources</p>
+</footer>
 
 <script>
 	// The room lives on /chat. A hosted preview can carry an access token in the query

@@ -1,0 +1,593 @@
+/* ---------- study-portal theme ----------
+   Gives the room the same light school-portal look as the public landing page:
+   white cards on a soft blue-grey wash, navy headings, blue links, green actions.
+   Original palette and type; imported after base.css and app.css so it wins
+   without rewriting their layout rules. */
+
+:root {
+  --wash: #eef3f8;
+  --card: #ffffff;
+  --line: #d9e3ed;
+  --line-soft: #e4ebf1;
+  --navy: #173f67;
+  --ink: #14243a;
+  --body-ink: #2f4457;
+  --muted: #7d92a3;
+  --muted-deep: #5c7386;
+  --blue: #2563a6;
+  --blue-soft: #e8f1fb;
+  --green: #22c55e;
+  --green-dark: #1ea34d;
+  --green-soft: #e7f7ee;
+  --green-line: #bfe6cf;
+  --sans: 'Segoe UI', Inter, system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+body {
+  background: var(--wash);
+  color: var(--body-ink);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+::selection {
+  background: rgba(37, 99, 166, 0.18);
+  color: var(--ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8d6e3;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aec3d6;
+  background-clip: content-box;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ---------- backdrop ---------- */
+
+.sky {
+  background-color: var(--wash);
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(38, 104, 171, 0.1), transparent 30%),
+    radial-gradient(circle at 90% 6%, rgba(60, 139, 102, 0.08), transparent 26%),
+    repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(57, 91, 122, 0.05) 32px),
+    linear-gradient(#f6fafd, #e4edf5);
+}
+
+.blob {
+  display: none;
+}
+
+/* ---------- surfaces ---------- */
+
+.glass {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(38, 58, 81, 0.09);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.scrim,
+.modal-scrim {
+  background: rgba(16, 42, 67, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ---------- type ---------- */
+
+.brand h1,
+.auth-brand h1,
+.chat-title h2,
+.members-head h2,
+.settings-head h2,
+.board-head h2 {
+  color: #102a43;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.brand p,
+.auth-brand p,
+.chat-topic,
+.members-head p,
+.settings-head p,
+.settings-hint,
+.board-head p,
+.board-empty,
+.side-hint,
+.empty,
+.dm-snippet,
+.dm-time,
+.msg-time,
+.composer-foot,
+.settings-count {
+  color: var(--muted);
+}
+
+.section-title {
+  color: var(--blue);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.sub-title {
+  color: #8297a8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hash,
+.hash-big {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.members-count {
+  color: #27445f;
+  font-weight: 700;
+}
+
+/* ---------- sidebar ---------- */
+
+.brand-glyph {
+  border-radius: 9px;
+  color: #fff;
+  background: var(--navy);
+  border: 0;
+  box-shadow: 0 6px 14px rgba(23, 63, 103, 0.25);
+  animation: none;
+  text-shadow: none;
+}
+
+.nav-row {
+  border-radius: 9px;
+  color: #41586e;
+  border: 1px solid transparent;
+  letter-spacing: 0;
+}
+
+.nav-row:hover {
+  color: var(--ink);
+  background: #f2f7fb;
+  transform: none;
+}
+
+.nav-row.active {
+  color: var(--navy);
+  background: var(--blue-soft);
+  box-shadow: inset 0 0 0 1px #c9dcee;
+  font-weight: 600;
+}
+
+.nav-row.ghost {
+  color: #6a7f92;
+  border: 1px dashed #cfdeea;
+  border-radius: 9px;
+}
+
+.nav-label {
+  text-transform: none;
+  font-size: 13.5px;
+}
+
+.me-card {
+  background: #f7fafc;
+  border-top: 1px solid var(--line-soft);
+}
+
+.me-card .name {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.icon-btn {
+  border-radius: 8px;
+  color: var(--muted-deep);
+  border: 1px solid transparent;
+}
+
+.icon-btn:hover {
+  color: var(--navy);
+  background: #eef4fa;
+  border-color: #dbe6f0;
+  transform: none;
+}
+
+/* ---------- chat ---------- */
+
+.chat-header {
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--card);
+}
+
+.msg {
+  border-radius: 8px;
+}
+
+.msg:hover {
+  background: #f6fafd;
+}
+
+.msg-name {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.msg-text {
+  color: var(--body-ink);
+  font-size: 13.8px;
+}
+
+.system-line {
+  border-radius: 8px;
+  color: var(--blue);
+  background: #eef5fc;
+  border: 1px solid #d5e5f4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* direct messages */
+
+.bubble {
+  border-radius: 14px;
+  color: var(--body-ink);
+  background: #f5f9fd;
+  border: 1px solid #e0e9f1;
+  box-shadow: none;
+  font-size: 13.8px;
+}
+
+.msg.dm.own .bubble {
+  color: #1c4535;
+  font-weight: 500;
+  background: var(--green-soft);
+  border-color: var(--green-line);
+  box-shadow: none;
+}
+
+/* ---------- composer ---------- */
+
+.composer {
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid #d7e2ec;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.composer::before {
+  content: none;
+}
+
+.composer:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 166, 0.14);
+}
+
+.composer textarea {
+  color: var(--body-ink);
+  font-size: 13.9px;
+}
+
+.composer textarea::placeholder {
+  color: #8fa2b2;
+}
+
+.send {
+  border-radius: 9px;
+  color: #fff;
+  background: var(--green);
+  border: 0;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.24);
+}
+
+.send:hover:not(:disabled) {
+  background: var(--green-dark);
+  transform: none;
+}
+
+.send:disabled {
+  opacity: 0.4;
+}
+
+.composer-foot {
+  letter-spacing: 0;
+}
+
+.composer-error {
+  color: #c0392b;
+}
+
+.cmd-menu {
+  border-radius: 10px;
+}
+
+.cmd-item {
+  border-radius: 7px;
+}
+
+.cmd-item:hover {
+  background: #f2f7fb;
+}
+
+.cmd-name {
+  color: var(--navy);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.cmd-desc {
+  color: var(--muted);
+}
+
+/* ---------- members ---------- */
+
+.member-row {
+  border-radius: 8px;
+}
+
+.member-row:hover {
+  background: #f5f9fd;
+}
+
+.member-name {
+  color: #22384c;
+}
+
+.member-handle {
+  color: var(--muted);
+}
+
+.friend-btn {
+  border-radius: 7px;
+  color: var(--muted);
+  border: 1px solid #dfe8f0;
+  background: var(--card);
+}
+
+.friend-btn:hover {
+  color: var(--navy);
+  background: #f2f7fb;
+  border-color: #c3d6e6;
+}
+
+.friend-btn.is-friend {
+  color: #1e8a4f;
+  border-color: var(--green-line);
+  background: #eefaf3;
+}
+
+/* ---------- badges, chips, avatars ---------- */
+
+.badge {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+
+.badge.owner {
+  color: #0f3d24;
+  background: #c9f2d9;
+}
+
+.badge.co-owner {
+  color: #123d67;
+  background: #dbeafe;
+}
+
+.badge.admin {
+  color: #5a2a10;
+  background: #fde8d3;
+}
+
+.badge.mod {
+  color: #3f3170;
+  background: #e9e3fb;
+}
+
+.badge.member {
+  color: var(--muted-deep);
+  background: #eef4fa;
+  border: 1px solid #dfe8f0;
+}
+
+.chip {
+  border-radius: 999px;
+  color: #456078;
+  background: #f2f7fb;
+  border: 1px solid #e0e9f1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.avatar {
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(20, 36, 58, 0.08);
+}
+
+.avatar-dot {
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.avatar-dot.is-on {
+  background: var(--green);
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.avatar-dot.is-off {
+  background: #c3d2df;
+}
+
+/* ---------- auth ---------- */
+
+.auth-tabs {
+  border-radius: 10px;
+  background: #f2f7fb;
+  border: 1px solid #e0e9f1;
+}
+
+.auth-tabs button {
+  border-radius: 8px;
+  color: var(--muted-deep);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.auth-tabs button.active {
+  color: var(--navy);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(38, 58, 81, 0.14);
+}
+
+.field span {
+  color: #42596d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.field input,
+.field textarea {
+  border-radius: 8px;
+  color: #22384c;
+  background: var(--card);
+  border: 1px solid #d8e4ef;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #93a6b6;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 166, 0.14);
+}
+
+.btn-primary {
+  border-radius: 8px;
+  color: #fff;
+  background: var(--green);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 8px 18px rgba(34, 197, 94, 0.22);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--green-dark);
+  box-shadow: 0 10px 22px rgba(34, 197, 94, 0.26);
+  transform: none;
+}
+
+.auth-note {
+  border-radius: 8px;
+  color: #8a5a00;
+  background: #fff6e5;
+  border: 1px solid #f4dfb2;
+}
+
+.auth-error {
+  border-radius: 8px;
+  color: #a12a1c;
+  background: #fdeceb;
+  border: 1px solid #f3c6c2;
+}
+
+.boot {
+  color: var(--muted-deep);
+  font-family: var(--sans);
+}
+
+/* ---------- settings ---------- */
+
+.settings-head {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.pill-btn {
+  border-radius: 999px;
+  border: 1px solid #dfe8f0;
+  color: #456078;
+  background: var(--card);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pill-btn:hover {
+  border-color: var(--blue);
+  color: var(--navy);
+  background: #f6fafd;
+}
+
+.text-btn {
+  color: var(--blue);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.text-btn:hover {
+  color: var(--navy);
+}
+
+.swatch {
+  border-radius: 50%;
+}
+
+.swatch.on {
+  box-shadow:
+    0 0 0 2px var(--card),
+    0 0 0 3px var(--blue);
+}
+
+/* ---------- who's online ---------- */
+
+.board-head {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.board-row:hover {
+  background: #f5f9fd;
+}
+
+.board-name {
+  color: #22384c;
+}
+
+.board-room {
+  color: var(--muted);
+}
+
+.board-link .live-dot {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}

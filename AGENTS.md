@@ -56,18 +56,15 @@ Non-obvious things worth knowing before changing something:
   left the buttons dead inside the preview pane). The only script copies the current query string — a
   hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
   works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
-  The page is a replica of the public landing page at `drawspace.online` (K-12 Study Portal): its
-  markup is copied verbatim into `launcher.html` and its stylesheet chain (Font Awesome, `main.css`,
-  `login.css`, `colors.css`, `theme.css`, `responsive.css`, `custom.css`) plus `logo.png`/`icon.png`
-  live in `web/public/landing/`. Keep that order — later sheets override earlier ones (e.g. the
-  green `.ok_btn` comes from `theme.css`). `custom.css` ends with two rules that give the anchor
-  CTAs a `<button>`'s box model; the CTAs are plain `<a href="/chat">` links for the same reason as
-  before. Everything is local now, so the page needs no network.
-- **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
-  after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
-  and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
-  instead of editing component CSS, and keep its `border-radius: 0` rules after the media-query radius
-  rules in `app.css` (later import order is what lets them win).
+  The page is our own K-12 study-portal landing page (`web/public/launcher.html` + the hand-written
+  `web/public/landing/portal.css` and `landing/logo.svg`). Nothing is loaded from a third party: no
+  CDN, no webfont, no copied store template — icons are inline SVG. Keep it that way; do not paste a
+  store template's stylesheet or artwork back in. The CTAs are plain `<a href="/chat">` links for the
+  same reason as before, and `data-chat` links get the preview's query string appended.
+- **The room's look is one file: `web/src/styles/portal.css`,** imported last in `main.jsx` after
+  `base.css` and `app.css`. It repaints the room to match the landing page's light study-portal theme
+  (white cards, navy headings, blue links, green actions) and never touches layout — `app.css` still
+  owns structure, so restyle there instead of editing component CSS.
 - **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
