@@ -56,7 +56,12 @@ export default function ChatPane({
         </button>
       </header>
 
-      <MessageList messages={messages} kind={kind} me={me} />
+      <MessageList
+        messages={messages}
+        kind={kind}
+        me={me}
+        channelName={channel?.name}
+      />
 
       <Composer
         placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}

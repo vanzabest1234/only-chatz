@@ -9,6 +9,8 @@ const PATHS = {
   close: 'M6 6l12 12M18 6 6 18',
   profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 8a8 8 0 0 1 16 0',
   image: 'M4 5h16v14H4zM4 15l4.5-4.5 3 3L15 9l5 5M9 9.5a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z',
+  book: 'M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5ZM4 17.5A2.5 2.5 0 0 1 6.5 15H20',
+  pencil: 'M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4ZM14 6l4 4',
 }
 
 export default function Icon({ name, size = 18 }) {

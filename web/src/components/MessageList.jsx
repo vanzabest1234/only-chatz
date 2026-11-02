@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Avatar from './Avatar'
+import Icon from './Icon'
 import RoleBadge from './RoleBadge'
 import { timeShort } from '../lib/format'
 
@@ -53,7 +54,45 @@ function DmMessage({ message, me }) {
   )
 }
 
-export default function MessageList({ messages, kind, me }) {
+function EmptyRoom({ kind, channelName }) {
+  if (kind === 'dm') {
+    return (
+      <div className="empty-room">
+        <div className="empty-badge">
+          <Icon name="book" size={24} />
+        </div>
+        <h3>Your study corner</h3>
+        <p>This is the start of your conversation. Say hello, swap notes, or plan a study session.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="empty-room">
+      <div className="empty-badge">
+        <Icon name="book" size={24} />
+      </div>
+      <h3>Welcome to {channelName ? `#${channelName}` : 'the study room'}</h3>
+      <p>
+        Class is quiet for now. Take a seat, get your notes out, and start the conversation — no
+        question is too small.
+      </p>
+      <ul className="empty-tips">
+        <li>
+          <Icon name="pencil" size={15} /> Share what you are studying
+        </li>
+        <li>
+          <Icon name="check" size={15} /> Post notes or ask a question
+        </li>
+        <li>
+          <Icon name="users" size={15} /> Invite a classmate to join
+        </li>
+      </ul>
+    </div>
+  )
+}
+
+export default function MessageList({ messages, kind, me, channelName }) {
   const scroller = useRef(null)
 
   useEffect(() => {
@@ -64,11 +103,7 @@ export default function MessageList({ messages, kind, me }) {
   if (!messages.length) {
     return (
       <div className="messages">
-        <p className="empty">
-          {kind === 'dm'
-            ? 'This is the start of your conversation. Say something nice.'
-            : 'Nothing here yet — be the first to say something.'}
-        </p>
+        <EmptyRoom kind={kind} channelName={channelName} />
       </div>
     )
   }
