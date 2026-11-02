@@ -56,8 +56,13 @@ Non-obvious things worth knowing before changing something:
   left the buttons dead inside the preview pane). The only script copies the current query string — a
   hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
   works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
-  The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
-  remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
+  The page is a replica of the public landing page at `drawspace.online` (K-12 Study Portal): its
+  markup is copied verbatim into `launcher.html` and its stylesheet chain (Font Awesome, `main.css`,
+  `login.css`, `colors.css`, `theme.css`, `responsive.css`, `custom.css`) plus `logo.png`/`icon.png`
+  live in `web/public/landing/`. Keep that order — later sheets override earlier ones (e.g. the
+  green `.ok_btn` comes from `theme.css`). `custom.css` ends with two rules that give the anchor
+  CTAs a `<button>`'s box model; the CTAs are plain `<a href="/chat">` links for the same reason as
+  before. Everything is local now, so the page needs no network.
 - **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
   after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
   and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there

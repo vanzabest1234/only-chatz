@@ -1,503 +1,212 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="dark" />
-    <!-- A preview link can carry an access token in the query string; never leak it to
-         the remote hero image through the Referer header. -->
-    <meta name="referrer" content="no-referrer" />
-    <title>Only Chatz</title>
-    <meta
-      name="description"
-      content="A small real-time chatroom: channels, direct messages, real roles and a live who's-online board."
-    />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <style>
-      * {
-        box-sizing: border-box;
-      }
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta charset="utf-8" />
+<title>K-12 Study Portal | Maths, Science, English &amp; Grammar</title>
+<meta name="description" content="K-12 school study portal for maths, science, English grammar, reading, writing, biology, chemistry, physics, arithmetic, algebra, geometry, homework, revision, lessons, worksheets and practice questions.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+<link rel="icon" href="/landing/icon.png" type="image/png" />
+<link rel="stylesheet" type="text/css" href="/landing/awesome/css/all.min.css" />
+<link rel="stylesheet" type="text/css" href="/landing/main.css" />
+<link rel="stylesheet" type="text/css" href="/landing/login.css" />
+<link id="gradient_sheet" rel="stylesheet" type="text/css" href="/landing/colors.css" />
+<link id="actual_theme" rel="stylesheet" type="text/css" href="/landing/theme.css" />
+<link rel="stylesheet" type="text/css" href="/landing/responsive.css" />
+<link rel="stylesheet" type="text/css" href="/landing/custom.css" />
+</head>
+<body>
+<div id="login_wrap" class="back_login education_login" role="main" aria-label="K-12 school study portal login">
+	<div id="intro_top" class="btable">
+		<div class="bcell_mid">
+			<div id="login_all" class="pad30" role="region" aria-labelledby="portal_title">
+				<div class="education_badge" aria-label="Education category">
+					<i class="fa fa-graduation-cap" aria-hidden="true"></i>
+					K-12 EDUCATION
+				</div>
 
-      body {
-        margin: 0;
-        background: #0a0f14;
-      }
+				<div class="centered_element">
+					<img id="login_logo" src="/landing/logo.png" alt="K-12 Study Portal logo" title="K-12 Study Portal"/>
+				</div>
 
-      .pg {
-        position: relative;
-        width: 100%;
-        min-height: 100dvh;
-        background: #0a0f14;
-        color: #8fa3b0;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.6;
-        font-weight: 400;
-        text-transform: lowercase;
-        display: flex;
-        overflow: hidden;
-        border: 1px solid #1d2a33;
-      }
+				<div class="login_text vpad20 centered_element">
+					<h1 class="bold text_xlarge bpad10" id="portal_title">K-12 Study Portal</h1>
+					<p class="portal_lead">
+						School learning and study material for <strong>Maths</strong>, <strong>Science</strong>,
+						<strong>English Grammar</strong>, reading and writing—from elementary through high school.
+					</p>
+				</div>
 
-      .pg:before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-          linear-gradient(rgba(116, 240, 166, 0.045) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(116, 240, 166, 0.045) 1px, transparent 1px);
-        background-size: 24px 24px;
-        pointer-events: none;
-      }
+				<div class="subject_strip" aria-label="Core school subjects">
+					<span><i class="fa fa-square-root-alt" aria-hidden="true"></i> Maths</span>
+					<span><i class="fa fa-flask" aria-hidden="true"></i> Science</span>
+					<span><i class="fa fa-spell-check" aria-hidden="true"></i> Grammar</span>
+					<span><i class="fa fa-book-reader" aria-hidden="true"></i> Reading</span>
+				</div>
 
-      .rail {
-        position: relative;
-        width: 210px;
-        flex: none;
-        background: #0d141a;
-        border-right: 1px solid #1d2a33;
-        padding: 32px 22px;
-        display: flex;
-        flex-direction: column;
-        gap: 28px;
-      }
+				<div class="study_material_preview" aria-label="Study material available after login">
+					<div class="study_preview_title">School Study Material</div>
+					<div class="study_preview_grid">
+						<div><strong>Mathematics</strong><small>Arithmetic · Fractions · Algebra · Geometry</small></div>
+						<div><strong>Science</strong><small>Biology · Chemistry · Physics · Earth Science</small></div>
+						<div><strong>English</strong><small>Grammar · Vocabulary · Writing · Comprehension</small></div>
+						<div><strong>Practice</strong><small>Lessons · Worksheets · Revision · Questions</small></div>
+					</div>
+				</div>
 
-      .word {
-        margin: 0;
-        color: #74f0a6;
-        font-size: 17px;
-        font-weight: 400;
-        letter-spacing: 0.12em;
-        line-height: 1.3;
-      }
+				<div class="centered_element vpad15 login_actions">
+					<a href="/chat" data-chat class="intro_login_btn large_button_rounded ok_btn btnshadow" aria-label="Student or teacher login">
+						<i class="fa fa-user-graduate" aria-hidden="true"></i> Student / Teacher Login
+					</a>
+					<div class="clear"></div>
+				</div>
 
-      .rl {
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding: 0;
-        list-style: none;
-      }
+				<div class="centered_element registration_prompt">
+					<p class="text_xsmall">Need a student account?</p>
+					<a href="/chat" data-chat class="text_med bold bclick tpad5 registration_link" aria-label="Create a student account">
+						Create Student Account
+					</a>
+				</div>
 
-      .rl li {
-        padding: 6px 10px;
-        border: 1px solid transparent;
-        color: #8fa3b0;
-        letter-spacing: 0.04em;
-      }
+				<div class="education_scope" aria-label="Supported grade levels and learning resources">
+					<strong>Grades K-12</strong>
+					<span>Elementary School</span><span>Middle School</span><span>High School</span>
+					<span>Homework Help</span><span>Revision</span><span>Practice Questions</span>
+				</div>
+			</div>
+		</div>
+	</div>
 
-      .rl li:before {
-        content: '> ';
-        color: #74f0a6;
-        opacity: 0.6;
-      }
+	<section class="mw-section" aria-labelledby="study-heading">
+	<header class="mw-head">
+		<span class="section_kicker">K-12 SCHOOL LEARNING</span>
+		<h2 id="study-heading">Study Material by Subject</h2>
+		<p>Straightforward school resources organized around the subjects students actually study: explanations, examples, revision topics, worksheets and practice questions.</p>
+	</header>
 
-      .main {
-        position: relative;
-        flex: 1;
-        padding: 36px 40px 48px;
-        display: flex;
-        flex-direction: column;
-        gap: 30px;
-        min-width: 0;
-      }
+	<div class="bento-grid" role="list">
+		<article class="bento-box subject_math span-2" role="listitem">
+			<div class="bento-icon" aria-hidden="true"><i class="fa fa-calculator"></i></div>
+			<div class="grade_label">MATHEMATICS</div>
+			<h3>Maths Lessons &amp; Practice</h3>
+			<p>Number sense, arithmetic, multiplication, division, fractions, decimals, percentages, ratios, algebra, equations, geometry, measurement, graphs and problem solving.</p>
+			<ul class="topic_list">
+				<li>Worked examples</li><li>Formula review</li><li>Practice questions</li><li>Step-by-step revision</li>
+			</ul>
+		</article>
 
-      .hero {
-        position: relative;
-        border: 1px solid #1d2a33;
-        background: #0a0f14;
-        padding: 0;
-        overflow: hidden;
-      }
+		<article class="bento-box subject_science" role="listitem">
+			<div class="bento-icon" aria-hidden="true"><i class="fa fa-atom"></i></div>
+			<div class="grade_label">SCIENCE</div>
+			<h3>Science Study Notes</h3>
+			<p>Life science, biology, chemistry, physics, matter, forces, energy, cells, ecosystems, the human body, Earth and space.</p>
+		</article>
 
-      .hero img {
-        display: block;
-        width: 100%;
-        aspect-ratio: 4/3;
-        object-fit: cover;
-        opacity: 0.75;
-      }
+		<article class="bento-box subject_english" role="listitem">
+			<div class="bento-icon" aria-hidden="true"><i class="fa fa-font"></i></div>
+			<div class="grade_label">ENGLISH LANGUAGE ARTS</div>
+			<h3>Grammar, Reading &amp; Writing</h3>
+			<p>Parts of speech, sentence structure, tenses, punctuation, spelling, vocabulary, reading comprehension, paragraph writing and essay skills.</p>
+		</article>
 
-      .hero-in {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(10, 15, 20, 0.1), rgba(10, 15, 20, 0.75));
-        padding: 22px 24px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        gap: 6px;
-      }
+		<article class="bento-box span-2" role="listitem">
+			<div class="bento-icon" aria-hidden="true"><i class="fa fa-school"></i></div>
+			<div class="grade_label">GRADES K-12</div>
+			<h3>School-Level Learning Path</h3>
+			<p>Material is framed for elementary, middle and high school learning, with core-topic review for homework, classroom study, revision and independent practice.</p>
+			<div class="grade_chips" aria-label="Grade ranges">
+				<span>Kindergarten</span><span>Grades 1-5</span><span>Grades 6-8</span><span>Grades 9-12</span>
+			</div>
+		</article>
+	</div>
 
-      .h1 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 400;
-        letter-spacing: 0.3em;
-        color: #74f0a6;
-        line-height: 1.1;
-        text-shadow: 0 0 14px rgba(116, 240, 166, 0.35);
-      }
+	<section class="lesson_samples" aria-labelledby="sample-lessons-heading">
+		<header class="lesson_samples_head">
+			<span>REAL STUDY-MATERIAL PREVIEW</span>
+			<h3 id="sample-lessons-heading">Quick Lesson Notes</h3>
+		</header>
 
-      .tag {
-        margin: 0;
-        letter-spacing: 0.18em;
-        color: #8fa3b0;
-      }
+		<div class="lesson_sample_grid">
+			<article class="study_example">
+				<div class="study_example_header">
+					<span>MATHS · FRACTIONS</span>
+					<h4>Adding Unlike Denominators</h4>
+				</div>
+				<div class="study_example_body">
+					<p><strong>Rule:</strong> Rewrite both fractions using a common denominator before adding.</p>
+					<div class="equation_line" aria-label="One third plus one fourth equals seven twelfths">1/3 + 1/4 = 4/12 + 3/12 = <strong>7/12</strong></div>
+					<ol>
+						<li>Find a common denominator: 12.</li>
+						<li>Convert each fraction to twelfths.</li>
+						<li>Add the numerators: 4 + 3 = 7.</li>
+					</ol>
+					<p class="practice_prompt"><strong>Practice:</strong> Solve 2/5 + 1/3.</p>
+				</div>
+			</article>
 
-      .lede {
-        margin: 0;
-        max-width: 560px;
-        color: #b7c7d1;
-        font-size: 14px;
-      }
+			<article class="study_example science_note">
+				<div class="study_example_header">
+					<span>SCIENCE · BIOLOGY</span>
+					<h4>Photosynthesis</h4>
+				</div>
+				<div class="study_example_body">
+					<p><strong>Key idea:</strong> Green plants use light energy to make glucose from carbon dioxide and water.</p>
+					<div class="formula_text">carbon dioxide + water → glucose + oxygen</div>
+					<ul>
+						<li>Chlorophyll absorbs light energy.</li>
+						<li>Carbon dioxide enters through leaf stomata.</li>
+						<li>Oxygen is released as a product.</li>
+					</ul>
+					<p class="practice_prompt"><strong>Check:</strong> Name the pigment that absorbs light.</p>
+				</div>
+			</article>
 
-      .tbl {
-        position: relative;
-        border: 1px solid #1d2a33;
-        background: #111a20;
-        overflow: hidden;
-        animation: fade 0.6s both;
-      }
+			<article class="study_example grammar_note">
+				<div class="study_example_header">
+					<span>ENGLISH · GRAMMAR</span>
+					<h4>Subject–Verb Agreement</h4>
+				</div>
+				<div class="study_example_body">
+					<p><strong>Rule:</strong> A singular subject normally takes a singular verb; a plural subject takes a plural verb.</p>
+					<div class="grammar_examples">
+						<span>✓ The student <strong>writes</strong>.</span>
+						<span>✓ The students <strong>write</strong>.</span>
+					</div>
+					<p>Ignore words in a prepositional phrase when identifying the main subject.</p>
+					<p class="practice_prompt"><strong>Practice:</strong> “The box of pencils ___ on the desk.” Choose <em>is</em> or <em>are</em>.</p>
+				</div>
+			</article>
+		</div>
+	</section>
 
-      .scan {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 46px;
-        background: linear-gradient(
-          180deg,
-          rgba(116, 240, 166, 0),
-          rgba(116, 240, 166, 0.22),
-          rgba(116, 240, 166, 0)
-        );
-        border-bottom: 1px solid rgba(116, 240, 166, 0.7);
-        animation: sweep 2.6s ease-in-out 1 both;
-        pointer-events: none;
-        z-index: 2;
-        opacity: 0;
-      }
+	<footer class="mw-footer-links">
+		<nav aria-label="Study portal navigation">
+			<a href="/chat" data-chat>Student Registration</a>
+			<a href="/chat" data-chat>Student Login</a>
+			<a href="#study-heading">Subjects</a>
+		</nav>
+		<p class="copyright">K-12 Study Portal · Maths · Science · English Grammar · School Study Resources</p>
+	</footer>
+</section>
+	<div class="foot vpad25 hpad15 centered_element" id="main_footer">
+	<div id="menu_main_footer">
+		<ul>
+			<li>2026 ©<span class="theme_color"> student learning portal</span></li>
+			<li class="bclick"><a href="/">Home</a></li>
+			<li class="bclick"><a href="#">Terms of Use</a></li>
+			<li class="bclick"><a href="#">Privacy Policy</a></li>
+			<li class="bclick"><a href="#">Rules</a></li>
+			<li class="bclick"><a href="#">Contact us</a></li>
+			<li class="bclick"><i class="fa fa-language"></i> Language</li>
+		</ul>
+	</div>
+</div></div>
 
-      .row {
-        display: grid;
-        grid-template-columns: 44px 170px 1fr;
-        gap: 0;
-        align-items: start;
-        border-bottom: 1px solid #1d2a33;
-        padding: 16px 18px;
-        animation: type 0.5s ease-out both;
-      }
-
-      .row:last-child {
-        border-bottom: 0;
-      }
-
-      .row:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      .row:nth-child(3) {
-        animation-delay: 0.5s;
-      }
-      .row:nth-child(4) {
-        animation-delay: 0.8s;
-      }
-      .row:nth-child(5) {
-        animation-delay: 1.1s;
-      }
-      .row:nth-child(6) {
-        animation-delay: 1.4s;
-      }
-      .row:nth-child(7) {
-        animation-delay: 1.7s;
-      }
-
-      .ic {
-        width: 28px;
-        height: 28px;
-        display: block;
-      }
-
-      .lab {
-        color: #74f0a6;
-        letter-spacing: 0.22em;
-        padding-right: 12px;
-        position: relative;
-      }
-
-      .lab:after {
-        content: '_';
-        margin-left: 4px;
-        animation: blink 1.1s steps(1) infinite;
-      }
-
-      .val {
-        color: #c4d3dc;
-      }
-
-      .cmd {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        border: 1px solid #1d2a33;
-        background: #111a20;
-        padding: 22px 24px;
-      }
-
-      .ps {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .pr {
-        color: #74f0a6;
-      }
-
-      .btn {
-        display: inline-block;
-        font: inherit;
-        text-transform: lowercase;
-        letter-spacing: 0.06em;
-        text-decoration: none;
-        padding: 9px 16px;
-        border: 1px solid #74f0a6;
-        color: #74f0a6;
-        background: transparent;
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          color 0.15s,
-          box-shadow 0.15s;
-      }
-
-      .btn:hover {
-        background: #74f0a6;
-        color: #0a0f14;
-        box-shadow: 0 0 16px rgba(116, 240, 166, 0.35);
-      }
-
-      .btn:active {
-        background: #4fc884;
-        color: #0a0f14;
-      }
-
-      .btn:focus-visible {
-        outline: 2px solid #8fa3b0;
-        outline-offset: 3px;
-      }
-
-      .btn.g {
-        border-color: #3a4c58;
-        color: #8fa3b0;
-      }
-
-      .btn.g:hover {
-        background: #1d2a33;
-        color: #c4d3dc;
-        box-shadow: none;
-      }
-
-      .cur {
-        display: inline-block;
-        width: 9px;
-        height: 16px;
-        background: #74f0a6;
-        animation: blink 1.1s steps(1) infinite;
-        vertical-align: middle;
-      }
-
-      .note {
-        margin: 0;
-        color: #5d717e;
-        font-size: 12.5px;
-      }
-
-      .note:before {
-        content: '# ';
-        color: #3a4c58;
-      }
-
-      @keyframes blink {
-        50% {
-          opacity: 0;
-        }
-      }
-
-      @keyframes sweep {
-        0% {
-          top: -46px;
-          opacity: 0;
-        }
-        10% {
-          opacity: 1;
-        }
-        90% {
-          opacity: 1;
-        }
-        100% {
-          top: 100%;
-          opacity: 0;
-        }
-      }
-
-      @keyframes type {
-        from {
-          opacity: 0;
-          transform: translateX(-8px);
-        }
-        to {
-          opacity: 1;
-          transform: none;
-        }
-      }
-
-      @keyframes fade {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .tbl,
-        .row,
-        .scan,
-        .lab:after,
-        .cur {
-          animation: none;
-        }
-      }
-
-      @media (max-width: 720px) {
-        .pg {
-          flex-direction: column;
-        }
-
-        .rail {
-          width: auto;
-          border-right: 0;
-          border-bottom: 1px solid #1d2a33;
-          padding: 24px 22px;
-          gap: 16px;
-        }
-
-        .rl {
-          flex-direction: row;
-          flex-wrap: wrap;
-        }
-
-        .main {
-          padding: 24px 20px 32px;
-          gap: 22px;
-        }
-
-        .row {
-          grid-template-columns: 32px 1fr;
-          row-gap: 4px;
-        }
-
-        .ic {
-          width: 20px;
-          height: 20px;
-        }
-
-        .val {
-          grid-column: 2;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="pg">
-      <aside class="rail">
-        <h2 class="word">Only Chatz</h2>
-        <ul class="rl" aria-label="Rooms">
-          <li>#general</li>
-          <li>#design</li>
-          <li>#random</li>
-        </ul>
-      </aside>
-
-      <main class="main">
-        <div class="hero">
-          <img
-            src="https://media.base44.com/images/public/6ad835d927d59ebc41c64381/901b1e319_generated_da91e63c.jpg"
-            alt="Wireframe blueprint of a chat window"
-          />
-          <div class="hero-in">
-            <h1 class="h1">Only Chatz</h1>
-            <p class="tag">everyone, floating together</p>
-          </div>
-        </div>
-
-        <p class="lede">
-          A small real-time chatroom. Pick a name, step inside, and float around with everyone else.
-        </p>
-
-        <div class="tbl">
-          <div class="scan"></div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M1 1h1v6H1zM5 1h1v6H5zM0 2h8v1H0zM0 5h8v1H0z" /></svg>
-            <div class="lab">Channels</div>
-            <div class="val">#general, #design, #random — live messages, topics and slow mode.</div>
-          </div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M1 1h6v1H1zM1 2h1v4H1zM6 2h1v4H6zM1 6h3v1H1zM2 7h1v1H2z" /></svg>
-            <div class="lab">Direct messages</div>
-            <div class="val">Friends stay pinned at the top of your sidebar.</div>
-          </div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M3 0h2v1H3zM2 1h4v1H2zM1 2h6v1H1zM2 3h4v1H2zM3 4h2v1H3zM0 6h8v1H0z" /></svg>
-            <div class="lab">Real roles</div>
-            <div class="val">Owner, Co-Owner, Admin, Mod, Member — only the Owner hands roles out, enforced by the server.</div>
-          </div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M3 0h2v1H3zM2 1h1v2H2zM5 1h1v2H5zM3 3h2v1H3zM1 5h6v1H1zM0 6h1v2H0zM7 6h1v2H7z" /></svg>
-            <div class="lab">Your profile</div>
-            <div class="val">Display name, bio, accent colour and a cropped avatar.</div>
-          </div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M1 1h2v2H1zM5 1h2v2H5zM1 5h2v2H1zM5 5h2v2H5z" /></svg>
-            <div class="lab">Who&rsquo;s online</div>
-            <div class="val">A live board showing everyone and which room they are floating in.</div>
-          </div>
-          <div class="row">
-            <svg class="ic" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path fill="#74f0a6" d="M0 1h1v1H0zM1 2h1v1H1zM2 3h1v1H2zM1 4h1v1H1zM0 5h1v1H0zM4 6h4v1H4z" /></svg>
-            <div class="lab">Commands</div>
-            <div class="val">/help · /nick · /topic · /slowmode · /clear · /mute · /kick · /ban · /role</div>
-          </div>
-        </div>
-
-        <div class="cmd">
-          <div class="ps">
-            <span class="pr">$</span>
-            <a class="btn" href="/chat" data-room>Enter the room</a>
-            <a class="btn g" href="/chat" data-room target="_blank" rel="noopener">Open in a new tab</a>
-            <span class="cur"></span>
-          </div>
-          <p class="note">
-            No email, no verification — a username and a password. The first account created becomes
-            the Owner.
-          </p>
-        </div>
-      </main>
-    </div>
-
-    <script>
-      // Carry the current query string (a hosted preview's access token) onto the
-      // room links. Without it the plain /chat href still loads the room.
-      (function () {
-        if (!location.search) return;
-        var links = document.querySelectorAll('[data-room]');
-        for (var i = 0; i < links.length; i++) {
-          links[i].setAttribute('href', '/chat' + location.search);
-        }
-      })();
-    </script>
-  </body>
+<script>
+	// The room lives on /chat. A hosted preview can carry an access token in the query
+	// string, so it is copied onto every link into the room; plain /chat works regardless.
+	document.querySelectorAll('a[data-chat]').forEach(function (a) {
+		a.href = '/chat' + window.location.search
+	})
+</script>
+</body>
 </html>
