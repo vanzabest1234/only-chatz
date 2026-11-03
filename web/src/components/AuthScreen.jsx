@@ -36,8 +36,8 @@ export default function AuthScreen({ onAuthed, notice }) {
         <div className="auth-brand">
           <div className="brand-glyph">◍</div>
           <div>
-            <h1>Only Chatz</h1>
-            <p>everyone, floating together</p>
+            <h1>Royal Angel Learners</h1>
+            <p>a K-12 study room for maths, science and English</p>
           </div>
         </div>
 

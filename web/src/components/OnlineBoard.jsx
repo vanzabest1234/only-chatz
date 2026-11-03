@@ -6,7 +6,7 @@ const ORDER = ['owner', 'co-owner', 'admin', 'mod', 'member']
 
 export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
   const roomLabel = entry => {
-    if (!entry) return 'Floating around'
+    if (!entry) return 'Not in a room'
     if (entry.kind === 'channel') {
       const channel = me.channels.find(item => item.id === entry.id)
       return channel ? `#${channel.name}` : 'A channel'
@@ -45,7 +45,7 @@ export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
         </header>
 
         <div className="board-list">
-          {people.length === 0 && <p className="board-empty">Nobody else is floating here yet.</p>}
+          {people.length === 0 && <p className="board-empty">No one else is in a study room yet.</p>}
           {people.map(person => (
             <button
               key={person.id}

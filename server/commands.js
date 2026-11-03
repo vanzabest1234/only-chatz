@@ -9,7 +9,7 @@ import { publicMessage } from './serializers.js'
 async function postSystem(channel, content) {
   const { rows } = await q(
     `INSERT INTO messages (channel_id, author_name, author_role, content, system)
-     VALUES ($1, 'Only Chatz', 'system', $2, TRUE) RETURNING *`,
+     VALUES ($1, 'Royal Angel Learners', 'system', $2, TRUE) RETURNING *`,
     [channel.id, content],
   )
   const message = publicMessage(rows[0])

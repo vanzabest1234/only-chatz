@@ -89,6 +89,9 @@ export function cleanName(value, max = 32) {
 const RESERVED = new Set([
   'only chatz',
   'onlychatz',
+  'royal angel',
+  'royal angel learners',
+  'royalangellearners',
   'system',
   'server',
   'admin',

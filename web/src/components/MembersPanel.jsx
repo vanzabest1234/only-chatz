@@ -20,7 +20,7 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
         <div className="members-head">
           <div>
             <h2>Members</h2>
-            <p>{me.members.length} people floating</p>
+            <p>{me.members.length} learners in the portal</p>
           </div>
           <button className="icon-btn members-close" onClick={onClose} aria-label="Close members">
             <Icon name="close" />

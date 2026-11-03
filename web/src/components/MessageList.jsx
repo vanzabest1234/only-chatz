@@ -61,8 +61,9 @@ function EmptyRoom({ kind, channelName }) {
         <div className="empty-badge">
           <Icon name="book" size={24} />
         </div>
-        <h3>Your study corner</h3>
-        <p>This is the start of your conversation. Say hello, swap notes, or plan a study session.</p>
+        <span className="empty-kicker">Royal Angel Learners</span>
+        <h3>Your private study chat</h3>
+        <p>This chat is just for the two of you. Say hello, swap notes, or plan a study session.</p>
       </div>
     )
   }
@@ -72,10 +73,11 @@ function EmptyRoom({ kind, channelName }) {
       <div className="empty-badge">
         <Icon name="book" size={24} />
       </div>
-      <h3>Welcome to {channelName ? `#${channelName}` : 'the study room'}</h3>
+      <span className="empty-kicker">K-12 Study Room</span>
+      <h3>Welcome to Royal Angel Learners</h3>
       <p>
-        Class is quiet for now. Take a seat, get your notes out, and start the conversation — no
-        question is too small.
+        {channelName ? `You're in #${channelName}. ` : 'You are in a study room. '}
+        Class is quiet for now — say hello, share what you are studying, or ask a question.
       </p>
       <ul className="empty-tips">
         <li>

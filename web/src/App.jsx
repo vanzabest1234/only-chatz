@@ -199,7 +199,7 @@ export default function App() {
         <Background />
         <div className="boot">
           <div className="brand-glyph">◍</div>
-          <p>Opening Only Chatz…</p>
+          <p>Opening Royal Angel Learners…</p>
         </div>
       </>
     )
@@ -259,7 +259,7 @@ export default function App() {
           />
         ) : (
           <section className="chat glass">
-            <p className="empty">Pick a channel to start floating.</p>
+            <p className="empty">Pick a study room to begin.</p>
           </section>
         )}
 

@@ -29,8 +29,8 @@ export default function Sidebar({
         <div className="brand">
           <div className="brand-glyph">◍</div>
           <div className="brand-text">
-            <h1>Only Chatz</h1>
-            <p>{me.members.length} floating people</p>
+            <h1>Royal Angel Learners</h1>
+            <p>{me.members.length} learners in the portal</p>
           </div>
           <button className="icon-btn drawer-close" onClick={onClose} aria-label="Close menu">
             <Icon name="close" />
@@ -47,7 +47,7 @@ export default function Sidebar({
           </section>
 
           <section className="section">
-            <h2 className="section-title">Text Channels</h2>
+            <h2 className="section-title">Study Rooms</h2>
             {me.channels.map(channel => (
               <button
                 key={channel.id}
@@ -62,7 +62,7 @@ export default function Sidebar({
           </section>
 
           <section className="section">
-            <h2 className="section-title">Direct Messages</h2>
+            <h2 className="section-title">Private Chats</h2>
 
             <h3 className="sub-title">Friends</h3>
             {friendUsers.length === 0 && (
