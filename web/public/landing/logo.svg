@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" role="img" aria-label="Royal Angel Learners">
-  <rect x="2" y="8" width="48" height="48" rx="13" fill="#173f67"/>
+  <rect x="2" y="8" width="48" height="48" rx="13" fill="#0ea5e9"/>
   <path d="M16 25h13a5 5 0 0 1 5 5v16a5 5 0 0 0-5-5H16z" fill="#ffffff" opacity="0.92"/>
   <path d="M42 25H29a5 5 0 0 0-5 5v16a5 5 0 0 1 5-5h13z" fill="#ffffff" opacity="0.65"/>
-  <path d="M29 25v16" stroke="#173f67" stroke-width="2"/>
-  <text x="62" y="35" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#173f67" letter-spacing="0.2">ROYAL ANGEL</text>
-  <text x="63" y="53" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#22c55e" letter-spacing="3.6">LEARNERS</text>
+  <path d="M29 25v16" stroke="#0ea5e9" stroke-width="2"/>
+  <text x="62" y="35" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#f4f4f5" letter-spacing="0.2">ROYAL ANGEL</text>
+  <text x="63" y="53" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#38bdf8" letter-spacing="3.6">LEARNERS</text>
 </svg>

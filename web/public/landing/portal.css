@@ -586,3 +586,242 @@ a {
     padding-top: 38px;
   }
 }
+
+/* ---------- dark theme ----------
+   The page ships in the dark zinc/sky palette used by the chat room:
+   near-black page, #202023 cards, #27272a raised bars, #3f3f46 borders,
+   sky-blue links and accents, light grey type. */
+
+body {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.08), transparent 38%),
+    radial-gradient(circle at 96% 100%, rgba(14, 165, 233, 0.07), transparent 32%),
+    #18181b;
+  color: #d4d4d8;
+}
+
+a {
+  color: #38bdf8;
+}
+
+.sp-card {
+  background: #202023;
+  border: 1px solid #27272a;
+  border-top: 4px solid #0ea5e9;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.25);
+}
+
+.sp-badge {
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+
+.sp-title {
+  color: #f4f4f5;
+}
+
+.sp-lead {
+  color: #a1a1aa;
+}
+
+.sp-lead strong {
+  color: #e4e4e7;
+}
+
+.sp-subjects span {
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  background: #27272a;
+  color: #e4e4e7;
+}
+
+.sp-subjects svg {
+  color: #38bdf8;
+}
+
+.sp-material {
+  border: 1px solid #27272a;
+  background: #18181b;
+}
+
+.sp-material-title {
+  background: #0f172a;
+  color: #e4e4e7;
+}
+
+.sp-material-grid div {
+  border-right: 1px solid #27272a;
+  border-bottom: 1px solid #27272a;
+  color: #e4e4e7;
+}
+
+.sp-material-grid small {
+  color: #a1a1aa;
+}
+
+.sp-cta {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #22c55e;
+}
+
+.sp-cta:hover {
+  background: #16a34a;
+  box-shadow: 0 7px 16px rgba(34, 197, 94, 0.2);
+}
+
+.sp-signup {
+  border-top: 1px solid #27272a;
+}
+
+.sp-signup p {
+  color: #71717a;
+}
+
+.sp-signup a {
+  color: #38bdf8;
+}
+
+.sp-signup a:hover {
+  color: #7dd3fc;
+}
+
+.sp-grades {
+  color: #71717a;
+}
+
+.sp-grades strong {
+  color: #a1a1aa;
+}
+
+.sp-grades span {
+  border-radius: 4px;
+  background: #27272a;
+  color: #a1a1aa;
+}
+
+.sp-kicker {
+  color: #38bdf8;
+}
+
+.sp-head h2,
+.sp-samples h3 {
+  color: #f4f4f5;
+}
+
+.sp-head p {
+  color: #a1a1aa;
+}
+
+.sp-box {
+  background: #202023;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+}
+
+.sp-icon {
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.sp-label {
+  color: #71717a;
+}
+
+.sp-box h3 {
+  color: #f4f4f5;
+}
+
+.sp-box p {
+  color: #a1a1aa;
+}
+
+.sp-topics {
+  color: #d4d4d8;
+}
+
+.sp-chips span {
+  border: 1px solid #3f3f46;
+  background: #27272a;
+  color: #a1a1aa;
+}
+
+.sp-note {
+  background: #202023;
+  border: 1px solid #27272a;
+  border-top: 3px solid #22c55e;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+}
+
+.sp-note.science {
+  border-top-color: #38bdf8;
+}
+
+.sp-note.grammar {
+  border-top-color: #a78bfa;
+}
+
+.sp-note-head,
+.sp-note.science .sp-note-head,
+.sp-note.grammar .sp-note-head {
+  background: #27272a;
+  border-bottom: 1px solid #3f3f46;
+}
+
+.sp-note-head span {
+  color: #4ade80;
+}
+
+.sp-note.science .sp-note-head span {
+  color: #38bdf8;
+}
+
+.sp-note.grammar .sp-note-head span {
+  color: #c4b5fd;
+}
+
+.sp-note-head h4,
+.sp-note.science .sp-note-head h4,
+.sp-note.grammar .sp-note-head h4 {
+  color: #f4f4f5;
+}
+
+.sp-note-body {
+  color: #a1a1aa;
+}
+
+.sp-band {
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  background: #18181b;
+  color: #e4e4e7;
+}
+
+.sp-band.science {
+  border-color: #1e3a5f;
+  background: rgba(56, 189, 248, 0.08);
+  color: #bae6fd;
+}
+
+.sp-band.grammar {
+  border-color: rgba(167, 139, 250, 0.32);
+  background: rgba(167, 139, 250, 0.08);
+  color: #ddd6fe;
+}
+
+.sp-practice {
+  border-top: 1px dashed #3f3f46;
+}
+
+.sp-foot a {
+  color: #38bdf8;
+}
+
+.sp-copy {
+  color: #71717a;
+}
