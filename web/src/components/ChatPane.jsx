@@ -3,15 +3,7 @@ import Icon from './Icon'
 import MessageList from './MessageList'
 import Composer from './Composer'
 
-export default function ChatPane({
-  me,
-  channel,
-  thread,
-  messages,
-  onSend,
-  onOpenSidebar,
-  onOpenMembers,
-}) {
+export default function ChatPane({ me, channel, thread, messages, onSend, onOpenSidebar }) {
   const kind = channel ? 'channel' : 'dm'
   const peer = thread?.peer
   const peerOnline = peer ? me.online.includes(peer.id) : false
@@ -38,7 +30,7 @@ export default function ChatPane({
               <Avatar
                 name={peer.displayName}
                 color={peer.color}
-                size={32}
+                size={30}
                 online={peerOnline}
                 src={peer.avatarUrl}
               />
@@ -49,17 +41,12 @@ export default function ChatPane({
             <p className="chat-topic">{subtitle}</p>
           </div>
         </div>
-
-        <button className="icon-btn members-toggle" onClick={onOpenMembers} aria-label="Open members">
-          <Icon name="users" />
-          <span className="members-count">{me.members.length}</span>
-        </button>
       </header>
 
       <MessageList messages={messages} kind={kind} me={me} />
 
       <Composer
-        placeholder={channel ? `Message #${channel.name}` : `Message ${title}`}
+        placeholder="Type here..."
         commands={me.commands}
         onSend={onSend}
         disabled={muted}

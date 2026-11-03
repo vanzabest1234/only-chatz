@@ -1,10 +1,17 @@
 import { useRef, useState } from 'react'
 import Icon from './Icon'
 
+const EMOJI = [
+  '😀', '😄', '😅', '😂', '🙂', '😉', '😍', '😘',
+  '😎', '🤔', '😴', '😭', '😡', '👍', '👎', '🙏',
+  '🔥', '💜', '✨', '🎉', '☕', '🌙', '💀', '👀',
+]
+
 export default function Composer({ placeholder, commands, onSend, disabled, slowmode = 0 }) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const area = useRef(null)
 
   const matches =
@@ -39,6 +46,12 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
     area.current?.focus()
   }
 
+  function addEmoji(emoji) {
+    setValue(current => current + emoji)
+    setEmojiOpen(false)
+    area.current?.focus()
+  }
+
   return (
     <form
       className="composer-wrap"
@@ -58,7 +71,46 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
         </div>
       )}
 
+      {emojiOpen && (
+        <div className="emoji-pop glass">
+          {EMOJI.map(emoji => (
+            <button
+              key={emoji}
+              type="button"
+              className="emoji-item"
+              onClick={() => addEmoji(emoji)}
+              aria-label={`Insert ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="composer">
+        <button
+          type="button"
+          className="tool-btn"
+          aria-label="Commands"
+          title="Commands"
+          onClick={() => {
+            setValue(current => (current.startsWith('/') ? current : `/${current}`))
+            area.current?.focus()
+          }}
+        >
+          <Icon name="plus" size={18} />
+        </button>
+        <button
+          type="button"
+          className="tool-btn"
+          aria-label="Emoji"
+          title="Emoji"
+          aria-expanded={emojiOpen}
+          onClick={() => setEmojiOpen(open => !open)}
+        >
+          <Icon name="smile" size={18} />
+        </button>
+
         <textarea
           ref={area}
           rows={1}
@@ -71,12 +123,14 @@ export default function Composer({ placeholder, commands, onSend, disabled, slow
             resize(event.target)
           }}
           onKeyDown={event => {
+            if (event.key === 'Escape') setEmojiOpen(false)
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
               submit()
             }
           }}
         />
+
         <button
           className="send"
           type="submit"

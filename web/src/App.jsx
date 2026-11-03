@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, getToken, setToken } from './api'
 import { socket } from './socket'
 import Background from './components/Background'
+import AppHeader from './components/AppHeader'
+import AppFooter from './components/AppFooter'
 import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
 import ChatPane from './components/ChatPane'
@@ -16,6 +18,8 @@ export default function App() {
   const [messages, setMessages] = useState([])
   const [notice, setNotice] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [railOpen, setRailOpen] = useState(true)
+  const [peopleOpen, setPeopleOpen] = useState(true)
   const [membersOpen, setMembersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [boardOpen, setBoardOpen] = useState(false)
@@ -217,10 +221,35 @@ export default function App() {
   const channel = view?.type === 'channel' ? me.channels.find(item => item.id === view.id) : null
   const thread = view?.type === 'dm' ? me.threads.find(item => item.id === view.id) : null
 
+  const isNarrow = query => window.matchMedia(query).matches
+
+  // The header's people button and the footer's menu button drive the docked
+  // rails on wide screens and the drawers on narrow ones.
+  const togglePeople = () => {
+    if (isNarrow('(max-width: 1180px)')) setMembersOpen(value => !value)
+    else setPeopleOpen(value => !value)
+  }
+
+  const toggleChannels = () => {
+    if (isNarrow('(max-width: 900px)')) setSidebarOpen(value => !value)
+    else setRailOpen(value => !value)
+  }
+
   return (
     <>
       <Background />
-      <div className="shell">
+      <div className="app-frame">
+        <AppHeader
+          user={me.user}
+          onlineCount={me.online.length}
+          onTogglePeople={togglePeople}
+          onOpenBoard={() => setBoardOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+
+        <div
+          className={`shell ${railOpen ? '' : 'rail-collapsed'} ${peopleOpen ? '' : 'people-collapsed'}`}
+        >
         <Sidebar
           me={me}
           channelId={channel?.id}
@@ -255,7 +284,6 @@ export default function App() {
             messages={messages}
             onSend={send}
             onOpenSidebar={() => setSidebarOpen(true)}
-            onOpenMembers={() => setMembersOpen(value => !value)}
           />
         ) : (
           <section className="chat glass">
@@ -270,6 +298,9 @@ export default function App() {
           onOpenDm={openDm}
           onToggleFriend={toggleFriend}
         />
+        </div>
+
+        <AppFooter onlineCount={me.online.length} onToggleChannels={toggleChannels} />
 
         {boardOpen && (
           <OnlineBoard

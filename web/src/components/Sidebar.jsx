@@ -26,12 +26,8 @@ export default function Sidebar({
     <>
       {open && <div className="scrim" onClick={onClose} aria-hidden="true" />}
       <aside className={`sidebar glass ${open ? 'open' : ''}`}>
-        <div className="brand">
-          <div className="brand-glyph">◍</div>
-          <div className="brand-text">
-            <h1>Only Chatz</h1>
-            <p>{me.members.length} floating people</p>
-          </div>
+        <div className="rail-head">
+          <h2>Rooms</h2>
           <button className="icon-btn drawer-close" onClick={onClose} aria-label="Close menu">
             <Icon name="close" />
           </button>

@@ -13,10 +13,14 @@ function ChannelMessage({ message }) {
   }
   return (
     <div className="msg">
-      <Avatar name={message.authorName} color={message.authorColor} src={message.authorAvatar} />
+      <span className="msg-ring" style={{ '--ring': message.authorColor }}>
+        <Avatar name={message.authorName} color={message.authorColor} src={message.authorAvatar} />
+      </span>
       <div className="msg-body">
         <div className="msg-head">
-          <span className="msg-name">{message.authorName}</span>
+          <span className="msg-name" style={{ color: message.authorColor }}>
+            {message.authorName}
+          </span>
           <RoleBadge role={message.authorRole} />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
         </div>
@@ -31,17 +35,21 @@ function DmMessage({ message, me }) {
   return (
     <div className={`msg dm ${own ? 'own' : ''}`}>
       {!own && (
-        <Avatar
-          name={message.authorName}
-          color={message.authorColor}
-          size={32}
-          src={message.authorAvatar}
-        />
+        <span className="msg-ring" style={{ '--ring': message.authorColor }}>
+          <Avatar
+            name={message.authorName}
+            color={message.authorColor}
+            size={32}
+            src={message.authorAvatar}
+          />
+        </span>
       )}
       <div className="dm-stack">
         {!own && (
           <div className="msg-head">
-            <span className="msg-name">{message.authorName}</span>
+            <span className="msg-name" style={{ color: message.authorColor }}>
+              {message.authorName}
+            </span>
             <RoleBadge role={message.authorRole} />
             <span className="msg-time">{timeShort(message.createdAt)}</span>
           </div>
