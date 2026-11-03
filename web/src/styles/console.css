@@ -930,6 +930,19 @@ textarea:focus-visible,
   border-bottom: 1px solid var(--line-soft);
 }
 
+.board-list .member-group {
+  display: grid;
+  gap: 6px;
+}
+
+.board-list .member-group + .member-group {
+  margin-top: 6px;
+}
+
+.board-list .member-group-head {
+  padding: 6px 10px 2px;
+}
+
 .board-row:hover {
   background: var(--panel-2);
 }
