@@ -637,6 +637,34 @@ textarea:focus-visible,
   margin-left: auto;
 }
 
+.member-group + .member-group {
+  margin-top: 8px;
+}
+
+.member-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 6px 5px;
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.member-group-count {
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.12);
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
 .member-open,
 .member-row,
 .friend-btn {
