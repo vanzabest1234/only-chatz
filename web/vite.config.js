@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { createLogger, defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const API_TARGET = 'http://api:8000'
@@ -8,6 +8,19 @@ const API_TARGET = 'http://api:8000'
 // accepts localhost and bare IPs and answers everything else with "Blocked request", so
 // the check is turned off here — a dev server is not the place to pin one hostname.
 const allowedHosts = true
+
+// A tab that reloads, closes or loses its network drops the socket without a close frame, so
+// http-proxy reports `read ECONNRESET` for that abandoned websocket on every load. That is
+// teardown noise, not a failed request; keep it out of the log so a real proxy error stands out.
+function roomLogger() {
+  const logger = createLogger()
+  const fail = logger.error.bind(logger)
+  logger.error = (message, options) => {
+    if (typeof message === 'string' && message.includes('ws proxy socket error') && message.includes('ECONNRESET')) return
+    fail(message, options)
+  }
+  return logger
+}
 
 // Every front door opens the room: `/` plus the old launcher paths render the app in
 // place. No HTTP redirect — a preview host treats a 302 on the root document as a routing
@@ -39,6 +52,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    logger: roomLogger(),
     strictPort: true,
     allowedHosts,
     proxy: {

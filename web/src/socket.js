@@ -20,3 +20,11 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'visible') wake()
   })
 }
+
+// Closing or reloading the tab should close the socket politely. A websocket torn out from
+// under the dev proxy surfaces as `ws proxy socket error: read ECONNRESET` on every reload.
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    if (socket.connected) socket.disconnect()
+  })
+}
