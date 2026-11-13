@@ -48,11 +48,11 @@ function frontDoorToChat() {
 }
 
 export default defineConfig({
+  customLogger: roomLogger(),
   plugins: [react(), frontDoorToChat()],
   server: {
     host: '0.0.0.0',
     port: 5173,
-    logger: roomLogger(),
     strictPort: true,
     allowedHosts,
     proxy: {
