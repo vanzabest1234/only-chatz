@@ -3,12 +3,11 @@ import react from '@vitejs/plugin-react'
 
 const API_TARGET = 'http://api:8000'
 
-// Sandbox preview: the proxy hands us a rotating `<port>-<sandbox id>` host, so the
-// allowlist is extended with a wildcard only while BASE44_PREVIEW_MODE is "1".
-const allowedHosts = []
-if (process.env.BASE44_PREVIEW_MODE === '1' && process.env.BASE44_SANDBOX_HOST_DOMAIN) {
-  allowedHosts.push(`.${process.env.BASE44_SANDBOX_HOST_DOMAIN}`)
-}
+// The room is opened from whatever address reaches it: the preview proxy, a phone on the
+// LAN by IP or machine name, a tunnel, a custom domain. Vite's default allowlist only
+// accepts localhost and bare IPs and answers everything else with "Blocked request", so
+// the check is turned off here — a dev server is not the place to pin one hostname.
+const allowedHosts = true
 
 // Every front door opens the room: `/` plus the old launcher paths render the app in
 // place. No HTTP redirect — a preview host treats a 302 on the root document as a routing
@@ -41,7 +40,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: allowedHosts.length ? allowedHosts : undefined,
+    allowedHosts,
     proxy: {
       // xfwd forwards the caller's address, so the API's per-IP limits see the real
       // client instead of the proxy container.

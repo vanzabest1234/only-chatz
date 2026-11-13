@@ -170,10 +170,18 @@ Non-obvious things worth knowing before changing something:
   beside the box (`Composer.jsx` → `onSend(text, imageUrl)`), and the picture renders above the
   text in both channel rows and DM bubbles (`MessageImage` in `MessageList.jsx`). Edits still only
   change the text; there is no way to edit or swap the picture after sending.
-- **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds
-  `.<BASE44_SANDBOX_HOST_DOMAIN>` to Vite's `allowedHosts` (the preview host rotates). With the flag
-  unset the allowlist is untouched. `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` is passed through from
-  the platform. Never hardcode resolved `BASE44_*` hostnames anywhere.
+- **The dev server accepts any host name**, so the room opens from whatever address reaches it:
+  the preview proxy, a phone on the LAN (IP or machine name), a tunnel, a custom domain.
+  `web/vite.config.js` sets `server.allowedHosts: true`, because Vite's default allowlist answers
+  every non-localhost *host name* with "Blocked request. This host ... is not allowed" — that is
+  what made the app look like it only worked on one network. Releases are served by Express, which
+  has no host check, so nothing there needs changing. Never hardcode a resolved `BASE44_*` hostname.
+- **A dropped socket is a network change, and the client catches up on it.** `web/src/socket.js`
+  reconnects on `online` and on the tab becoming visible (only when a token exists — an anonymous
+  handshake would just be refused), and the `connect` handler in `App.jsx` (`resync`) re-reads
+  `/api/me` and the open room's messages before re-sharing `presence:where`. So a wifi switch,
+  a tunnel hiccup or a phone waking up shows the messages sent during the gap instead of a stale
+  room. Don't narrow `connect` back to only `shareRoom`.
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.

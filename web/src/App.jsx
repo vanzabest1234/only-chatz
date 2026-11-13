@@ -130,6 +130,15 @@ export default function App() {
       load().catch(() => {})
     }
 
+    // A disconnect is a network change (another wifi, a tunnel hiccup, a phone waking up), so
+    // every (re)connection catches up on the account and the open room instead of trusting the
+    // view fetched before the drop — otherwise messages sent during the gap are never shown.
+    const resync = () => {
+      refresh()
+      loadMessages().catch(() => {})
+      shareRoom()
+    }
+
     const handlers = {
       'message:new': message => {
         const target = viewRef.current
@@ -210,7 +219,7 @@ export default function App() {
         setMe(previous =>
           previous ? { ...previous, user: { ...previous.user, coins: state } } : previous,
         ),
-      connect: shareRoom,
+      connect: resync,
       'session:revoke': payload => {
         setNotice(payload?.message || 'You were removed from this server.')
         signOut()
