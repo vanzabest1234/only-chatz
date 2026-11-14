@@ -3,6 +3,7 @@ import Icon from './Icon'
 import { api } from '../api'
 import { flairColor, flairLabel } from '../lib/flairs'
 import { money } from '../lib/format'
+import RankOffers from './RankOffers'
 
 const TURNS = 5
 const SPIN_MS = 4200
@@ -21,7 +22,7 @@ function slicePath(start, end) {
 }
 
 
-export default function FlairWheel({ coins, unlimited = false, onClose, onChanged }) {
+export default function FlairWheel({ coins, role, unlimited = false, onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [angle, setAngle] = useState(0)
   const [spinning, setSpinning] = useState(false)
@@ -230,6 +231,13 @@ export default function FlairWheel({ coins, unlimited = false, onClose, onChange
             )
           })}
         </div>
+
+        <RankOffers
+          role={role}
+          unlimited={unlimited}
+          coins={coins}
+          onChanged={onChanged}
+        />
       </div>
     </div>
   )

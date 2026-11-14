@@ -121,8 +121,9 @@ Non-obvious things worth knowing before changing something:
   get `coins:update`. The top bar's coin icon (an `∞`/balance chip) opens `SendCoins.jsx`, which
   picks any member and posts the amount; it is the member-facing counterpart to the Owner-only
   `/give` mint.
-- **Ranks can be bought with coins** (`server/ranks.js` + `routes/ranks.js`, opened from the
-  sidebar's "Rank shop" and the narrow-screen "rank" pill). Every rank costs 10,000 royal coins and
+- **Ranks can be bought with coins, from the flair wheel** (`server/ranks.js` + `routes/ranks.js`,
+  rendered by `RankOffers.jsx` at the bottom of `FlairWheel.jsx` — there is no separate rank shop
+  entry in the sidebar or the quick bar). Every rank costs 10,000 royal coins and
   each purchase raises the next price by another 10,000, so the first is 10,000, the second 20,000,
   the third 30,000 — `users.ranks_bought` is that counter. `mod`, `admin` and `co-owner` are for
   sale; `member` is the default and `owner` is never bought (an owner sees every rank as held, and

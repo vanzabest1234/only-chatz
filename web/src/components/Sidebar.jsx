@@ -17,7 +17,6 @@ export default function Sidebar({
   onOpenBoard,
   onOpenFlairs,
   onOpenPass,
-  onOpenRanks,
   onOpenCasino,
   onOpenLeaders,
   onSignOut,
@@ -151,11 +150,6 @@ export default function Sidebar({
               <span className="hash">▮</span>
               <span className="nav-label">Season pass</span>
               <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
-            </button>
-            <button className="nav-row rank-link" onClick={onOpenRanks}>
-              <span className="hash">▲</span>
-              <span className="nav-label">Rank shop</span>
-              <span className="chip">{money(10000)}</span>
             </button>
           </section>
         </div>
