@@ -1,6 +1,7 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
+import PlayerName from './PlayerName'
 
 const ORDER = ['owner', 'co-owner', 'admin', 'mod', 'member']
 
@@ -67,7 +68,11 @@ export default function OnlineBoard({ me, where, onClose, onOpenDm }) {
               />
               <span className="board-text">
                 <span className="board-name">
-                  {person.displayName}
+                  <PlayerName
+                    name={person.displayName}
+                    role={person.role}
+                    flairs={person.flairs}
+                  />
                   {person.id === me.user.id ? ' (you)' : ''}
                 </span>
                 <span className="board-meta">

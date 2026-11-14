@@ -2469,3 +2469,60 @@ body {
   background: var(--phosphor);
   box-shadow: none;
 }
+
+/* Names wear what their owner holds: a rainbow and a crown for MVP, gold for VIP,
+   red with a trident for the owner. `PlayerName.jsx` picks the tone. */
+.player-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22em;
+  min-width: 0;
+}
+
+.player-name .name-mark {
+  font-size: 0.92em;
+  line-height: 1;
+}
+
+.player-name.is-vip .player-name-text {
+  color: #ffd166;
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.35);
+}
+
+.player-name.is-owner .player-name-text {
+  color: #ff5f5f;
+  text-shadow: 0 0 10px rgba(255, 95, 95, 0.4);
+}
+
+.player-name.is-mvp .player-name-text {
+  background-image: linear-gradient(
+    90deg,
+    #ff6b6b,
+    #ffd166,
+    #8ef58a,
+    #7df9ff,
+    #c9a4ff,
+    #ff6b6b
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: name-rainbow 6s linear infinite;
+}
+
+@keyframes name-rainbow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 220% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-name.is-mvp .player-name-text {
+    animation: none;
+  }
+}

@@ -87,6 +87,13 @@ Non-obvious things worth knowing before changing something:
   `/api/me`. `CHANNEL_ACCESS_SQL` is the one place the rule is written in SQL; keep the four call
   sites (snapshot, read, post, socket) on it.
   The custom tag itself takes any characters up to 20 — only control/invisible ones are stripped.
+- **Names are painted by what you hold** (`web/src/components/PlayerName.jsx`, styles at the end of
+  `console.css`): the owner is red with a 🔱, an MVP wears an animated rainbow with a 👑, a VIP is
+  gold. Every place a display name renders goes through that component — messages (channel and DM),
+  the members panel, the who's-online board, the profile banner, and the sidebar's friends, DMs and
+  me-card. **The owner check comes first on purpose:** owners hold the whole wheel, so without it
+  every owner would wear the MVP rainbow instead of their trident. Purely cosmetic — never read a
+  name class for a permission.
 - **A mention is a ping, delivered over sockets.** Channel/DM posts parse `@username` in
   `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
   `user:<id>`; `App.jsx` answers with a chime and a toast whose room label comes from the payload,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Avatar from './Avatar'
 import RoleBadge from './RoleBadge'
 import FlairBadges from './FlairBadges'
+import PlayerName from './PlayerName'
 import { snippet, timeShort } from '../lib/format'
 import { splitMentions } from '../lib/mentions'
 
@@ -209,7 +210,12 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
       <div className="msg-body">
         {/* chatflux puts the name and its time on the same line; roles and flairs follow. */}
         <div className="msg-head">
-          <span className="msg-name">{message.authorName}</span>
+          <PlayerName
+            className="msg-name"
+            name={message.authorName}
+            role={message.authorRole}
+            flairs={message.authorFlairs}
+          />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
           {message.editedAt && <span className="msg-edited">(edited)</span>}
           <RoleBadge role={message.authorRole} />
@@ -271,7 +277,12 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProf
       <div className="dm-stack">
         {!own && (
           <div className="msg-head">
-            <span className="msg-name">{message.authorName}</span>
+            <PlayerName
+            className="msg-name"
+            name={message.authorName}
+            role={message.authorRole}
+            flairs={message.authorFlairs}
+          />
             <RoleBadge role={message.authorRole} />
             <span className="msg-time">{timeShort(message.createdAt)}</span>
             {message.editedAt && <span className="msg-edited">(edited)</span>}

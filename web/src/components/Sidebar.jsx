@@ -1,6 +1,7 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
+import PlayerName from './PlayerName'
 import { money, relativeTime, snippet } from '../lib/format'
 
 export default function Sidebar({
@@ -62,7 +63,12 @@ export default function Sidebar({
                   online={isOnline(friend.id)}
                   src={friend.avatarUrl}
                 />
-                <span className="nav-label">{friend.displayName}</span>
+                <PlayerName
+                  className="nav-label"
+                  name={friend.displayName}
+                  role={friend.role}
+                  flairs={friend.flairs}
+                />
                 <RoleBadge role={friend.role} />
               </button>
             ))}
@@ -82,7 +88,12 @@ export default function Sidebar({
                   src={thread.peer.avatarUrl}
                 />
                 <span className="dm-text">
-                  <span className="nav-label">{thread.peer.displayName}</span>
+                  <PlayerName
+                    className="nav-label"
+                    name={thread.peer.displayName}
+                    role={thread.peer.role}
+                    flairs={thread.peer.flairs}
+                  />
                   <span className="dm-snippet">
                     {thread.lastMessage ? snippet(thread.lastMessage.content) : 'Say hello'}
                   </span>
@@ -152,7 +163,12 @@ export default function Sidebar({
             src={me.user.avatarUrl}
           />
           <div className="meta">
-            <span className="name">{me.user.displayName}</span>
+            <PlayerName
+              className="name"
+              name={me.user.displayName}
+              role={me.user.role}
+              flairs={me.user.flairs}
+            />
             <RoleBadge role={me.user.role} />
           </div>
           <button

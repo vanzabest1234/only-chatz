@@ -2,6 +2,7 @@ import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
 import FlairBadges from './FlairBadges'
+import PlayerName from './PlayerName'
 
 /** The banner that opens when someone taps another member's picture. */
 export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm }) {
@@ -25,7 +26,9 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
             />
           </span>
           <div className="profile-id">
-            <h2>{member.displayName}</h2>
+            <h2>
+              <PlayerName name={member.displayName} role={member.role} flairs={member.flairs} />
+            </h2>
             <p className="profile-handle">@{member.username}</p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close profile">
