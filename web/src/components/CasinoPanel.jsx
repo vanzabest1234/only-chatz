@@ -96,7 +96,7 @@ export default function CasinoPanel({ me, onClose }) {
             ◉
           </span>
           <div>
-            <span className="vault-balance">{money(balance)}</span>
+            <span className="vault-balance">{money(balance, me?.user?.role === 'owner')}</span>
             <span className="vault-balance-unit">royal coins</span>
           </div>
         </div>

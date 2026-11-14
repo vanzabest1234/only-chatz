@@ -21,7 +21,7 @@ function slicePath(start, end) {
 }
 
 
-export default function FlairWheel({ coins, onClose, onChanged }) {
+export default function FlairWheel({ coins, unlimited = false, onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [angle, setAngle] = useState(0)
   const [spinning, setSpinning] = useState(false)
@@ -188,7 +188,7 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
           )}
           {!won && !error && data && (
             <p className="wheel-hint">
-              you hold {money(wallet.coins)} coins · +100 every {wallet.tickMinutes ?? 10} min · vip
+              you hold {money(wallet.coins, unlimited)} coins · +100 every {wallet.tickMinutes ?? 10} min · vip
               1% · mvp 0.1% · custom tag 0.01%
             </p>
           )}

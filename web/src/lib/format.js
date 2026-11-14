@@ -1,5 +1,7 @@
-/** Royal coins can outgrow a JS number, so a balance that arrives as digits is formatted exactly. */
-export function money(value) {
+/** Royal coins can outgrow a JS number, so a balance that arrives as digits is formatted exactly.
+ *  The house (owners) is refilled on every read, so their purse simply reads as infinite. */
+export function money(value, unlimited = false) {
+  if (unlimited) return '∞'
   try {
     return BigInt(value ?? 0).toLocaleString('en-US')
   } catch {

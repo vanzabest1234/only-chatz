@@ -128,7 +128,7 @@ export default function Sidebar({
               <span className="hash">◉</span>
               <span className="nav-label">Royal vault</span>
               <span className="chip">
-                {money(me.user.coins?.coins)}
+                {money(me.user.coins?.coins, me.user.role === 'owner')}
               </span>
             </button>
             <button className="nav-row ladder-link" onClick={onOpenLeaders}>

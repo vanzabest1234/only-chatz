@@ -12,6 +12,7 @@ import chatRoutes from './routes/chat.js'
 import profileRoutes from './routes/profile.js'
 import flairRoutes from './routes/flairs.js'
 import casinoRoutes from './routes/casino.js'
+import coinRoutes from './routes/coins.js'
 import leaderboardRoutes from './routes/leaderboard.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
@@ -45,6 +46,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api', profileRoutes)
 app.use('/api', flairRoutes)
 app.use('/api', casinoRoutes)
+app.use('/api', coinRoutes)
 app.use('/api', leaderboardRoutes)
 app.use('/api', chatRoutes)
 

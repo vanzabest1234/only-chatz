@@ -16,7 +16,9 @@ import FlairWheel from './components/FlairWheel'
 import PassPanel from './components/PassPanel'
 import CasinoPanel from './components/CasinoPanel'
 import LeaderboardPanel from './components/LeaderboardPanel'
+import SendCoins from './components/SendCoins'
 import { playPing } from './lib/mentions'
+import { money } from './lib/format'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -32,6 +34,7 @@ export default function App() {
   const [passOpen, setPassOpen] = useState(false)
   const [casinoOpen, setCasinoOpen] = useState(false)
   const [leadersOpen, setLeadersOpen] = useState(false)
+  const [sendOpen, setSendOpen] = useState(false)
   const [ping, setPing] = useState(null)
   const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
@@ -414,15 +417,27 @@ export default function App() {
               only chatz
             </span>
           </div>
-          <button
-            type="button"
-            className="topbar-live"
-            onClick={() => setBoardOpen(true)}
-            aria-label="Who is online"
-          >
-            <span className="topbar-dot" />
-            {me.online.length} online
-          </button>
+          <div className="topbar-right">
+            <button
+              type="button"
+              className="topbar-coins"
+              onClick={() => setSendOpen(true)}
+              aria-label="Send royal coins"
+              title="Send royal coins"
+            >
+              <Icon name="coin" size={15} />
+              <span>{money(me.user.coins?.coins, me.user.role === 'owner')}</span>
+            </button>
+            <button
+              type="button"
+              className="topbar-live"
+              onClick={() => setBoardOpen(true)}
+              aria-label="Who is online"
+            >
+              <span className="topbar-dot" />
+              {me.online.length} online
+            </button>
+          </div>
         </header>
 
         <QuickBar
@@ -544,6 +559,7 @@ export default function App() {
         {flairOpen && (
           <FlairWheel
             coins={me.user.coins}
+            unlimited={me.user.role === 'owner'}
             onClose={() => setFlairOpen(false)}
             onChanged={() => load().catch(() => {})}
           />
@@ -552,6 +568,18 @@ export default function App() {
         {casinoOpen && <CasinoPanel me={me} onClose={() => setCasinoOpen(false)} />}
 
         {leadersOpen && <LeaderboardPanel me={me} onClose={() => setLeadersOpen(false)} />}
+
+        {sendOpen && (
+          <SendCoins
+            me={me}
+            onClose={() => setSendOpen(false)}
+            onSent={coins =>
+              setMe(previous =>
+                previous ? { ...previous, user: { ...previous.user, coins } } : previous,
+              )
+            }
+          />
+        )}
 
         {passOpen && <PassPanel pass={me.user.pass} onClose={() => setPassOpen(false)} />}
 

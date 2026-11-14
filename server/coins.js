@@ -1,4 +1,4 @@
-import { q } from './db.js'
+import { pool, q } from './db.js'
 
 // Royal Coins — the server's currency. Income is passive: 100 coins land every ten
 // minutes. Nothing is paid by a timer alone, the balance is worked out from the clock
@@ -149,6 +149,45 @@ export async function settleBet(userId, wager, payout) {
     [userId, wager, payout],
   )
   return rows.length ? coinState(rows[0]) : null
+}
+
+/**
+ * Move coins from one purse to another in one transaction. The sender's balance is checked by
+ * the same statement that takes it, and the receiver is only paid when the coins really left,
+ * so a send either moves the amount or changes nothing — coins can never vanish in between.
+ */
+export async function transferCoins(fromId, toId, amount) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const { rows: paid } = await client.query(
+      `UPDATE users SET royal_coins = royal_coins - $2
+        WHERE id = $1 AND royal_coins >= $2
+        RETURNING royal_coins, coins_claimed_at`,
+      [fromId, amount],
+    )
+    if (!paid.length) {
+      await client.query('ROLLBACK')
+      return { short: true }
+    }
+    const { rows: given } = await client.query(
+      `UPDATE users SET royal_coins = royal_coins + $2
+        WHERE id = $1 AND NOT banned
+        RETURNING royal_coins, coins_claimed_at`,
+      [toId, amount],
+    )
+    if (!given.length) {
+      await client.query('ROLLBACK')
+      return { missing: true }
+    }
+    await client.query('COMMIT')
+    return { sender: coinState(paid[0]), receiver: coinState(given[0]) }
+  } catch (problem) {
+    await client.query('ROLLBACK')
+    throw problem
+  } finally {
+    client.release()
+  }
 }
 
 /** Pay somebody coins from outside the economy (hand-outs, bonuses). */

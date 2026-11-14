@@ -111,7 +111,16 @@ Non-obvious things worth knowing before changing something:
   `coinText` in `coins.js`, `money` in `web/src/lib/format.js`) so nothing is rounded on the way out.
   Owners hold `OWNER_COINS` (999999999999999) — effectively infinite: every read of an owner's
   wallet lifts it back to that balance, so no bet or spin drains an owner, and a bigger purse is
-  left untouched. Everyone else lives off the drip alone.
+  left untouched. Everyone else lives off the drip alone. An owner's balance is painted as `∞`
+  (`money(value, unlimited)` in `web/src/lib/format.js`).
+- **Coins travel between people with `POST /api/coins/send`** (`server/routes/coins.js`).
+  `transferCoins` in `server/coins.js` takes from the sender and pays the receiver inside one
+  transaction, and the sender's balance is checked by the statement that takes it, so a send
+  either moves the whole amount or changes nothing. The amount is a digits-only digit string
+  (a purse can outgrow a JS number), the target must exist and not be banned, and both accounts
+  get `coins:update`. The top bar's coin icon (an `∞`/balance chip) opens `SendCoins.jsx`, which
+  picks any member and posts the amount; it is the member-facing counterpart to the Owner-only
+  `/give` mint.
 - **Four coin commands everyone can run** (`server/commands.js`, all `minRank: 0`):
   `/steal @user` takes a quarter of the target's purse on a 50/50 roll and pays the same amount
   when it fails; `/punch @user` silences them for 60 seconds but is refused while the target holds
