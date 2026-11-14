@@ -66,8 +66,9 @@ Non-obvious things worth knowing before changing something:
   weights (the roll happens there, never in the browser) and `MAX_EQUIPPED = 3` — owning a flair
   never expires, but only three can be worn at once, so `POST /api/flairs/equip` refuses a fourth.
   `bread` is off the wheel (`/bread`, Owner only); `custom` is the 0.01% slice that unlocks a
-  user-written tag in settings. One free spin a day (`users.flair_spun_at`), and a pass spin token is
-  spent instead of waiting — the client only enables the button when a token is banked.
+  user-written tag in settings. One turn of the wheel every 24 hours (`users.flair_spun_at`), and a
+  banked pass spin token skips the wait — the client shows the countdown and only enables the button
+  once the turn is back or a token is banked.
   `server/pass.js` turns one minute of an open socket into 2 XP (`pass_xp`/`pass_minutes`, reset by
   `pass_season` = `YYYY-MM`), and tier rewards are derived from the tier, never stored: frames
   (`frame-ember|frost|void|aurora` in `console.css`) come from `frameFor(tier)` in the serializers,
@@ -121,19 +122,20 @@ Non-obvious things worth knowing before changing something:
   get `coins:update`. The top bar's coin icon (an `∞`/balance chip) opens `SendCoins.jsx`, which
   picks any member and posts the amount; it is the member-facing counterpart to the Owner-only
   `/give` mint.
-- **Ranks can be bought with coins, from the flair wheel** (`server/ranks.js` + `routes/ranks.js`,
+- **Flairs can be bought with coins, from the daily wheel** (`server/ranks.js` + `routes/ranks.js`,
   rendered by `RankOffers.jsx` at the bottom of `FlairWheel.jsx` — there is no separate rank shop
-  entry in the sidebar or the quick bar). Every rank costs 10,000 royal coins and
-  each purchase raises the next price by another 10,000, so the first is 10,000, the second 20,000,
-  the third 30,000 — `users.ranks_bought` is that counter. `mod`, `admin` and `co-owner` are for
-  sale; `member` is the default and `owner` is never bought (an owner sees every rank as held, and
-  the server refuses any purchase for one). The ladder is bought one rung at a time: only the first
-  rank you do not hold is for sale (`buyable`), everything above it is `locked` (with a
-  "buy X first" note) until the one before is bought, and the endpoint refuses a locked rank with
-  the same reason. The balance, the new role and the price guard move in one `UPDATE ... WHERE
-  royal_coins >= $price AND ranks_bought = $seen`, so two tabs cannot both buy at the old price and
-  a purse cannot go negative; the buyer's wallet and everyone's member list are refreshed over
-  sockets afterwards.
+  entry in the sidebar or the quick bar). The shop sells the wheel's own **flairs**
+  (`RANK_LADDER` = `WHEEL` keys), never a staff role: a purchase grants the flair
+  (`user_flairs`, worn when a slot is free) and touches no `users.role`. Every flair costs 10,000
+  royal coins and each purchase raises the next price by another 10,000, so the first is 10,000, the
+  second 20,000, the third 30,000 — `users.ranks_bought` is that counter. The ladder is bought one
+  rung at a time: a flair you already hold (won or bought) is skipped, only the first one you do not
+  hold is for sale (`buyable`), and everything above it is `locked` (with a "buy X first" note) until
+  the one before is bought; the endpoint refuses a locked rung with the same reason. The coins, the
+  purchase counter and the flair claim move in one `UPDATE ... WHERE royal_coins >= $price AND
+  ranks_bought = $seen AND NOT EXISTS (row already owned)`, so two tabs cannot both buy at the old
+  price and a purse cannot go negative; the buyer's wallet and everyone's member list are refreshed
+  over sockets afterwards.
 - **Four coin commands everyone can run** (`server/commands.js`, all `minRank: 0`):
   `/steal @user` takes a quarter of the target's purse on a 50/50 roll and pays the same amount
   when it fails; `/punch @user` silences them for 60 seconds but is refused while the target holds
@@ -155,9 +157,10 @@ Non-obvious things worth knowing before changing something:
   richest purses (`LEADERBOARD_SIZE`, highest first, banned accounts left off). `GET /api/leaderboard`
   feeds the panel (`LeaderboardPanel.jsx`, opened from the sidebar) and `/leaderboard` (minRank 0)
   posts the same rows as a system message, so the two cannot drift.
-- **A turn of the wheel costs coins, not a day's wait.** `SPIN_COST` is 1000; a banked pass token
-  (`spin_tokens`) is spent first as a free turn, otherwise the coins are charged before the roll.
-  The `402` it returns carries the balance. `flair_spun_at` is still in the table but no longer read.
+- **A turn of the wheel is one per 24 hours.** `users.flair_spun_at` holds the last turn; a second
+  turn inside the same day is refused with the remaining time, and a banked pass token
+  (`spin_tokens`) is the only way to skip the wait — it is spent instead of waiting and leaves the
+  stamp alone.
 - **The vault (`server/casino.js` + `routes/casino.js`) is the gambling table.** Four stakes,
   each with a house edge: steady 75% ×1.25, even 50% ×1.9, bold 25% ×3.6, royal 10% ×8.5. The d100
   roll happens server-side with `randomInt`, the stake and payout move in one `settleBet` statement,
@@ -191,11 +194,13 @@ Non-obvious things worth knowing before changing something:
   (`typingLabel` in `ChatPane.jsx`): one name, "a and b are typing", or "more than 7 people are
   typing" once eight or more are going at once. Nothing is stored, so a restart only loses the
   current notes.
-- **Tapping an avatar opens a profile banner.** `web/src/components/ProfileCard.jsx` renders name,
-  `@username`, role, pronouns, online state and bio from the `me.members` entry (nothing is fetched);
-  the message-list avatars (`ProfileAvatar` in `MessageList.jsx`) and the members panel's separate
-  avatar button open it. Pronouns live in `users.pronouns` (max 24 chars, edited in
-  `SettingsModal.jsx`, saved through `PATCH /api/me/profile`); bio comes from the existing column.
+- **Tapping an avatar or a name opens a profile banner.** `web/src/components/ProfileCard.jsx`
+  renders name, `@username`, the account's serial as `member #<id>` (`publicUser` → `number`, the
+  registration order), role, pronouns, online state and bio from the `me.members` entry (nothing is
+  fetched); the message-list avatars (`ProfileAvatar` in `MessageList.jsx`), the message author names
+  (`PlayerName` with an `onClick`) and the members panel's separate avatar button open it. Pronouns
+  live in `users.pronouns` (max 24 chars, edited in `SettingsModal.jsx`, saved through
+  `PATCH /api/me/profile`); bio comes from the existing column.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
   `SettingsModal.jsx`; no file storage involved.
 - **Pictures can be sent with a message.** `messages.image_url` holds a data URL that

@@ -215,6 +215,7 @@ function ChannelMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpe
             name={message.authorName}
             role={message.authorRole}
             flairs={message.authorFlairs}
+            onClick={message.authorId ? () => onOpenProfile(message.authorId) : undefined}
           />
           <span className="msg-time">{timeShort(message.createdAt)}</span>
           {message.editedAt && <span className="msg-edited">(edited)</span>}
@@ -282,6 +283,7 @@ function DmMessage({ message, me, onReact, onReply, onEdit, onDelete, onOpenProf
             name={message.authorName}
             role={message.authorRole}
             flairs={message.authorFlairs}
+            onClick={message.authorId ? () => onOpenProfile(message.authorId) : undefined}
           />
             <RoleBadge role={message.authorRole} />
             <span className="msg-time">{timeShort(message.createdAt)}</span>

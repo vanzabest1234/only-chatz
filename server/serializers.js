@@ -4,6 +4,8 @@ import { coinState } from './coins.js'
 export function publicUser(row) {
   return {
     id: row.id,
+    // The account's own serial, painted on the profile banner: "member #7".
+    number: Number(row.id),
     username: row.username,
     displayName: row.display_name,
     role: row.role,

@@ -29,7 +29,10 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
             <h2>
               <PlayerName name={member.displayName} role={member.role} flairs={member.flairs} />
             </h2>
-            <p className="profile-handle">@{member.username}</p>
+            <p className="profile-handle">
+              @{member.username}
+              <span className="profile-number">member #{member.number ?? member.id}</span>
+            </p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close profile">
             <Icon name="close" />
