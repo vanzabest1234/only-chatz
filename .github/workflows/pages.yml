@@ -1,0 +1,68 @@
+# Publishes the front-door page in `site/` to GitHub Pages, so the github.io
+# address always opens a real page that leads into the live chatroom.
+#
+# The room itself (Express + Socket.IO + Postgres) cannot run on Pages, which only
+# serves static files. This page is the front door; the button points at the chat
+# server. Set the target with a repository variable named CHAT_URL
+# (Settings -> Secrets and variables -> Actions -> Variables). When it is unset the
+# page falls back to the Render blueprint address from `render.yaml`.
+#
+# Requires: Settings -> Pages -> Source = "GitHub Actions", and NO custom domain
+# pointing at a domain that does not resolve.
+
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build the page
+        env:
+          CHAT_URL: ${{ vars.CHAT_URL }}
+        run: |
+          set -eu
+          url="${CHAT_URL:-https://only-chatz.onrender.com}"
+          mkdir -p _site
+          cp site/index.html _site/index.html
+          touch _site/.nojekyll
+          CHAT_URL_RESOLVED="$url" python3 - <<'PY'
+          import os, pathlib
+          page = pathlib.Path("_site/index.html")
+          html = page.read_text()
+          if "__CHAT_URL__" not in html:
+              raise SystemExit("site/index.html lost its __CHAT_URL__ placeholder")
+          page.write_text(html.replace("__CHAT_URL__", os.environ["CHAT_URL_RESOLVED"]))
+          print("chat link -> " + os.environ["CHAT_URL_RESOLVED"])
+          PY
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the page
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -358,6 +358,15 @@ repository secret on a push to `main` (and on manual dispatch); without that sec
 branch through a pull request, so nothing deploys from a feature branch. `vercel.json` is the
 third path (Vercel's own git integration, no workflow involved) — it is not exercised here.
 
+**The github.io address is a front door, not the app.** GitHub Pages only serves static files, so
+`site/index.html` (a single self-contained card: wordmark, one line, "Enter the chat") is published
+there by `.github/workflows/pages.yml` on every push to `main`. The button's target is the `CHAT_URL`
+repository variable, substituted into the page's `__CHAT_URL__` placeholder at build time, falling
+back to the Render blueprint address from `render.yaml`. Keep that placeholder in the file — the
+workflow fails loudly without it. Two things are set in the repository, not in code: Pages must use
+source "GitHub Actions", and no custom domain may be configured (a domain that does not resolve
+301s every github.io request away from the site, whatever is deployed).
+
 **`--profile public` is the zero-account public URL.** That profile adds a `cloudflare/cloudflared`
 quick tunnel (`tunnel --no-autoupdate --url http://app:3000`), so the release stack gets a random
 `https://<words>.trycloudflare.com` address with no Cloudflare account, no domain and no inbound port.
