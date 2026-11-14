@@ -143,8 +143,8 @@ export default function Sidebar({
             </button>
             <button className="nav-row flair-link" onClick={onOpenFlairs}>
               <span className="hash">✦</span>
-              <span className="nav-label">Flair wheel</span>
-              <span className="chip">spin</span>
+              <span className="nav-label">Daily wheel</span>
+              <span className="chip">1/day</span>
             </button>
             <button className="nav-row pass-link" onClick={onOpenPass}>
               <span className="hash">▮</span>

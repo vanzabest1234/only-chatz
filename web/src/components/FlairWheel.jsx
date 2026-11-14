@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
 import { api } from '../api'
 import { flairColor, flairLabel } from '../lib/flairs'
-import { money } from '../lib/format'
+import { money, timeShort } from '../lib/format'
 import RankOffers from './RankOffers'
 
 const TURNS = 5
@@ -19,6 +19,17 @@ function slicePath(start, end) {
   const to = polar(100, end)
   const large = end - start > 180 ? 1 : 0
   return `M100 100 L${from.x} ${from.y} A100 100 0 ${large} 1 ${to.x} ${to.y} Z`
+}
+
+/** How long until the wheel comes back, in the shortest friendly form. */
+function waitText(ms) {
+  const total = Math.ceil(ms / 1000)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const seconds = total % 60
+  if (hours) return `${hours}h ${minutes}m`
+  if (minutes) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
 }
 
 
@@ -42,13 +53,25 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
   const cost = wallet.spinCost ?? 1000
   // A banked pass token is a free turn; otherwise a turn is paid for in royal coins.
   const affordable = tokens > 0 || (wallet.coins ?? 0) >= cost
-  const canSpin = Boolean(data) && !spinning && affordable
+  // The wheel comes back 24 hours after the last turn; the server owns the stamp, this only
+  // counts down to what it handed over.
+  const [now, setNow] = useState(Date.now())
+  const nextSpin = data?.nextSpinAt ? new Date(data.nextSpinAt).getTime() : 0
+  const waitMs = Math.max(0, nextSpin - now)
+  const cooling = waitMs > 0
+  const canSpin = Boolean(data) && !spinning && affordable && !cooling
 
   useEffect(() => {
     api('/api/flairs')
       .then(setData)
       .catch(problem => setError(problem.message))
   }, [])
+
+  useEffect(() => {
+    if (!cooling) return undefined
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [cooling])
 
   // The landing slice is the one the server already rolled; the wheel only animates to it.
   const land = useCallback(
@@ -83,6 +106,7 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
               owned: result.owned,
               spinTokens: result.spinTokens ?? 0,
               customTag: result.customTag ?? previous.customTag,
+              nextSpinAt: result.nextSpinAt ?? previous.nextSpinAt,
               coins: result.coins ?? previous.coins,
             }
           : previous,
@@ -116,13 +140,15 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
         className="wheel-modal glass"
         role="dialog"
         aria-modal="true"
-        aria-label="Flair wheel"
+        aria-label="Daily wheel"
         onClick={event => event.stopPropagation()}
       >
         <header className="settings-head">
           <div>
-            <h2>Flair wheel</h2>
-            <p>pure decoration · wear up to {data?.maxEquipped ?? 3} at once</p>
+            <h2>Daily wheel</h2>
+            <p>
+              one turn every 24 hours · wear up to {data?.maxEquipped ?? 3} flairs at once
+            </p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close the wheel">
             <Icon name="close" />
@@ -138,7 +164,7 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
               transition: spinning ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.86, 0.16, 1)` : 'none',
             }}
           >
-            <svg viewBox="0 0 200 200" role="img" aria-label="Flair wheel">
+            <svg viewBox="0 0 200 200" role="img" aria-label="Daily wheel">
               {wheel.map((item, index) => (
                 <path
                   key={item.key}
@@ -175,9 +201,11 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
           <button className="btn-primary" onClick={spin} disabled={!canSpin}>
             {spinning
               ? 'spinning…'
-              : tokens > 0
-                ? `spin · ${tokens} free turn${tokens === 1 ? '' : 's'}`
-                : `spin · ${money(cost)} royal coins`}
+              : cooling
+                ? `come back in ${waitText(waitMs)}`
+                : tokens > 0
+                  ? `spin · ${tokens} free turn${tokens === 1 ? '' : 's'}`
+                  : `spin · ${money(cost)} royal coins`}
           </button>
           {won && (
             <p className="wheel-result" style={{ '--flair': flairColor(won.key) }}>
@@ -193,7 +221,12 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
               1% · mvp 0.1% · custom tag 0.01%
             </p>
           )}
-          {!won && !error && data && !affordable && (
+          {!won && !error && data && cooling && (
+            <p className="wheel-hint">
+              one turn a day — the next turn lands {timeShort(data.nextSpinAt)}
+            </p>
+          )}
+          {!won && !error && data && !cooling && !affordable && (
             <p className="wheel-hint">
               need {money(cost - (wallet.coins ?? 0))} more — the royal drip pays 100 every 10
               minutes

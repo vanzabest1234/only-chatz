@@ -12,9 +12,20 @@ import {
   rollFlair,
 } from '../flairs.js'
 import { ensureOwnerSeason } from '../pass.js'
-import { SPIN_COST, accrueCoins, coinState, spendCoins } from '../coins.js'
+import { SPIN_COST, accrueCoins, coinState } from '../coins.js'
 
 const router = Router()
+
+// The daily wheel turns once every 24 hours. `users.flair_spun_at` is the stamp that gates it,
+// and the guard sits inside the statement that pays, so two open tabs cannot both take the same
+// day. The comparison is the database's clock, never the browser's.
+const SPIN_COOLDOWN_MS = 24 * 60 * 60 * 1000
+const WHEEL_OPEN_SQL = `(flair_spun_at IS NULL OR flair_spun_at <= now() - interval '24 hours')`
+
+function nextSpinAt(stamp) {
+  if (!stamp) return null
+  return new Date(new Date(stamp).getTime() + SPIN_COOLDOWN_MS).toISOString()
+}
 
 async function ownedFlairs(userId) {
   const { rows } = await q(
@@ -44,6 +55,7 @@ router.get('/flairs', requireAuth, async (req, res) => {
     maxEquipped: MAX_EQUIPPED,
     spinTokens: user.spin_tokens ?? 0,
     customTag: user.custom_tag ?? null,
+    nextSpinAt: nextSpinAt(user.flair_spun_at),
     coins,
   })
 })
@@ -53,21 +65,39 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
   await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
 
-  // A turn is paid for: a banked pass token is spent first, otherwise 1000 Royal Coins.
-  // The charge is claimed before the roll, so two open tabs cannot spend one payment twice.
+  // One turn a day: the day's window is claimed by the same statement that pays for the turn,
+  // so a spent stamp is never left behind by a purse that came up short. A banked pass token
+  // is spent first, otherwise 1000 Royal Coins, and a second tab cannot spend either twice.
   await accrueCoins(user.id)
   let coins = null
   if ((user.spin_tokens ?? 0) > 0) {
     const { rows: spent } = await q(
-      `UPDATE users SET spin_tokens = spin_tokens - 1
-        WHERE id = $1 AND spin_tokens > 0
+      `UPDATE users SET spin_tokens = spin_tokens - 1, flair_spun_at = now()
+        WHERE id = $1 AND spin_tokens > 0 AND ${WHEEL_OPEN_SQL}
         RETURNING royal_coins, coins_claimed_at`,
       [user.id],
     )
     if (spent.length) coins = coinState(spent[0])
   }
-  if (!coins) coins = await spendCoins(user.id, SPIN_COST)
   if (!coins) {
+    const { rows: paid } = await q(
+      `UPDATE users SET royal_coins = royal_coins - $2, flair_spun_at = now()
+        WHERE id = $1 AND royal_coins >= $2 AND ${WHEEL_OPEN_SQL}
+        RETURNING royal_coins, coins_claimed_at`,
+      [user.id, SPIN_COST],
+    )
+    if (paid.length) coins = coinState(paid[0])
+  }
+  if (!coins) {
+    // Nothing moved: either the day is already spent, or the purse is short.
+    const { rows: after } = await q('SELECT flair_spun_at FROM users WHERE id = $1', [user.id])
+    const next = nextSpinAt(after[0]?.flair_spun_at)
+    if (next && Date.parse(next) > Date.now()) {
+      return res.status(429).json({
+        error: 'The daily wheel has already turned — it comes back 24 hours after your last spin.',
+        nextSpinAt: next,
+      })
+    }
     const { state } = await accrueCoins(user.id)
     return res.status(402).json({
       error: `A turn of the wheel costs ${SPIN_COST} royal coins — you hold ${state.coins}.`,
@@ -101,6 +131,7 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
     maxEquipped: MAX_EQUIPPED,
     spinTokens: fresh.spin_tokens ?? 0,
     customTag: fresh.custom_tag ?? null,
+    nextSpinAt: nextSpinAt(fresh.flair_spun_at),
     coins: coinState(fresh),
   })
 })

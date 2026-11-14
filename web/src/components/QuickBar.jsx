@@ -86,7 +86,7 @@ export default function QuickBar({
         <span className="qb-mark">●</span>online
       </button>
       <button type="button" className="qb-item" onClick={onOpenFlairs}>
-        <span className="qb-mark">✦</span>flair
+        <span className="qb-mark">✦</span>daily
       </button>
       <button type="button" className="qb-item" onClick={onOpenPass}>
         <span className="qb-mark">▮</span>tier {me.user.pass?.tier ?? 0}
