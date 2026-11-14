@@ -232,6 +232,8 @@ textarea:focus-visible,
 
 .msg {
   border-radius: 6px;
+  /* incoming messages ease up into place, like the drawspace chat */
+  animation: msg-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .msg:hover {
