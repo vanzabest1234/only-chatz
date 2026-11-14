@@ -559,7 +559,6 @@ export default function App() {
         {flairOpen && (
           <FlairWheel
             coins={me.user.coins}
-            role={me.user.role}
             unlimited={me.user.role === 'owner'}
             onClose={() => setFlairOpen(false)}
             onChanged={() => load().catch(() => {})}

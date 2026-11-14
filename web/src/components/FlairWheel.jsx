@@ -33,7 +33,7 @@ function waitText(ms) {
 }
 
 
-export default function FlairWheel({ coins, role, unlimited = false, onClose, onChanged }) {
+export default function FlairWheel({ coins, unlimited = false, onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [angle, setAngle] = useState(0)
   const [spinning, setSpinning] = useState(false)
@@ -266,10 +266,15 @@ export default function FlairWheel({ coins, role, unlimited = false, onClose, on
         </div>
 
         <RankOffers
-          role={role}
           unlimited={unlimited}
           coins={coins}
-          onChanged={onChanged}
+          onChanged={() => {
+            // A bought flair is owned like a won one, so the list above has to re-read it.
+            api('/api/flairs')
+              .then(setData)
+              .catch(() => {})
+            onChanged?.()
+          }}
         />
       </div>
     </div>

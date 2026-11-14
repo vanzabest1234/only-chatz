@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { money } from '../lib/format'
-import { roleLabel, roleRank } from '../lib/roles'
+import { flairColor } from '../lib/flairs'
 
 /**
- * The ranks on sale, shown inside the flair wheel. Every rank costs 10,000 coins and every
+ * The flairs on sale, shown inside the daily wheel. Every flair costs 10,000 coins and every
  * purchase raises the next price by another 10,000; the server owns both the price and the
- * change of role, so this section only asks.
+ * ladder, so this section only asks.
  */
-export default function RankOffers({ role, unlimited = false, coins, onChanged }) {
+export default function RankOffers({ unlimited = false, coins, onChanged }) {
   const [shop, setShop] = useState(null)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
@@ -30,9 +30,9 @@ export default function RankOffers({ role, unlimited = false, coins, onChanged }
     try {
       const data = await api('/api/ranks/buy', {
         method: 'POST',
-        body: JSON.stringify({ role: next }),
+        body: JSON.stringify({ flair: next }),
       })
-      // The server answers with the shop as it now stands (new price, ranks held).
+      // The server answers with the shop as it now stands (new price, flairs held).
       setShop(previous => ({
         ...(previous ?? {}),
         ...(data.shop ?? {}),
@@ -48,32 +48,33 @@ export default function RankOffers({ role, unlimited = false, coins, onChanged }
   }
 
   return (
-    <section className="wheel-ranks" aria-label="Ranks for sale">
+    <section className="wheel-ranks" aria-label="Flairs for sale">
       <header className="wheel-ranks-head">
-        <h3>ranks for sale</h3>
-        <span>you are {roleLabel(role)}</span>
+        <h3>flairs for sale</h3>
+        <span>one rung at a time</span>
       </header>
 
       <p className="rank-wallet">
-        you hold {money(wallet?.coins, unlimited)} · the first rank is {money(10000)}, each
+        you hold {money(wallet?.coins, unlimited)} · the first flair is {money(10000)}, each
         purchase adds {money(10000)}
       </p>
 
       <div className="rank-list">
         {(shop?.ranks ?? []).map((entry, index) => (
           <div
-            key={entry.role}
+            key={entry.flair}
             className={`rank-row ${entry.held ? 'is-held' : ''} ${entry.locked ? 'is-locked' : ''}`}
+            style={{ '--flair': flairColor(entry.flair) }}
           >
-            <span className="rank-badge">{roleRank(entry.role)}</span>
+            <span className="rank-badge">{index + 1}</span>
             <span className="rank-text">
               <span className="rank-name">{entry.label}</span>
               <span className="rank-note">
                 {entry.held
                   ? 'already yours'
                   : entry.locked
-                    ? `locked · buy ${shop.ranks[index - 1]?.label ?? 'the rank before'} first`
-                    : `next rank · ${money(shop.price)}`}
+                    ? `locked · buy ${shop.ranks[index - 1]?.label ?? 'the one before'} first`
+                    : `next flair · ${money(shop.price)}`}
               </span>
             </span>
             {entry.held ? (
@@ -85,16 +86,16 @@ export default function RankOffers({ role, unlimited = false, coins, onChanged }
                 type="button"
                 className="pill-btn rank-buy"
                 disabled={Boolean(busy)}
-                onClick={() => buy(entry.role)}
+                onClick={() => buy(entry.flair)}
               >
-                {busy === entry.role ? 'buying…' : `buy ${money(shop.price)}`}
+                {busy === entry.flair ? 'buying…' : `buy ${money(shop.price)}`}
               </button>
             )}
           </div>
         ))}
-        {!shop && !error && <p className="board-empty">opening the ranks…</p>}
+        {!shop && !error && <p className="board-empty">opening the shop…</p>}
         {shop && !shop.ranks.some(entry => entry.buyable) && (
-          <p className="board-empty">every rank on sale is already yours.</p>
+          <p className="board-empty">every flair on sale is already yours.</p>
         )}
       </div>
 
