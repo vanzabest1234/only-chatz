@@ -13,18 +13,24 @@ export function rankPrice(bought = 0) {
   return String(RANK_PRICE * (Number(bought) + 1))
 }
 
-/** The shop as the client reads it: the current price and every rank, already judged. */
+/**
+ * The shop as the client reads it: the current price and every rank, already judged.
+ * The ladder is bought one rung at a time — only the first rank you do not hold is for
+ * sale, and buying it unlocks the next one. Everything above stays locked.
+ */
 export function rankShop(row) {
   const mine = rankOf(row?.role)
+  let open = row?.role !== 'owner'
+  const ranks = BUYABLE_RANKS.map(role => {
+    const held = mine >= RANKS[role]
+    const buyable = !held && open
+    if (buyable) open = false
+    return { role, label: labelFor(role), held, buyable, locked: !held && !buyable }
+  })
   return {
     price: rankPrice(row?.ranks_bought),
     bought: Number(row?.ranks_bought ?? 0),
-    ranks: BUYABLE_RANKS.map(role => ({
-      role,
-      label: labelFor(role),
-      held: mine >= RANKS[role],
-      buyable: row?.role !== 'owner' && mine < RANKS[role],
-    })),
+    ranks,
   }
 }
 
@@ -41,7 +47,12 @@ export async function buyRank(userId, role) {
   if (!row) return { missing: true }
 
   const shop = rankShop(row)
-  if (!shop.ranks.some(entry => entry.role === role && entry.buyable)) {
+  const offer = shop.ranks.find(entry => entry.role === role)
+  if (offer?.locked) {
+    const below = shop.ranks[shop.ranks.indexOf(offer) - 1]?.label ?? 'the rank before it'
+    return { refused: `${offer.label} is still locked — buy ${below} first.` }
+  }
+  if (!offer?.buyable) {
     return { refused: `You cannot buy the ${labelFor(role)} rank.` }
   }
 

@@ -1751,6 +1751,18 @@ textarea:focus-visible,
   border-color: rgba(116, 240, 166, 0.4);
 }
 
+.rank-row.is-locked {
+  opacity: 0.5;
+}
+
+.rank-locked {
+  flex: none;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .rank-badge {
   flex: none;
   width: 20px;

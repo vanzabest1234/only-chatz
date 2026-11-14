@@ -127,8 +127,10 @@ Non-obvious things worth knowing before changing something:
   each purchase raises the next price by another 10,000, so the first is 10,000, the second 20,000,
   the third 30,000 — `users.ranks_bought` is that counter. `mod`, `admin` and `co-owner` are for
   sale; `member` is the default and `owner` is never bought (an owner sees every rank as held, and
-  the server refuses any purchase for one). A rank at or below your own is not buyable either, so a
-  purchase always climbs. The balance, the new role and the price guard move in one `UPDATE ... WHERE
+  the server refuses any purchase for one). The ladder is bought one rung at a time: only the first
+  rank you do not hold is for sale (`buyable`), everything above it is `locked` (with a
+  "buy X first" note) until the one before is bought, and the endpoint refuses a locked rank with
+  the same reason. The balance, the new role and the price guard move in one `UPDATE ... WHERE
   royal_coins >= $price AND ranks_bought = $seen`, so two tabs cannot both buy at the old price and
   a purse cannot go negative; the buyer's wallet and everyone's member list are refreshed over
   sockets afterwards.

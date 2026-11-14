@@ -60,22 +60,31 @@ export default function RankOffers({ role, unlimited = false, coins, onChanged }
       </p>
 
       <div className="rank-list">
-        {(shop?.ranks ?? []).map(entry => (
-          <div key={entry.role} className={`rank-row ${entry.held ? 'is-held' : ''}`}>
+        {(shop?.ranks ?? []).map((entry, index) => (
+          <div
+            key={entry.role}
+            className={`rank-row ${entry.held ? 'is-held' : ''} ${entry.locked ? 'is-locked' : ''}`}
+          >
             <span className="rank-badge">{roleRank(entry.role)}</span>
             <span className="rank-text">
               <span className="rank-name">{entry.label}</span>
               <span className="rank-note">
-                {entry.held ? 'already yours' : `next rank · ${money(shop.price)}`}
+                {entry.held
+                  ? 'already yours'
+                  : entry.locked
+                    ? `locked · buy ${shop.ranks[index - 1]?.label ?? 'the rank before'} first`
+                    : `next rank · ${money(shop.price)}`}
               </span>
             </span>
             {entry.held ? (
               <span className="rank-held">held</span>
+            ) : entry.locked ? (
+              <span className="rank-locked">locked</span>
             ) : (
               <button
                 type="button"
                 className="pill-btn rank-buy"
-                disabled={!entry.buyable || Boolean(busy)}
+                disabled={Boolean(busy)}
                 onClick={() => buy(entry.role)}
               >
                 {busy === entry.role ? 'buying…' : `buy ${money(shop.price)}`}
