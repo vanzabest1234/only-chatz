@@ -92,3 +92,30 @@ export async function grantOwnerWheel(user) {
 export async function ensureCustomTag(userId) {
   await q("UPDATE users SET custom_tag = COALESCE(custom_tag, 'tag') WHERE id = $1", [userId])
 }
+
+// ---- fenced rooms ---------------------------------------------------------------------
+
+/**
+ * A room can be fenced behind a flair: `channels.flair` names the one that opens it, and
+ * holding it — worn or not — is what lets the room appear. This is the SQL side of that
+ * rule, written for the parameters ($1 channel id, $2 user id).
+ */
+export const CHANNEL_ACCESS_SQL = `SELECT 1 FROM channels c
+   WHERE c.id = $1
+     AND (c.flair IS NULL OR EXISTS (
+       SELECT 1 FROM user_flairs f WHERE f.user_id = $2 AND f.flair = c.flair))`
+
+/** The flair's printed word, for saying which one opens a room. */
+export function flairLabel(key) {
+  return FLAIRS.find(flair => flair.key === key)?.label ?? key
+}
+
+/** Whether this account may open and read a fenced room. */
+export async function canEnterChannel(userId, channel) {
+  if (!channel?.flair) return true
+  const { rows } = await q(
+    'SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = $2 LIMIT 1',
+    [userId, channel.flair],
+  )
+  return rows.length > 0
+}

@@ -4,6 +4,7 @@ import { sessionUser } from './auth.js'
 import { audit, take } from './guard.js'
 import { addPresenceMinutes } from './pass.js'
 import { accrueCoins } from './coins.js'
+import { CHANNEL_ACCESS_SQL } from './flairs.js'
 
 let io = null
 const online = new Map()
@@ -142,7 +143,13 @@ export function initRealtime(httpServer) {
 
     const [threads, channels] = await Promise.all([
       q('SELECT thread_id FROM dm_members WHERE user_id = $1', [user.id]),
-      q('SELECT id FROM channels'),
+      // Open rooms only: a fenced one is joined when its flair opens it (presence:where).
+      q(
+        `SELECT c.id FROM channels c
+          WHERE c.flair IS NULL
+             OR EXISTS (SELECT 1 FROM user_flairs f WHERE f.user_id = $1 AND f.flair = c.flair)`,
+        [user.id],
+      ),
     ])
     threads.rows.forEach(row => socket.join(`thread:${row.thread_id}`))
     channels.rows.forEach(row => socket.join(`channel:${row.id}`))
@@ -168,8 +175,11 @@ export function initRealtime(httpServer) {
                 id,
                 user.id,
               ])
-            : await q('SELECT 1 FROM channels WHERE id = $1 LIMIT 1', [id])
+            : await q(CHANNEL_ACCESS_SQL, [id, user.id])
         if (!rows.length) return
+        // Opening a room subscribes this socket to it, so a fenced room starts arriving
+        // only once its flair has opened it — never at connect for everyone.
+        if (kind === 'channel') socket.join(`channel:${id}`)
       } catch {
         return
       }
@@ -194,8 +204,11 @@ export function initRealtime(httpServer) {
                 id,
                 user.id,
               ])
-            : await q('SELECT 1 FROM channels WHERE id = $1 LIMIT 1', [id])
+            : await q(CHANNEL_ACCESS_SQL, [id, user.id])
         if (!rows.length) return
+        // Opening a room subscribes this socket to it, so a fenced room starts arriving
+        // only once its flair has opened it — never at connect for everyone.
+        if (kind === 'channel') socket.join(`channel:${id}`)
       } catch {
         return
       }

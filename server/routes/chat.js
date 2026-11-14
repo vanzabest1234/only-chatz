@@ -6,7 +6,7 @@ import { publicMessage, publicUser } from '../serializers.js'
 import { rankOf } from '../roles.js'
 import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
-import { grantOwnerWheel } from '../flairs.js'
+import { canEnterChannel, flairLabel, grantOwnerWheel } from '../flairs.js'
 import { ensureOwnerSeason, passState } from '../pass.js'
 import { accrueCoins } from '../coins.js'
 import { answerAi, isAiMessage } from '../ai.js'
@@ -35,6 +35,11 @@ const EQUIPPED_FLAIRS = userExpr => `COALESCE(
 function readId(raw) {
   const id = Number(raw)
   return Number.isInteger(id) && id > 0 ? id : null
+}
+
+/** What a fenced room answers someone who does not hold the flair that opens it. */
+function fencedRoomError(channel) {
+  return `#${channel.name} is for ${flairLabel(channel.flair)} members — win that flair on the wheel.`
 }
 
 /** Text a person typed, minus control/invisible characters, within the length cap. */
@@ -107,7 +112,15 @@ async function notifyMentions(message, actor, room) {
 
 async function loadSnapshot(user) {
   const [channels, members, friends, threads, tag] = await Promise.all([
-    q('SELECT id, name, topic, slowmode, position, announce FROM channels ORDER BY position, id'),
+    // A fenced room only shows up for the flair that opens it (channels.flair).
+    q(
+      `SELECT c.id, c.name, c.topic, c.slowmode, c.position, c.announce
+         FROM channels c
+        WHERE c.flair IS NULL
+           OR EXISTS (SELECT 1 FROM user_flairs f WHERE f.user_id = $1 AND f.flair = c.flair)
+        ORDER BY c.position, c.id`,
+      [user.id],
+    ),
     q(
       `SELECT *, ${EQUIPPED_FLAIRS('users.id')} AS flairs
          FROM users WHERE banned = FALSE ORDER BY id`,
@@ -330,8 +343,12 @@ router.get('/channels/:id/messages', requireAuth, async (req, res) => {
   const channelId = readId(req.params.id)
   if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
 
-  const channel = await q('SELECT 1 FROM channels WHERE id = $1', [channelId])
-  if (!channel.rows.length) return res.status(404).json({ error: 'That channel no longer exists.' })
+  const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
+  const channel = rows[0]
+  if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+  if (!(await canEnterChannel(req.user.id, channel))) {
+    return res.status(403).json({ error: fencedRoomError(channel) })
+  }
 
   res.json({ messages: await listMessages('channel_id', channelId) })
 })
@@ -349,6 +366,10 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
   const channel = rows[0]
   if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+
+  if (!(await canEnterChannel(req.user.id, channel))) {
+    return res.status(403).json({ error: fencedRoomError(channel) })
+  }
 
   if (overPostingLimit(req.user, res)) return
 

@@ -67,6 +67,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_accepted_at TIMESTAMPTZ;
 -- announcement rooms: everyone reads, only the Owner posts
 ALTER TABLE channels ADD COLUMN IF NOT EXISTS announce BOOLEAN NOT NULL DEFAULT FALSE;
 
+-- fenced rooms: the flair that opens this channel (NULL = open to everyone)
+ALTER TABLE channels ADD COLUMN IF NOT EXISTS flair TEXT;
+
 -- More than one owner is allowed (ownership can be shared between accounts).
 -- The first account on a fresh server still becomes the only owner of that moment: the
 -- check runs under a transaction advisory lock in routes/auth.js, so two people

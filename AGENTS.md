@@ -77,6 +77,15 @@ Non-obvious things worth knowing before changing something:
   `/role`: `/flair <flair> @user` and `/pass @user` are Owner-only (alongside `/bread @user`), and
   the flair word is whichever argument is a known flair key, so `@user` may come first.
   Nothing here grants permissions — never wire a flair to a role check.
+- **Two rooms are fenced behind a flair, not a role.** `channels.flair` names the flair that opens
+  a room (`vip` → `#vip`, `mvp` → `#mvp`, NULL = open). Holding it — worn or not — is what shows
+  the room: `loadSnapshot` filters the channel list, `GET`/`POST /api/channels/:id/messages` refuse
+  with a 403 naming the flair (`canEnterChannel` / `flairLabel` in `server/flairs.js`), and a socket
+  joins only the open rooms at connect. A fenced room is joined when the client reports
+  `presence:where` for it, which is also where the gate is re-checked, so winning the flair makes
+  the room appear on its own — the flair grant already emits `profile:update`, which refetches
+  `/api/me`. `CHANNEL_ACCESS_SQL` is the one place the rule is written in SQL; keep the four call
+  sites (snapshot, read, post, socket) on it.
   The custom tag itself takes any characters up to 20 — only control/invisible ones are stripped.
 - **A mention is a ping, delivered over sockets.** Channel/DM posts parse `@username` in
   `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
@@ -373,10 +382,12 @@ a production image — edits would stop showing.
 
 ## Accounts and seed data
 
-There are no demo accounts and no pre-made conversations. The seed keeps exactly three empty channels,
-in this order: `#general`, `#announcements` (owner-only posting, `announce = TRUE`) and `#random`.
-Room order comes from `channels.position`, which the seed re-asserts on every boot. `#design` was
-removed at the owner's request; there is no room-creation command, so the seed list is the whole set.
+There are no demo accounts and no pre-made conversations. The seed keeps five empty channels, in
+this order: `#general`, `#announcements` (owner-only posting, `announce = TRUE`), `#random`, and the
+two fenced rooms `#vip` and `#mvp` (`flair = 'vip'` / `'mvp'`, visible only to accounts holding that
+flair). Room order comes from `channels.position`, which the seed re-asserts on every boot, along
+with `channels.flair`, so an older database picks both up. `#design` was removed at the owner's
+request; there is no room-creation command, so the seed list is the whole set.
 
 The **first account to register becomes the owner** (`server/routes/auth.js`); every later signup is
 a member and has to be promoted with `/role`. Consequence for testing: if you delete the last owner,
