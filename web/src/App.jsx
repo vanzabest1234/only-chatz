@@ -17,6 +17,7 @@ import PassPanel from './components/PassPanel'
 import CasinoPanel from './components/CasinoPanel'
 import LeaderboardPanel from './components/LeaderboardPanel'
 import SendCoins from './components/SendCoins'
+import RankShop from './components/RankShop'
 import { playPing } from './lib/mentions'
 import { money } from './lib/format'
 
@@ -35,6 +36,7 @@ export default function App() {
   const [casinoOpen, setCasinoOpen] = useState(false)
   const [leadersOpen, setLeadersOpen] = useState(false)
   const [sendOpen, setSendOpen] = useState(false)
+  const [rankOpen, setRankOpen] = useState(false)
   const [ping, setPing] = useState(null)
   const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
@@ -451,6 +453,7 @@ export default function App() {
           onOpenLeaders={() => setLeadersOpen(true)}
           onOpenFlairs={() => setFlairOpen(true)}
           onOpenPass={() => setPassOpen(true)}
+          onOpenRanks={() => setRankOpen(true)}
         />
 
         <div className="shell">
@@ -503,6 +506,10 @@ export default function App() {
           }}
           onOpenLeaders={() => {
             setLeadersOpen(true)
+            setSidebarOpen(false)
+          }}
+          onOpenRanks={() => {
+            setRankOpen(true)
             setSidebarOpen(false)
           }}
           onSignOut={() => {
@@ -578,6 +585,14 @@ export default function App() {
                 previous ? { ...previous, user: { ...previous.user, coins } } : previous,
               )
             }
+          />
+        )}
+
+        {rankOpen && (
+          <RankShop
+            me={me}
+            onClose={() => setRankOpen(false)}
+            onChanged={() => load().catch(() => {})}
           />
         )}
 

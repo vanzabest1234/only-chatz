@@ -14,6 +14,7 @@ import flairRoutes from './routes/flairs.js'
 import casinoRoutes from './routes/casino.js'
 import coinRoutes from './routes/coins.js'
 import leaderboardRoutes from './routes/leaderboard.js'
+import rankRoutes from './routes/ranks.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
@@ -48,6 +49,7 @@ app.use('/api', flairRoutes)
 app.use('/api', casinoRoutes)
 app.use('/api', coinRoutes)
 app.use('/api', leaderboardRoutes)
+app.use('/api', rankRoutes)
 app.use('/api', chatRoutes)
 
 // A release build serves the built site from this same origin (see Dockerfile).

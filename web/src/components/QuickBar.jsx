@@ -15,6 +15,7 @@ export default function QuickBar({
   onOpenLeaders,
   onOpenFlairs,
   onOpenPass,
+  onOpenRanks,
 }) {
   const friends = me.friends
     .map(id => me.members.find(member => member.id === id))
@@ -90,6 +91,9 @@ export default function QuickBar({
       </button>
       <button type="button" className="qb-item" onClick={onOpenPass}>
         <span className="qb-mark">▮</span>tier {me.user.pass?.tier ?? 0}
+      </button>
+      <button type="button" className="qb-item qb-rank" onClick={onOpenRanks}>
+        <span className="qb-mark">▲</span>rank
       </button>
     </nav>
   )

@@ -135,6 +135,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS royal_coins INTEGER NOT NULL DEFAULT 
 -- A purse can be handed a fortune far past what BIGINT holds, so the balance is NUMERIC.
 ALTER TABLE users ALTER COLUMN royal_coins TYPE NUMERIC;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL DEFAULT now();
+-- how many ranks this account has bought in the shop, which is what raises the next price
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ranks_bought INTEGER NOT NULL DEFAULT 0;
 
 -- what the vault paid out, so the last few rolls can be shown back to the player
 CREATE TABLE IF NOT EXISTS coin_bets (
