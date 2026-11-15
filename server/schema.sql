@@ -137,6 +137,8 @@ ALTER TABLE users ALTER COLUMN royal_coins TYPE NUMERIC;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL DEFAULT now();
 -- how many ranks this account has bought in the shop, which is what raises the next price
 ALTER TABLE users ADD COLUMN IF NOT EXISTS ranks_bought INTEGER NOT NULL DEFAULT 0;
+-- the member number painted on the profile banner; NULL means "use the account id"
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_no INTEGER;
 
 -- what the vault paid out, so the last few rolls can be shown back to the player
 CREATE TABLE IF NOT EXISTS coin_bets (
