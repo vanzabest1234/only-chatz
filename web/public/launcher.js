@@ -1,7 +1,11 @@
-// The launcher's two ways into the room. Both open the same app at /chat; only the frame it
+// The launcher's ways into the room. They all open the same app at /chat; only the frame it
 // lives in differs. The URL is absolute on purpose — an about:blank document has no base of
-// its own. Kept in its own file so the page needs no inline script.
-const ROOM = new URL('/chat', window.location.origin).href
+// its own — and keeps this page's query string, so a preview's access token travels along.
+// Kept in its own file so the page needs no inline script.
+const ROOM = new URL('/chat', window.location.origin)
+ROOM.search = window.location.search
+const roomUrl = ROOM.href
+
 const hint = document.getElementById('hint')
 
 function say(text, bad) {
@@ -24,7 +28,7 @@ document.getElementById('blank').addEventListener('click', () => {
       '<title>only chatz</title>' +
       '<style>html,body{margin:0;height:100%;background:#2e3339}iframe{display:block;width:100%;height:100%;border:0}</style>' +
       '</head><body><iframe src="' +
-      ROOM +
+      roomUrl +
       '" allow="clipboard-write"></iframe></body></html>',
   )
   blank.document.close()
@@ -37,13 +41,14 @@ document.getElementById('blank').addEventListener('click', () => {
   )
 })
 
-// The same room, framed inside this page, with a way back out.
-document.getElementById('frame').addEventListener('click', () => {
+// The same room, framed inside this page, with a way back out. Staying on this page is
+// what keeps the room reachable in a preview host that only answers its own address.
+function openRoom() {
   if (document.querySelector('.stage')) return
 
   const stage = document.createElement('iframe')
   stage.className = 'stage'
-  stage.src = ROOM
+  stage.src = roomUrl
   stage.title = 'only chatz'
 
   const close = document.createElement('button')
@@ -60,4 +65,13 @@ document.getElementById('frame').addEventListener('click', () => {
 
   document.body.append(stage, close)
   document.body.classList.add('staged')
+}
+
+document.getElementById('frame').addEventListener('click', openRoom)
+
+// "just open the room" opens it here too instead of navigating away — a full-page hop to
+// /chat is refused by the preview host, which only serves the path it handed the pane.
+document.querySelector('.foot a').addEventListener('click', event => {
+  event.preventDefault()
+  openRoom()
 })
