@@ -426,7 +426,7 @@ export default function App() {
               title="Send royal coins"
             >
               <Icon name="coin" size={15} />
-              <span>{money(me.user.coins?.coins, me.user.role === 'owner')}</span>
+              <span>{money(me.user.coins?.coins)}</span>
             </button>
             <button
               type="button"
@@ -559,7 +559,6 @@ export default function App() {
         {flairOpen && (
           <FlairWheel
             coins={me.user.coins}
-            unlimited={me.user.role === 'owner'}
             onClose={() => setFlairOpen(false)}
             onChanged={() => load().catch(() => {})}
           />

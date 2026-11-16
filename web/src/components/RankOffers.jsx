@@ -8,7 +8,7 @@ import { flairColor } from '../lib/flairs'
  * purchase raises the next price by another 10,000; the server owns both the price and the
  * ladder, so this section only asks.
  */
-export default function RankOffers({ unlimited = false, coins, onChanged }) {
+export default function RankOffers({ coins, onChanged }) {
   const [shop, setShop] = useState(null)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
@@ -55,7 +55,7 @@ export default function RankOffers({ unlimited = false, coins, onChanged }) {
       </header>
 
       <p className="rank-wallet">
-        you hold {money(wallet?.coins, unlimited)} · the first flair is {money(10000)}, each
+        you hold {money(wallet?.coins)} · the first flair is {money(10000)}, each
         purchase adds {money(10000)}
       </p>
 

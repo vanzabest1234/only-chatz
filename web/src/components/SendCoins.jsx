@@ -19,7 +19,6 @@ export default function SendCoins({ me, onClose, onSent }) {
   const [error, setError] = useState('')
   const [sent, setSent] = useState('')
 
-  const unlimited = me.user.role === 'owner'
   const needle = query.trim().toLowerCase()
   const others = me.members
     .filter(member => member.id !== me.user.id)
@@ -72,7 +71,7 @@ export default function SendCoins({ me, onClose, onSent }) {
         <header className="settings-head">
           <div>
             <h2>Send royal coins</h2>
-            <p>you hold {money(me.user.coins?.coins, unlimited)} · coins move instantly</p>
+            <p>you hold {money(me.user.coins?.coins)} · coins move instantly</p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close send coins">
             <Icon name="close" />

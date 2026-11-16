@@ -64,7 +64,7 @@ export default function LeaderboardPanel({ me, onClose }) {
                 <span className="board-room">@{person.username}</span>
               </span>
               <RoleBadge role={person.role} />
-              <span className="ladder-coins">{money(person.coins, person.role === 'owner')}</span>
+              <span className="ladder-coins">{money(person.coins)}</span>
             </div>
           ))}
         </div>

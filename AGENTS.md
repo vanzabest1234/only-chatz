@@ -110,16 +110,16 @@ Non-obvious things worth knowing before changing something:
   `users.royal_coins` is `NUMERIC`: a purse can be handed a fortune past what `BIGINT` holds, and a
   balance too large for a JS number travels to the client as a digit string (`walletValue` /
   `coinText` in `coins.js`, `money` in `web/src/lib/format.js`) so nothing is rounded on the way out.
-  Owners hold `OWNER_COINS` (999999999999999) — effectively infinite: every read of an owner's
-  wallet lifts it back to that balance, so no bet or spin drains an owner, and a bigger purse is
-  left untouched. Everyone else lives off the drip alone. An owner's balance is painted as `∞`
-  (`money(value, unlimited)` in `web/src/lib/format.js`).
+  **Every role earns the same way: 100 per 10-minute window, nothing else.** The Owner used to be
+  refilled to `OWNER_COINS` (an effectively infinite purse, painted as `∞`); that privilege is gone
+  on request, so an owner's wallet drains and refills like anyone else's and `money` in
+  `web/src/lib/format.js` paints the real balance for every role.
 - **Coins travel between people with `POST /api/coins/send`** (`server/routes/coins.js`).
   `transferCoins` in `server/coins.js` takes from the sender and pays the receiver inside one
   transaction, and the sender's balance is checked by the statement that takes it, so a send
   either moves the whole amount or changes nothing. The amount is a digits-only digit string
   (a purse can outgrow a JS number), the target must exist and not be banned, and both accounts
-  get `coins:update`. The top bar's coin icon (an `∞`/balance chip) opens `SendCoins.jsx`, which
+  get `coins:update`. The top bar's coin icon (the balance chip) opens `SendCoins.jsx`, which
   picks any member and posts the amount; it is the member-facing counterpart to the Owner-only
   `/give` mint.
 - **Flairs can be bought with coins, from the daily wheel** (`server/ranks.js` + `routes/ranks.js`,
