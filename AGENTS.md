@@ -253,7 +253,9 @@ Non-obvious things worth knowing before changing something:
   200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
   `web/public/launcher.html` is the exception and **is not in `ENTRY_PATHS`**: it is a real file
   served from `web/public` in dev and from `web/dist` in a release, and it must stay out of both
-  lists or the built `index.html` wins. It is the two-choice page: "open in about:blank" writes a
+  lists or the built `index.html` wins. It is the two-choice page — a light card on the room's slate
+  background listing what the app holds (rooms, daily wheel, royal coins, the Aide, the leaderboard)
+  above the two ways in: "open in about:blank" writes a
   full-bleed `<iframe>` of `/` into a blank tab with `document.write` (the address bar stays
   about:blank; about:blank inherits this origin, so the session comes along), and "open in iframe"
   swaps the card for the same room inside this page with a `×` to get back. Both use one absolute
