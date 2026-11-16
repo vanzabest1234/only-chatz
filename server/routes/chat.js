@@ -64,6 +64,16 @@ function readChannelName(raw) {
   return { name }
 }
 
+// Names are unique across every room kind; asked up front so a clash is a plain answer,
+// not a failed statement in the database log.
+async function channelNameTaken(name, exceptId = null) {
+  const { rows } = await q(
+    'SELECT 1 FROM channels WHERE name = $1 AND ($2::int IS NULL OR id <> $2)',
+    [name, exceptId],
+  )
+  return rows.length > 0
+}
+
 /** Text a person typed, minus control/invisible characters, within the length cap. */
 function readContent(raw, hasImage = false) {
   if (raw === undefined || raw === null || raw === '') {
@@ -377,6 +387,9 @@ router.post('/channels', requireAuth, async (req, res) => {
   }
   const read = readChannelName(req.body?.name)
   if (read.error) return res.status(400).json({ error: read.error })
+  if (await channelNameTaken(read.name)) {
+    return res.status(409).json({ error: 'A room with that name already exists.' })
+  }
 
   try {
     const { rows } = await q(
@@ -413,6 +426,9 @@ router.patch('/channels/:id', requireAuth, async (req, res) => {
   const read = readChannelName(req.body?.name)
   if (read.error) return res.status(400).json({ error: read.error })
   if (read.name === channel.name) return res.json({ channel })
+  if (await channelNameTaken(read.name, channelId)) {
+    return res.status(409).json({ error: 'A room with that name already exists.' })
+  }
 
   try {
     const updated = await q(
