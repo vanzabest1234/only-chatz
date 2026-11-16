@@ -6,6 +6,7 @@ import { publicUser } from '../serializers.js'
 import { cleanText } from '../guard.js'
 import { checkDisplayName } from '../names.js'
 import { isRealImage } from '../images.js'
+import { BANNERS } from '../roles.js'
 
 const router = Router()
 
@@ -49,6 +50,12 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
     }
   }
 
+  // The profile banner strip: one of the role themes, or blank to wear your own role's.
+  const banner = String(req.body?.banner ?? '').trim().toLowerCase()
+  if (banner && !BANNERS.includes(banner)) {
+    return res.status(400).json({ error: 'Pick one of the banner themes.' })
+  }
+
   const avatar = req.body?.avatarUrl
   let avatarUrl = null
   if (typeof avatar === 'string' && avatar.length > 0) {
@@ -63,9 +70,9 @@ router.patch('/me/profile', requireAuth, async (req, res) => {
 
   const { rows } = await q(
     `UPDATE users SET display_name = $1, bio = $2, color = $3, avatar_url = $4,
-            pronouns = $5, custom_tag = $6
-      WHERE id = $7 RETURNING *`,
-    [displayName, bio, color, avatarUrl, pronouns, customTagRaw || null, req.user.id],
+            pronouns = $5, custom_tag = $6, banner = $7
+      WHERE id = $8 RETURNING *`,
+    [displayName, bio, color, avatarUrl, pronouns, customTagRaw || null, banner || null, req.user.id],
   )
 
   emitAll('profile:update')

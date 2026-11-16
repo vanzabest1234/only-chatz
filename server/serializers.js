@@ -14,6 +14,7 @@ export function publicUser(row) {
     avatarUrl: row.avatar_url ?? null,
     bio: row.bio ?? '',
     pronouns: row.pronouns ?? '',
+    banner: row.banner ?? null,
     mutedUntil: row.muted_until ?? null,
     rulesAccepted: Boolean(row.rules_accepted_at),
     flairs: Array.isArray(row.flairs) ? row.flairs : [],

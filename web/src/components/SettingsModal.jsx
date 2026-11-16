@@ -2,8 +2,12 @@ import { useState } from 'react'
 import Avatar from './Avatar'
 import Icon from './Icon'
 import { api } from '../api'
+import { roleLabel } from '../lib/roles'
 
 const COLORS = ['#93c5fd', '#fca5a5', '#a7f3d0', '#fcd34d', '#c4b5fd', '#f9a8d4', '#7dd3fc', '#fdba74']
+
+// The banner strips on sale to everyone: one theme per role, pick any of them.
+const BANNERS = ['member', 'mod', 'admin', 'co-owner', 'owner']
 
 // The browser crops the picture to a square and shrinks it to 256px, so what we
 // send the API is a small data URL and the server needs no file storage.
@@ -37,6 +41,7 @@ export default function SettingsModal({ user, onClose, onSaved }) {
   const [color, setColor] = useState(user.color)
   const [customTag, setCustomTag] = useState(user.customTag || '')
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
+  const [banner, setBanner] = useState(user.banner || '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -67,6 +72,7 @@ export default function SettingsModal({ user, onClose, onSaved }) {
           bio,
           pronouns,
           color,
+          banner,
           avatarUrl: avatarUrl || null,
           ...(user.ownsCustomTag ? { customTag } : {}),
         }),
@@ -177,6 +183,34 @@ export default function SettingsModal({ user, onClose, onSaved }) {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="field">
+            <span>Profile banner</span>
+            <div className="banner-options">
+              <button
+                type="button"
+                className={`banner-option ${banner === '' ? 'on' : ''}`}
+                onClick={() => setBanner('')}
+                aria-pressed={banner === ''}
+              >
+                <span className={`banner-preview banner-${user.role}`} />
+                <span>my role · {roleLabel(user.role)}</span>
+              </button>
+              {BANNERS.map(theme => (
+                <button
+                  key={theme}
+                  type="button"
+                  className={`banner-option ${banner === theme ? 'on' : ''}`}
+                  onClick={() => setBanner(theme)}
+                  aria-pressed={banner === theme}
+                >
+                  <span className={`banner-preview banner-${theme}`} />
+                  <span>{roleLabel(theme)}</span>
+                </button>
+              ))}
+            </div>
+            <em className="settings-count">the strip across the top of your profile card</em>
           </div>
 
           {error && <p className="auth-error">{error}</p>}

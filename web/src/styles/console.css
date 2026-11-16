@@ -2772,3 +2772,83 @@ body {
     animation: none;
   }
 }
+
+/* ---------- profile banner strip ----------
+   The band across the top of the profile card: one theme per role, and everyone may pick
+   any of them in settings (a blank pick wears your own role's). */
+
+.profile-banner {
+  position: relative;
+  height: 46px;
+  margin: -16px -16px 14px;
+  border-radius: 9px 9px 0 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.profile-banner::after,
+.banner-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.14) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+.banner-member {
+  background: linear-gradient(115deg, #2a3037, #6b7681);
+}
+
+.banner-mod {
+  background: linear-gradient(115deg, #0f3a33, #38d9c0);
+}
+
+.banner-admin {
+  background: linear-gradient(115deg, #3a1420, #ff5c8a);
+}
+
+.banner-co-owner {
+  background: linear-gradient(115deg, #241a4a, #8b7bff);
+}
+
+.banner-owner {
+  background: linear-gradient(115deg, #3a2a08, #ffb347);
+}
+
+.banner-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.banner-option {
+  display: grid;
+  gap: 6px;
+  min-width: 76px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  background: none;
+  border-radius: 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  cursor: pointer;
+}
+
+.banner-option.on {
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+}
+
+.banner-preview {
+  position: relative;
+  display: block;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+}

@@ -206,6 +206,11 @@ Non-obvious things worth knowing before changing something:
   (`PlayerName` with an `onClick`) and the members panel's separate avatar button open it. Pronouns
   live in `users.pronouns` (max 24 chars, edited in `SettingsModal.jsx`, saved through
   `PATCH /api/me/profile`); bio comes from the existing column.
+  **The strip across the top of that card is the profile banner** — `users.banner` holds one of
+  `BANNERS` in `server/roles.js` (member/mod/admin/co-owner/owner), picked from the swatch row in
+  settings and validated in `routes/profile.js`. Everyone may pick any theme; NULL means the
+  account's own role's theme, which is also the fallback `ProfileCard.jsx` uses. Purely decorative
+  (`banner-<theme>` gradients at the end of `console.css`) — never read it as a role.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
   `SettingsModal.jsx`; no file storage involved.
 - **Pictures can be sent with a message.** `messages.image_url` holds a data URL that

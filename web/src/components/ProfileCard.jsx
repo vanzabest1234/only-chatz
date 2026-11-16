@@ -6,6 +6,8 @@ import PlayerName from './PlayerName'
 
 /** The banner that opens when someone taps another member's picture. */
 export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm }) {
+  // The strip is a theme the person picked; unset falls back to their own role's.
+  const banner = member.banner || member.role || 'member'
   return (
     <div className="modal-scrim" onClick={onClose}>
       <div
@@ -15,6 +17,8 @@ export default function ProfileCard({ member, online, isSelf, onClose, onOpenDm 
         aria-label={`${member.displayName}'s profile`}
         onClick={event => event.stopPropagation()}
       >
+        <div className={`profile-banner banner-${banner}`} aria-hidden="true" />
+
         <div className="profile-top">
           <span className={`avatar-frame ${member.frame ? `frame-${member.frame}` : ''}`}>
             <Avatar
