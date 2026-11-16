@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import AutoUpdate from './components/AutoUpdate'
 import './styles/base.css'
 import './styles/app.css'
 import './styles/console.css'
@@ -19,5 +20,6 @@ if (!import.meta.env.DEV && window.location.pathname !== '/chat') {
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
+    <AutoUpdate />
   </React.StrictMode>,
 )

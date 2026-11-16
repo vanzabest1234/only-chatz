@@ -1395,6 +1395,13 @@ textarea:focus-visible,
   border-color: var(--phosphor);
 }
 
+/* the auto-update note sits above the composer, clear of a ping toast */
+.toast.auto-update {
+  bottom: 84px;
+  z-index: 80;
+  letter-spacing: 0.06em;
+}
+
 /* ---------- pings ---------- */
 
 .ping-toast {

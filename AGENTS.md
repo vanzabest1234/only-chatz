@@ -228,6 +228,15 @@ Non-obvious things worth knowing before changing something:
   Vite's log is routed through `roomLogger()` in `web/vite.config.js`, which drops only the
   `ws proxy socket error … read ECONNRESET` line a torn-down socket produces on every reload —
   every other proxy error still prints.
+- **The room refreshes itself when new code lands.** `server/build.js` fingerprints the files the
+  process serves — the `server/` sources, plus `web/dist` in a release and `web/src` when that
+  directory is mounted — and `GET /api/version` (`server/routes/version.js`, public) hands it to the
+  browser. `AutoUpdate` is mounted in `web/src/main.jsx` beside `App` (so the sign-in screen gets it
+  too) and polls through `web/src/lib/version.js` every 6s; a value different from the one the page
+  loaded with shows "new version — reloading…" for 1.2s and reloads. A failed poll (the API
+  restarting under `node --watch`) is ignored — never treated as a new build — so a restart alone
+  does not trip a reload. In the sandbox this is what carries a server-side change to every open
+  tab, and in a release it is the only path, since Vite's HMR is not running there.
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
