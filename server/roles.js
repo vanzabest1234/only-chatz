@@ -21,6 +21,14 @@ export const BANNERS = ['member', 'mod', 'admin', 'co-owner', 'owner']
 
 export const rankOf = role => RANKS[role] ?? 0
 
+/**
+ * Rooms are structural, so making or renaming one needs a staff rank: admins and above.
+ * One rule for every channel kind — the voice rooms use the same gate a text room would.
+ */
+export const CHANNEL_MANAGER_RANK = 2
+
+export const canManageChannels = user => rankOf(user?.role) >= CHANNEL_MANAGER_RANK
+
 export const labelFor = role => ROLE_LABELS[role] ?? 'Member'
 
 export function roleForRank(rank) {

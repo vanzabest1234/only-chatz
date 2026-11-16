@@ -2852,3 +2852,44 @@ body {
   border-radius: 4px;
   overflow: hidden;
 }
+
+/* ---------- voice rooms ----------
+   A live room gets the phosphor treatment: the dot breathes, and whoever is talking is
+   ringed in green — the one place in the room where green means sound, not a command. */
+
+.voice-dock-ping {
+  animation: voice-breath 2.4s ease-in-out infinite;
+}
+
+@keyframes voice-breath {
+  0%,
+  100% {
+    opacity: 0.45;
+    box-shadow: none;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--phosphor);
+  }
+}
+
+.voice-avatar.is-speaking .avatar,
+.voice-tile.is-speaking .avatar {
+  box-shadow:
+    inset 0 0 0 1px var(--phosphor),
+    0 0 0 2px rgba(124, 240, 174, 0.55),
+    0 0 12px rgba(124, 240, 174, 0.35);
+}
+
+.voice-tile.is-speaking {
+  border-color: var(--phosphor);
+}
+
+.voice-tile.is-me .voice-tile-name {
+  color: var(--phosphor);
+}
+
+.voice-nav .avatar,
+.voice-avatar .avatar {
+  box-shadow: inset 0 0 0 1px rgba(116, 240, 166, 0.35);
+}

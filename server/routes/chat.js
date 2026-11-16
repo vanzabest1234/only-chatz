@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import { q } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { emitTo, joinThread, onlineIds, onlineWhere } from '../realtime.js'
+import { emitAll, emitTo, joinThread, onlineIds, onlineWhere } from '../realtime.js'
 import { publicMessage, publicUser } from '../serializers.js'
-import { rankOf } from '../roles.js'
+import { canManageChannels, rankOf } from '../roles.js'
+import { voiceSnapshot } from '../voice.js'
 import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
 import { canEnterChannel, flairLabel, grantOwnerWheel } from '../flairs.js'
@@ -40,6 +41,27 @@ function readId(raw) {
 /** What a fenced room answers someone who does not hold the flair that opens it. */
 function fencedRoomError(channel) {
   return `#${channel.name} is for ${flairLabel(channel.flair)} members — win that flair on the wheel.`
+}
+
+// What a room row looks like to the client, in one place for every endpoint that returns one.
+const CHANNEL_COLUMNS = 'id, name, topic, slowmode, position, announce, kind'
+
+// A room name is a small slug: lower case, words joined with dashes, no spaces.
+const CHANNEL_NAME = /^[a-z0-9][a-z0-9-]{1,23}$/
+
+function readChannelName(raw) {
+  if (typeof raw !== 'string') return { error: 'Give the room a name.' }
+  const name = cleanText(raw, 48)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+  if (name.length < 2) return { error: 'Names need at least two letters or numbers.' }
+  if (name.length > 24) return { error: 'Names top out at 24 characters.' }
+  if (!CHANNEL_NAME.test(name)) return { error: 'Use letters, numbers and dashes only.' }
+  return { name }
 }
 
 /** Text a person typed, minus control/invisible characters, within the length cap. */
@@ -114,7 +136,7 @@ async function loadSnapshot(user) {
   const [channels, members, friends, threads, tag] = await Promise.all([
     // A fenced room only shows up for the flair that opens it (channels.flair).
     q(
-      `SELECT c.id, c.name, c.topic, c.slowmode, c.position, c.announce
+      `SELECT c.id, c.name, c.topic, c.slowmode, c.position, c.announce, c.kind
          FROM channels c
         WHERE c.flair IS NULL
            OR EXISTS (SELECT 1 FROM user_flairs f WHERE f.user_id = $1 AND f.flair = c.flair)
@@ -191,7 +213,9 @@ async function loadSnapshot(user) {
     })),
     online: onlineIds(),
     where: onlineWhere(),
+    voice: voiceSnapshot(),
     commands: commandCatalog(rankOf(user.role)),
+    canManageChannels: canManageChannels(user),
   }
 }
 
@@ -339,6 +363,78 @@ router.get('/audit', requireAuth, async (req, res) => {
   res.json({ entries: recentAudit() })
 })
 
+/**
+ * Voice rooms are made and renamed by staff — one rule for channel kind, so a text room
+ * would use the same gate. Text rooms themselves stay seed-managed; only voice rooms are
+ * created or renamed from the app.
+ */
+router.post('/channels', requireAuth, async (req, res) => {
+  if (!canManageChannels(req.user)) {
+    return res.status(403).json({ error: 'Only admins and above can make rooms.' })
+  }
+  if (req.body?.kind !== 'voice') {
+    return res.status(400).json({ error: 'Only voice rooms can be made here.' })
+  }
+  const read = readChannelName(req.body?.name)
+  if (read.error) return res.status(400).json({ error: read.error })
+
+  try {
+    const { rows } = await q(
+      `INSERT INTO channels (name, topic, position, kind)
+       VALUES ($1, '', COALESCE((SELECT MAX(position) + 1 FROM channels), 0), 'voice')
+       RETURNING ${CHANNEL_COLUMNS}`,
+      [read.name],
+    )
+    audit('channel-created', { userId: req.user.id, username: req.user.username, name: read.name })
+    emitAll('channels:refresh')
+    res.json({ channel: rows[0] })
+  } catch (problem) {
+    if (problem.code === '23505') {
+      return res.status(409).json({ error: 'A room with that name already exists.' })
+    }
+    res.status(500).json({ error: 'That room could not be made.' })
+  }
+})
+
+router.patch('/channels/:id', requireAuth, async (req, res) => {
+  if (!canManageChannels(req.user)) {
+    return res.status(403).json({ error: 'Only admins and above can rename rooms.' })
+  }
+  const channelId = readId(req.params.id)
+  if (!channelId) return res.status(400).json({ error: 'That room no longer exists.' })
+
+  const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
+  const channel = rows[0]
+  if (!channel) return res.status(404).json({ error: 'That room no longer exists.' })
+  if (channel.kind !== 'voice') {
+    return res.status(400).json({ error: 'Only voice rooms can be renamed here.' })
+  }
+
+  const read = readChannelName(req.body?.name)
+  if (read.error) return res.status(400).json({ error: read.error })
+  if (read.name === channel.name) return res.json({ channel })
+
+  try {
+    const updated = await q(
+      `UPDATE channels SET name = $2 WHERE id = $1 RETURNING ${CHANNEL_COLUMNS}`,
+      [channelId, read.name],
+    )
+    audit('channel-renamed', {
+      userId: req.user.id,
+      username: req.user.username,
+      from: channel.name,
+      to: read.name,
+    })
+    emitAll('channels:refresh')
+    res.json({ channel: updated.rows[0] })
+  } catch (problem) {
+    if (problem.code === '23505') {
+      return res.status(409).json({ error: 'A room with that name already exists.' })
+    }
+    res.status(500).json({ error: 'That room could not be renamed.' })
+  }
+})
+
 router.get('/channels/:id/messages', requireAuth, async (req, res) => {
   const channelId = readId(req.params.id)
   if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
@@ -346,6 +442,9 @@ router.get('/channels/:id/messages', requireAuth, async (req, res) => {
   const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
   const channel = rows[0]
   if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+  if (channel.kind === 'voice') {
+    return res.status(400).json({ error: 'That is a voice room — join it from the sidebar.' })
+  }
   if (!(await canEnterChannel(req.user.id, channel))) {
     return res.status(403).json({ error: fencedRoomError(channel) })
   }
@@ -366,6 +465,9 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
   const channel = rows[0]
   if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+  if (channel.kind === 'voice') {
+    return res.status(400).json({ error: 'That is a voice room — join it from the sidebar.' })
+  }
 
   if (!(await canEnterChannel(req.user.id, channel))) {
     return res.status(403).json({ error: fencedRoomError(channel) })

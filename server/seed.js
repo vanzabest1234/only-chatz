@@ -26,15 +26,30 @@ const CHANNELS = [
     announce: false,
     flair: 'mvp',
   },
+  {
+    name: 'lounge',
+    topic: 'Voice room — drop in, unmute and talk',
+    position: 5,
+    announce: false,
+    kind: 'voice',
+  },
 ]
 
 export async function seed() {
   for (const channel of CHANNELS) {
     await q(
-      `INSERT INTO channels (name, topic, position, announce, flair)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (name) DO UPDATE SET position = EXCLUDED.position, flair = EXCLUDED.flair`,
-      [channel.name, channel.topic, channel.position, channel.announce, channel.flair ?? null],
+      `INSERT INTO channels (name, topic, position, announce, flair, kind)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (name) DO UPDATE
+         SET position = EXCLUDED.position, flair = EXCLUDED.flair, kind = EXCLUDED.kind`,
+      [
+        channel.name,
+        channel.topic,
+        channel.position,
+        channel.announce,
+        channel.flair ?? null,
+        channel.kind ?? 'text',
+      ],
     )
   }
 }

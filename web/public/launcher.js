@@ -29,7 +29,7 @@ document.getElementById('blank').addEventListener('click', () => {
       '<style>html,body{margin:0;height:100%;background:#2e3339}iframe{display:block;width:100%;height:100%;border:0}</style>' +
       '</head><body><iframe src="' +
       roomUrl +
-      '" allow="clipboard-write"></iframe></body></html>',
+      '" allow="microphone; clipboard-write"></iframe></body></html>',
   )
   blank.document.close()
   const framed = Boolean(blank.document.querySelector('iframe'))
@@ -50,6 +50,8 @@ function openRoom() {
   stage.className = 'stage'
   stage.src = roomUrl
   stage.title = 'only chatz'
+  // Voice channels need the microphone: a frame only gets it when it asks for it.
+  stage.allow = 'microphone; clipboard-write'
 
   const close = document.createElement('button')
   close.type = 'button'

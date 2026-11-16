@@ -5,6 +5,7 @@ import { audit, take } from './guard.js'
 import { addPresenceMinutes } from './pass.js'
 import { accrueCoins } from './coins.js'
 import { CHANNEL_ACCESS_SQL } from './flairs.js'
+import { attachVoice, initVoice, voiceSnapshot } from './voice.js'
 
 let io = null
 const online = new Map()
@@ -113,6 +114,7 @@ function startCoinClock() {
 
 export function initRealtime(httpServer) {
   io = new Server(httpServer)
+  initVoice(io)
   startTypingSweep()
   startPassClock()
   startCoinClock()
@@ -157,6 +159,11 @@ export function initRealtime(httpServer) {
     online.set(user.id, (online.get(user.id) ?? 0) + 1)
     io.emit('presence:update', onlineIds())
     io.emit('presence:where', whereSnapshot())
+
+    // Which voice rooms have people in them, so the sidebar paints its avatars even for
+    // someone who has not joined one yet. A reconnect asks again with `voice:sync`.
+    socket.emit('voice:update', voiceSnapshot())
+    attachVoice(socket)
 
     socket.on('presence:where', async payload => {
       // Presence is broadcast to everyone, so it is the cheapest way to spam every

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
 import PlayerName from './PlayerName'
+import VoiceDock from './VoiceDock'
 import { relativeTime, snippet, walletText } from '../lib/format'
 
 export default function Sidebar({
@@ -9,6 +11,7 @@ export default function Sidebar({
   channelId,
   threadId,
   open,
+  voice,
   onClose,
   onPickChannel,
   onOpenDm,
@@ -20,7 +23,53 @@ export default function Sidebar({
   onOpenCasino,
   onOpenLeaders,
   onSignOut,
+  onCreateChannel,
+  onRenameChannel,
 }) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [renamingId, setRenamingId] = useState(null)
+  const [renameName, setRenameName] = useState('')
+  const [formError, setFormError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const voiceChannels = me.channels.filter(channel => channel.kind === 'voice')
+  const voiceRoom = voice.channelId
+    ? me.channels.find(channel => channel.id === voice.channelId)
+    : null
+  const voiceRooms = voice.rooms ?? {}
+
+  const createVoice = async event => {
+    event.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setFormError('')
+    try {
+      await onCreateChannel(newName)
+      setCreating(false)
+      setNewName('')
+    } catch (problem) {
+      setFormError(problem.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const renameVoice = async (event, channel) => {
+    event.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setFormError('')
+    try {
+      await onRenameChannel(channel.id, renameName)
+      setRenamingId(null)
+      setRenameName('')
+    } catch (problem) {
+      setFormError(problem.message)
+    } finally {
+      setBusy(false)
+    }
+  }
   const friendUsers = me.friends
     .map(id => me.members.find(member => member.id === id))
     .filter(Boolean)
@@ -110,17 +159,153 @@ export default function Sidebar({
 
           <section className="section">
             <h2 className="section-title">Text Channels</h2>
-            {me.channels.map(channel => (
-              <button
-                key={channel.id}
-                className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
-                onClick={() => onPickChannel(channel)}
-              >
-                <span className="hash">#</span>
-                <span className="nav-label">{channel.name}</span>
-                {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
-              </button>
-            ))}
+            {me.channels
+              .filter(channel => channel.kind !== 'voice')
+              .map(channel => (
+                <button
+                  key={channel.id}
+                  className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
+                  onClick={() => onPickChannel(channel)}
+                >
+                  <span className="hash">#</span>
+                  <span className="nav-label">{channel.name}</span>
+                  {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
+                </button>
+              ))}
+          </section>
+
+          <section className="section">
+            <h2 className="section-title">Voice Channels</h2>
+            {voiceChannels.length === 0 && (
+              <p className="side-hint">No voice rooms yet — a voice room is where you talk.</p>
+            )}
+            {voiceChannels.map(channel => {
+              const people = voiceRooms[channel.id] ?? []
+              const joined = channel.id === voice.channelId
+              return (
+                <div key={channel.id} className="voice-row">
+                  {renamingId === channel.id ? (
+                    <form className="voice-form" onSubmit={event => renameVoice(event, channel)}>
+                      <input
+                        className="voice-input"
+                        value={renameName}
+                        onChange={event => setRenameName(event.target.value)}
+                        aria-label={`Rename the ${channel.name} voice room`}
+                        maxLength={24}
+                        autoFocus
+                      />
+                      <button className="icon-btn" type="submit" aria-label="Save name" disabled={busy}>
+                        <Icon name="check" size={15} />
+                      </button>
+                      <button
+                        className="icon-btn"
+                        type="button"
+                        aria-label="Cancel rename"
+                        onClick={() => setRenamingId(null)}
+                      >
+                        <Icon name="close" size={15} />
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className={`nav-row voice-nav ${joined ? 'active' : ''}`}
+                        onClick={() => (joined ? voice.leave() : voice.join(channel.id))}
+                        aria-pressed={joined}
+                        aria-label={`${joined ? 'Leave' : 'Join'} the ${channel.name} voice room`}
+                      >
+                        <Icon name="speaker" size={15} />
+                        <span className="nav-label">{channel.name}</span>
+                        {people.length > 0 && (
+                          <span className="voice-avatars">
+                            {people.slice(0, 4).map(person => (
+                              <span
+                                key={person.userId}
+                                className={
+                                  voice.speaking.includes(person.userId) ? 'voice-avatar is-speaking' : 'voice-avatar'
+                                }
+                              >
+                                <Avatar
+                                  name={person.displayName}
+                                  color={person.color}
+                                  src={person.avatarUrl}
+                                  size={18}
+                                />
+                              </span>
+                            ))}
+                            {people.length > 4 && (
+                              <span className="voice-more">+{people.length - 4}</span>
+                            )}
+                          </span>
+                        )}
+                      </button>
+                      {me.canManageChannels && (
+                        <button
+                          type="button"
+                          className="icon-btn voice-edit"
+                          aria-label={`Rename the ${channel.name} voice room`}
+                          title="rename"
+                          onClick={() => {
+                            setFormError('')
+                            setRenamingId(channel.id)
+                            setRenameName(channel.name)
+                          }}
+                        >
+                          <Icon name="pencil" size={13} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+
+            {(formError || voice.error) && (
+              <p className="voice-error">{formError || voice.error}</p>
+            )}
+
+            {me.canManageChannels &&
+              (creating ? (
+                <form className="voice-form voice-create" onSubmit={createVoice}>
+                  <input
+                    className="voice-input"
+                    value={newName}
+                    onChange={event => setNewName(event.target.value)}
+                    placeholder="new-voice-room"
+                    aria-label="New voice room name"
+                    maxLength={24}
+                    autoFocus
+                  />
+                  <button className="icon-btn" type="submit" aria-label="Create voice room" disabled={busy}>
+                    <Icon name="check" size={15} />
+                  </button>
+                  <button
+                    className="icon-btn"
+                    type="button"
+                    aria-label="Cancel new voice room"
+                    onClick={() => {
+                      setCreating(false)
+                      setNewName('')
+                      setFormError('')
+                    }}
+                  >
+                    <Icon name="close" size={15} />
+                  </button>
+                </form>
+              ) : (
+                <button
+                  className="nav-row ghost"
+                  type="button"
+                  onClick={() => {
+                    setFormError('')
+                    setCreating(true)
+                  }}
+                >
+                  <Icon name="plus" size={15} />
+                  <span className="nav-label">New voice room</span>
+                </button>
+              ))}
           </section>
 
           <section className="section">
@@ -153,6 +338,23 @@ export default function Sidebar({
             </button>
           </section>
         </div>
+
+        {voiceRoom && (
+          <VoiceDock
+            channel={voiceRoom}
+            roster={voice.roster}
+            speaking={voice.speaking}
+            muted={voice.muted}
+            deafened={voice.deafened}
+            hasMic={voice.hasMic}
+            micError={voice.micError}
+            error={voice.error}
+            meId={me.user.id}
+            onToggleMute={voice.toggleMute}
+            onToggleDeafen={voice.toggleDeafen}
+            onLeave={voice.leave}
+          />
+        )}
 
         <div className="me-card">
           <Avatar

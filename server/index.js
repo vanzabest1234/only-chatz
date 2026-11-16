@@ -33,7 +33,8 @@ app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff')
   res.set('Referrer-Policy', 'no-referrer')
   res.set('X-Permitted-Cross-Domain-Policies', 'none')
-  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // The room itself may use the microphone — voice channels are WebRTC. Nothing else is granted.
+  res.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()')
   next()
 })
 

@@ -199,6 +199,34 @@ Non-obvious things worth knowing before changing something:
   (`typingLabel` in `ChatPane.jsx`): one name, "a and b are typing", or "more than 7 people are
   typing" once eight or more are going at once. Nothing is stored, so a restart only loses the
   current notes.
+- **Voice rooms are rows in `channels` with `kind = 'voice'`.** The seed keeps one (`#lounge`,
+  position 5) and re-asserts its kind on every boot; text-room routes refuse a voice row (400), and
+  the sidebar paints both kinds in separate groups from the one `GET /api/me` list. Creating and
+  renaming one is staff-only — `canManageChannels` in `server/roles.js` is `rankOf >= 2` (admin),
+  the same gate a text room would use, and it rides to the client as `canManageChannels` so the
+  buttons only appear for staff. Names are slugified to `a-z0-9-`, 2-24 characters, unique across
+  both kinds. Text rooms stay seed-managed: there is still no UI to make or rename one.
+- **Voice is peer-to-peer; the server is only a switchboard.** `server/voice.js` keeps the roster in
+  memory (like presence — an API restart empties every room), seats one socket per account (a second
+  tab moves the seat, it does not open a second microphone), caps a room at 8 people, and relays
+  `voice:signal` only between two people the server has put in the *same* room, so the socket is not
+  a general message bus. Joining re-uses the text-room gates: flair fence, the 10 rules, and a mute
+  keeps you out until it lifts (`voice:join` refuses, `voice:error` answers). `voice:update` carries
+  the room → people snapshot to every client (sidebar avatars), `voice:sync` asks for it again on
+  reconnect.
+- **`web/src/lib/voice.js` is the browser half.** One `RTCPeerConnection` per person, the newcomer
+  offering to everyone already there, speaking detected from a WebAudio analyser on each stream, and
+  `iceServers: []` on purpose — no hosted STUN/TURN. Peers on the same network or a directly
+  reachable host connect; crossing NATs needs a STUN URL added there, which is the only change.
+  Joining asks for the microphone first: a frame that does not delegate it (`document.permissionsPolicy`)
+  or a prompt nobody answers within a few seconds falls back to listening only, and the dock says
+  so, so a join click can never hang. Mute disables the outgoing track, deafen mutes the remote
+  `<audio>` elements; both are reported to the room so the tiles show the icons.
+- **The connected panel is docked in the rooms sheet**, above the me-card (`VoiceDock.jsx`), not
+  floating over the conversation — the sidebar is a drop-down here, so voice lives where the room
+  list does. `server/index.js` allows `microphone=(self)` in `Permissions-Policy`; anything that
+  embeds the room in a frame must add `allow="microphone"` (the launcher does) or voice is
+  listening-only there.
 - **Tapping an avatar or a name opens a profile banner.** `web/src/components/ProfileCard.jsx`
   renders name, `@username`, the account's serial as `member #<id>` (`publicUser` → `number`, the
   registration order), role, pronouns, online state and bio from the `me.members` entry (nothing is

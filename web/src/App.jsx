@@ -18,6 +18,7 @@ import CasinoPanel from './components/CasinoPanel'
 import LeaderboardPanel from './components/LeaderboardPanel'
 import SendCoins from './components/SendCoins'
 import { playPing } from './lib/mentions'
+import { useVoice } from './lib/voice'
 import { money, walletText } from './lib/format'
 
 export default function App() {
@@ -49,6 +50,9 @@ export default function App() {
   const viewRef = useRef(view)
   viewRef.current = view
 
+  // Voice lives entirely in the browser: the socket only carries signalling.
+  const voice = useVoice(socket, me?.user?.id ?? null)
+
   const load = useCallback(async () => {
     const data = await api('/api/me')
     setMe(data)
@@ -68,6 +72,7 @@ export default function App() {
   }, [])
 
   const signOut = useCallback(() => {
+    voice.leave()
     socket.disconnect()
     setToken(null)
     setMe(null)
@@ -286,8 +291,32 @@ export default function App() {
   }
 
   const openChannel = channel => {
+    // A voice room has no scrollback: opening it joins it.
+    if (channel.kind === 'voice') {
+      setSidebarOpen(true)
+      voice.join(channel.id)
+      return
+    }
     setView({ type: 'channel', id: channel.id })
     setSidebarOpen(false)
+  }
+
+  const createChannel = async name => {
+    const data = await api('/api/channels', {
+      method: 'POST',
+      body: JSON.stringify({ name, kind: 'voice' }),
+    })
+    await load()
+    return data.channel
+  }
+
+  const renameChannel = async (channelId, name) => {
+    const data = await api(`/api/channels/${channelId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    })
+    await load()
+    return data.channel
   }
 
   const openDm = async userId => {
@@ -394,7 +423,10 @@ export default function App() {
     )
   }
 
-  const channel = view?.type === 'channel' ? me.channels.find(item => item.id === view.id) : null
+  const channel =
+    view?.type === 'channel'
+      ? me.channels.find(item => item.id === view.id && item.kind !== 'voice')
+      : null
   const thread = view?.type === 'dm' ? me.threads.find(item => item.id === view.id) : null
   const profileMember = profileId ? me.members.find(member => member.id === profileId) : null
 
@@ -474,6 +506,9 @@ export default function App() {
           channelId={channel?.id}
           threadId={thread?.id}
           open={sidebarOpen}
+          voice={voice}
+          onCreateChannel={createChannel}
+          onRenameChannel={renameChannel}
           onClose={() => setSidebarOpen(false)}
           onPickChannel={openChannel}
           onOpenDm={openDm}

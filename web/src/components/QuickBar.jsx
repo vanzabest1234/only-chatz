@@ -25,17 +25,19 @@ export default function QuickBar({
 
   return (
     <nav className="quick-bar" aria-label="Rooms, messages and shortcuts">
-      {me.channels.map(channel => (
-        <button
-          key={channel.id}
-          type="button"
-          className={`qb-item ${channel.id === channelId ? 'active' : ''}`}
-          onClick={() => onPickChannel(channel)}
-        >
-          <span className="qb-mark">#</span>
-          {channel.name}
-        </button>
-      ))}
+      {me.channels
+        .filter(channel => channel.kind !== 'voice')
+        .map(channel => (
+          <button
+            key={channel.id}
+            type="button"
+            className={`qb-item ${channel.id === channelId ? 'active' : ''}`}
+            onClick={() => onPickChannel(channel)}
+          >
+            <span className="qb-mark">#</span>
+            {channel.name}
+          </button>
+        ))}
 
       {friends.map(friend => {
         const thread = me.threads.find(item => item.peer.id === friend.id)

@@ -70,6 +70,9 @@ ALTER TABLE channels ADD COLUMN IF NOT EXISTS announce BOOLEAN NOT NULL DEFAULT 
 -- fenced rooms: the flair that opens this channel (NULL = open to everyone)
 ALTER TABLE channels ADD COLUMN IF NOT EXISTS flair TEXT;
 
+-- text rooms carry messages; voice rooms are a WebRTC room you join from the sidebar
+ALTER TABLE channels ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'text';
+
 -- More than one owner is allowed (ownership can be shared between accounts).
 -- The first account on a fresh server still becomes the only owner of that moment: the
 -- check runs under a transaction advisory lock in routes/auth.js, so two people
