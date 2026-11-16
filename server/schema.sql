@@ -139,6 +139,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS ranks_bought INTEGER NOT NULL DEFAULT 0;
 -- the member number painted on the profile banner; NULL means "use the account id"
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_no INTEGER;
+-- staff roles that already paid their joining bonus, so a promotion pays 10,000 once per role
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role_bonus_paid TEXT[] NOT NULL DEFAULT '{}';
 
 -- what the vault paid out, so the last few rolls can be shown back to the player
 CREATE TABLE IF NOT EXISTS coin_bets (

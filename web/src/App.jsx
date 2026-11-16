@@ -18,7 +18,7 @@ import CasinoPanel from './components/CasinoPanel'
 import LeaderboardPanel from './components/LeaderboardPanel'
 import SendCoins from './components/SendCoins'
 import { playPing } from './lib/mentions'
-import { money } from './lib/format'
+import { money, walletText } from './lib/format'
 
 export default function App() {
   const [me, setMe] = useState(null)
@@ -426,7 +426,7 @@ export default function App() {
               title="Send royal coins"
             >
               <Icon name="coin" size={15} />
-              <span>{money(me.user.coins?.coins)}</span>
+              <span>{walletText(me.user.coins)}</span>
             </button>
             <button
               type="button"

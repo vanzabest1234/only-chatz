@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { money } from '../lib/format'
+import { money, walletText } from '../lib/format'
 import { flairColor } from '../lib/flairs'
 
 /**
@@ -55,7 +55,7 @@ export default function RankOffers({ coins, onChanged }) {
       </header>
 
       <p className="rank-wallet">
-        you hold {money(wallet?.coins)} · the first flair is {money(10000)}, each
+        you hold {walletText(wallet)} · the first flair is {money(10000)}, each
         purchase adds {money(10000)}
       </p>
 

@@ -110,10 +110,15 @@ Non-obvious things worth knowing before changing something:
   `users.royal_coins` is `NUMERIC`: a purse can be handed a fortune past what `BIGINT` holds, and a
   balance too large for a JS number travels to the client as a digit string (`walletValue` /
   `coinText` in `coins.js`, `money` in `web/src/lib/format.js`) so nothing is rounded on the way out.
-  **Every role earns the same way: 100 per 10-minute window, nothing else.** The Owner used to be
-  refilled to `OWNER_COINS` (an effectively infinite purse, painted as `∞`); that privilege is gone
-  on request, so an owner's wallet drains and refills like anyone else's and `money` in
-  `web/src/lib/format.js` paints the real balance for every role.
+  **The Owner holds the house purse: it is never counted and never spent down.** `coinState` marks
+  an owner row `unlimited`, `walletText` in `web/src/lib/format.js` paints that as `∞`, and every
+  spend (`spendCoins`, `settleBet`, `transferCoins`, a wheel turn, a flair purchase) leaves an
+  owner's `royal_coins` untouched while still succeeding — so an owner gambles, spins and buys
+  without a balance. Everyone else earns 100 per 10-minute window and only spends what they hold.
+  **Gaining mod or admin pays 10,000 coins once per role** (`ROLE_BONUS` in `server/commands.js`,
+  applied by `/role`): the paid role is stamped in `users.role_bonus_paid`, so re-running the same
+  promotion, or demoting and promoting again, cannot collect the same bonus twice, while a later
+  step up to admin pays its own 10,000. Co-owner and member pay nothing.
 - **Coins travel between people with `POST /api/coins/send`** (`server/routes/coins.js`).
   `transferCoins` in `server/coins.js` takes from the sender and pays the receiver inside one
   transaction, and the sender's balance is checked by the statement that takes it, so a send

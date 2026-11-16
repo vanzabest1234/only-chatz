@@ -65,11 +65,15 @@ export function coinText(value) {
   }
 }
 
+/** The owner holds the house purse: it is never spent down, and the client paints it as ∞. */
+export const isHousePurse = row => row?.role === 'owner'
+
 /** What the client paints: the balance, the drip rate, and when the next 100 lands. */
 export function coinState(row) {
   const last = row?.coins_claimed_at ? new Date(row.coins_claimed_at).getTime() : Date.now()
   return {
     coins: walletValue(row?.royal_coins),
+    unlimited: isHousePurse(row),
     perTick: COIN_PER_TICK,
     tickMinutes: TICK_MINUTES,
     nextAt: new Date(last + TICK_MS).toISOString(),
@@ -102,7 +106,7 @@ export async function accrueCoins(userId) {
         SET royal_coins = royal_coins + $3,
             coins_claimed_at = $4
       WHERE id = $1 AND coins_claimed_at::text = $2
-      RETURNING royal_coins, coins_claimed_at`,
+      RETURNING royal_coins, coins_claimed_at, role`,
     [
       userId,
       row.claimed_text,
@@ -114,12 +118,16 @@ export async function accrueCoins(userId) {
   return { state: coinState(updated[0]), awarded: true }
 }
 
-/** Spend coins only if the balance covers it. Returns the new state, or null if short. */
+/**
+ * Spend coins only if the balance covers it. Returns the new state, or null if short.
+ * The owner's house purse is never deducted, so an owner can spend without a balance.
+ */
 export async function spendCoins(userId, amount) {
   const { rows } = await q(
-    `UPDATE users SET royal_coins = royal_coins - $2
-      WHERE id = $1 AND royal_coins >= $2
-      RETURNING royal_coins, coins_claimed_at`,
+    `UPDATE users
+        SET royal_coins = CASE WHEN role = 'owner' THEN royal_coins ELSE royal_coins - $2 END
+      WHERE id = $1 AND (role = 'owner' OR royal_coins >= $2)
+      RETURNING royal_coins, coins_claimed_at, role`,
     [userId, amount],
   )
   return rows.length ? coinState(rows[0]) : null
@@ -128,9 +136,10 @@ export async function spendCoins(userId, amount) {
 /** Take the stake and pay the win back in one statement, so a loss cannot leave coins stuck. */
 export async function settleBet(userId, wager, payout) {
   const { rows } = await q(
-    `UPDATE users SET royal_coins = royal_coins - $2 + $3
-      WHERE id = $1 AND royal_coins >= $2
-      RETURNING royal_coins, coins_claimed_at`,
+    `UPDATE users
+        SET royal_coins = CASE WHEN role = 'owner' THEN royal_coins ELSE royal_coins - $2 + $3 END
+      WHERE id = $1 AND (role = 'owner' OR royal_coins >= $2)
+      RETURNING royal_coins, coins_claimed_at, role`,
     [userId, wager, payout],
   )
   return rows.length ? coinState(rows[0]) : null
@@ -146,9 +155,11 @@ export async function transferCoins(fromId, toId, amount) {
   try {
     await client.query('BEGIN')
     const { rows: paid } = await client.query(
-      `UPDATE users SET royal_coins = royal_coins - $2
-        WHERE id = $1 AND royal_coins >= $2
-        RETURNING royal_coins, coins_claimed_at`,
+      // The owner's purse is the house purse: a send from it moves coins without draining it.
+      `UPDATE users
+          SET royal_coins = CASE WHEN role = 'owner' THEN royal_coins ELSE royal_coins - $2 END
+        WHERE id = $1 AND (role = 'owner' OR royal_coins >= $2)
+        RETURNING royal_coins, coins_claimed_at, role`,
       [fromId, amount],
     )
     if (!paid.length) {
@@ -158,7 +169,7 @@ export async function transferCoins(fromId, toId, amount) {
     const { rows: given } = await client.query(
       `UPDATE users SET royal_coins = royal_coins + $2
         WHERE id = $1 AND NOT banned
-        RETURNING royal_coins, coins_claimed_at`,
+        RETURNING royal_coins, coins_claimed_at, role`,
       [toId, amount],
     )
     if (!given.length) {
@@ -180,7 +191,7 @@ export async function grantCoins(userId, amount) {
   const { rows } = await q(
     `UPDATE users SET royal_coins = royal_coins + $2
       WHERE id = $1
-      RETURNING royal_coins, coins_claimed_at`,
+      RETURNING royal_coins, coins_claimed_at, role`,
     [userId, amount],
   )
   return rows.length ? coinState(rows[0]) : null

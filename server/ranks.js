@@ -67,15 +67,16 @@ export async function buyRank(userId, flair) {
 
   const price = rankPrice(row.ranks_bought)
   const { rows: paid } = await q(
+    // The owner's house purse is never deducted, so a flair is bought without a balance.
     `UPDATE users
-        SET royal_coins = royal_coins - $2,
+        SET royal_coins = CASE WHEN role = 'owner' THEN royal_coins ELSE royal_coins - $2 END,
             ranks_bought = ranks_bought + 1
       WHERE id = $1
         AND NOT banned
-        AND royal_coins >= $2
+        AND (role = 'owner' OR royal_coins >= $2)
         AND ranks_bought = $4
         AND NOT EXISTS (SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = $3)
-      RETURNING royal_coins, coins_claimed_at, ranks_bought`,
+      RETURNING royal_coins, coins_claimed_at, role, ranks_bought`,
     [userId, price, flair, Number(row.ranks_bought ?? 0)],
   )
   if (!paid.length) {

@@ -7,6 +7,11 @@ export function money(value) {
   }
 }
 
+/** A wallet paints as ∞ when it is the owner's house purse, otherwise its balance. */
+export function walletText(state) {
+  return state?.unlimited ? '∞' : money(state?.coins)
+}
+
 export function timeShort(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })

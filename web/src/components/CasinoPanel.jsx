@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
 import { api } from '../api'
-import { money } from '../lib/format'
+import { money, walletText } from '../lib/format'
 
 
 /** The drip: 100 coins every ten minutes, so the panel counts down to the next one. */
@@ -34,7 +34,8 @@ export default function CasinoPanel({ me, onClose }) {
     nextAt: null,
     spinCost: 1000,
   }
-  const balance = wallet.coins ?? 0
+  // The owner's house purse is endless: it is painted as ∞ and can cover any stake up to the cap.
+  const balance = wallet.unlimited ? (table?.maxBet ?? 100000) : (wallet.coins ?? 0)
   const stakes = table?.risks ?? []
   const minBet = table?.minBet ?? 10
   const picked = stakes.find(item => item.key === risk) ?? stakes[0] ?? null
@@ -96,7 +97,7 @@ export default function CasinoPanel({ me, onClose }) {
             ◉
           </span>
           <div>
-            <span className="vault-balance">{money(balance)}</span>
+            <span className="vault-balance">{walletText(wallet)}</span>
             <span className="vault-balance-unit">royal coins</span>
           </div>
         </div>
@@ -156,7 +157,8 @@ export default function CasinoPanel({ me, onClose }) {
                 {result.won ? `won ${money(result.payout)} coins` : `lost ${money(result.wager)} coins`}
               </strong>
               <span className="vault-result-line">
-                needed 1–{result.chance} · {result.risk} stakes · you hold {money(result.coins?.coins)}
+                needed 1–{result.chance} · {result.risk} stakes · you hold{' '}
+                {walletText(result.coins)}
               </span>
             </div>
           </div>
@@ -164,7 +166,7 @@ export default function CasinoPanel({ me, onClose }) {
 
         {error && <p className="auth-error">{error}</p>}
 
-        {!result && !error && balance < minBet && (
+        {!result && !error && !wallet.unlimited && balance < minBet && (
           <p className="vault-hint">
             the table opens at {money(minBet)} coins — the drip is paying you 100 every 10 minutes.
           </p>

@@ -3,7 +3,7 @@ import Avatar from './Avatar'
 import Icon from './Icon'
 import PlayerName from './PlayerName'
 import { api } from '../api'
-import { money } from '../lib/format'
+import { money, walletText } from '../lib/format'
 
 const QUICK = [100, 1000, 10000]
 
@@ -71,7 +71,7 @@ export default function SendCoins({ me, onClose, onSent }) {
         <header className="settings-head">
           <div>
             <h2>Send royal coins</h2>
-            <p>you hold {money(me.user.coins?.coins)} · coins move instantly</p>
+            <p>you hold {walletText(me.user.coins)} · coins move instantly</p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close send coins">
             <Icon name="close" />

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
 import { api } from '../api'
 import { flairColor, flairLabel } from '../lib/flairs'
-import { money, timeShort } from '../lib/format'
+import { money, timeShort, walletText } from '../lib/format'
 import RankOffers from './RankOffers'
 
 const TURNS = 5
@@ -52,7 +52,7 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
   const wallet = coins ?? data?.coins ?? { coins: 0, spinCost: 1000 }
   const cost = wallet.spinCost ?? 1000
   // A banked pass token is a free turn; otherwise a turn is paid for in royal coins.
-  const affordable = tokens > 0 || (wallet.coins ?? 0) >= cost
+  const affordable = tokens > 0 || wallet.unlimited || (wallet.coins ?? 0) >= cost
   // The wheel comes back 24 hours after the last turn; the server owns the stamp, this only
   // counts down to what it handed over.
   const [now, setNow] = useState(Date.now())
@@ -217,7 +217,7 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
           )}
           {!won && !error && data && (
             <p className="wheel-hint">
-              you hold {money(wallet.coins)} coins · +100 every {wallet.tickMinutes ?? 10} min · vip
+              you hold {walletText(wallet)} coins · +100 every {wallet.tickMinutes ?? 10} min · vip
               1% · mvp 0.1% · custom tag 0.01%
             </p>
           )}

@@ -12,6 +12,9 @@ import { accrueCoins, coinText, grantCoins, settleBet, spendCoins, topWallets } 
 import { MAX_BET, MIN_BET, gambleRoll, rollDice } from './casino.js'
 import { answerAi } from './ai.js'
 
+/** What a promotion is worth: gaining mod or admin pays 10,000 coins, once per role. */
+const ROLE_BONUS = { mod: 10000, admin: 10000 }
+
 async function postSystem(channel, content) {
   const { rows } = await q(
     `INSERT INTO messages (channel_id, author_name, author_role, content, system)
@@ -289,11 +292,29 @@ const COMMANDS = [
       if (rankOf(role) >= rankOf(actor.role)) {
         return { error: 'You can only hand out roles below your own.' }
       }
-      await q('UPDATE users SET role = $1 WHERE id = $2', [role, target.id])
-      audit('role-changed', { actor: actor.username, target: target.username, role })
+      // Earning mod or admin pays 10,000 coins once per role; the paid roles are stamped on the
+      // account so a demotion and re-promotion cannot collect the same bonus twice.
+      const already = Array.isArray(target.role_bonus_paid) ? target.role_bonus_paid : []
+      const bonus = ROLE_BONUS[role] && !already.includes(role) ? ROLE_BONUS[role] : 0
+      await q(
+        `UPDATE users
+            SET role = $1,
+                role_bonus_paid = CASE WHEN $3::boolean
+                                       THEN array_append(role_bonus_paid, $1)
+                                       ELSE role_bonus_paid END
+          WHERE id = $2`,
+        [role, target.id, Boolean(bonus)],
+      )
+      const state = bonus ? await grantCoins(target.id, bonus) : null
+      if (state) emitTo(`user:${target.id}`, 'coins:update', state)
+      audit('role-changed', { actor: actor.username, target: target.username, role, bonus })
       emitAll('members:refresh')
       emitTo(`user:${target.id}`, 'profile:update')
-      return { notice: `${target.display_name} is now ${labelFor(role)}.` }
+      return {
+        notice: state
+          ? `${target.display_name} is now ${labelFor(role)} — and collected ${coinText(bonus)} royal coins for the promotion.`
+          : `${target.display_name} is now ${labelFor(role)}.`,
+      }
     },
   },
   {

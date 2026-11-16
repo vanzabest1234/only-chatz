@@ -74,16 +74,19 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
     const { rows: spent } = await q(
       `UPDATE users SET spin_tokens = spin_tokens - 1, flair_spun_at = now()
         WHERE id = $1 AND spin_tokens > 0 AND ${WHEEL_OPEN_SQL}
-        RETURNING royal_coins, coins_claimed_at`,
+        RETURNING royal_coins, coins_claimed_at, role`,
       [user.id],
     )
     if (spent.length) coins = coinState(spent[0])
   }
   if (!coins) {
     const { rows: paid } = await q(
-      `UPDATE users SET royal_coins = royal_coins - $2, flair_spun_at = now()
-        WHERE id = $1 AND royal_coins >= $2 AND ${WHEEL_OPEN_SQL}
-        RETURNING royal_coins, coins_claimed_at`,
+      // The owner's house purse is never deducted: the wheel turns for free for the house.
+      `UPDATE users
+          SET royal_coins = CASE WHEN role = 'owner' THEN royal_coins ELSE royal_coins - $2 END,
+              flair_spun_at = now()
+        WHERE id = $1 AND (role = 'owner' OR royal_coins >= $2) AND ${WHEEL_OPEN_SQL}
+        RETURNING royal_coins, coins_claimed_at, role`,
       [user.id, SPIN_COST],
     )
     if (paid.length) coins = coinState(paid[0])
