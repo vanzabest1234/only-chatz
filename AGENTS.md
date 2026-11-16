@@ -341,7 +341,11 @@ Things not to undo:
 
 - **Session tokens are stored hashed (sha256).** `sessionUser` still accepts a row stored in
   the clear and rewrites it on use, so rotating this never signs anyone out; new sessions are
-  written hashed. `createSession` prunes expired rows on every login.
+  written hashed. **A session lasts until it is signed out or revoked** — logout, kick and ban are
+  the only things that end one. `SESSION_LOOKUP` deliberately has no `expires_at` filter (the
+  column is still stamped a century out), so a row written under the old 7-day rule keeps working.
+  On the client a failed boot only drops the saved token on 401/403: a blip such as the API
+  restarting keeps it and retries once, so a reload never signs anyone out.
 - **Passwords are 8-128 characters, hashed with async scrypt.** A sign-in for a username that
   does not exist still pays for one scrypt round (`DUMMY_HASH`), so response timing cannot be
   used to enumerate accounts.

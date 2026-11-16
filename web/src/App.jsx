@@ -115,12 +115,25 @@ export default function App() {
       setBooting(false)
       return
     }
-    finishAuth()
-      .catch(() => {
-        setToken(null)
-        setMe(null)
-      })
-      .finally(() => setBooting(false))
+    // Only a refused session ends a sign-in. A blip — the API restarting, a dropped
+    // connection — keeps the saved token and gets one more try before the sign-in screen.
+    const settle = error => {
+      if (error.status === 401 || error.status === 403) setToken(null)
+      setMe(null)
+    }
+    const boot = async () => {
+      try {
+        await finishAuth()
+      } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+          settle(error)
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        await finishAuth().catch(settle)
+      }
+    }
+    boot().finally(() => setBooting(false))
   }, [finishAuth])
 
   useEffect(() => {
