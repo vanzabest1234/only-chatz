@@ -19,11 +19,9 @@ import versionRoutes from './routes/version.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
-// Every front door, all answering a 302 to /chat. Mirrors ENTRY_PATHS in
-// web/vite.config.js so dev and release agree.
-// `/launcher.html` is not an entry path: it is a real file in the build (web/public), the
-// two-choice page that opens the room in about:blank or an iframe.
-const ENTRY_PATHS = ['/', '/royal-angel', '/royal-angel.html']
+// The launcher (web/public) is the front door on `/`; these paths render the room in place.
+// Mirrors ENTRY_PATHS in web/vite.config.js so dev and release agree.
+const ENTRY_PATHS = ['/chat', '/royal-angel', '/royal-angel.html']
 
 const app = express()
 app.disable('x-powered-by')
@@ -58,8 +56,8 @@ app.use('/api', chatRoutes)
 // The sandbox preview leaves this off and Vite serves the source instead.
 if (process.env.SERVE_WEB === '1') {
   // Every front door renders the app in place, no redirect (the client moves the address
-  // bar to /chat in a release build). Registered before express.static, which is what serves
-  // launcher.html — not listed above, so the file on disk wins.
+  // bar to /chat in a release build). Registered before express.static; `/` is the launcher.
+  app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'launcher.html')))
   app.get(ENTRY_PATHS, (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')))
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {

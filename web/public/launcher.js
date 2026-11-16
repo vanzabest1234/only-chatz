@@ -1,7 +1,7 @@
-// The launcher's two ways into the room. Both render the same app at the front door ('/');
-// only the frame it lives in differs. The URL is absolute on purpose — an about:blank document
-// has no base of its own. Kept in its own file so the page needs no inline script.
-const ROOM = new URL('/', window.location.origin).href
+// The launcher's two ways into the room. Both open the same app at /chat; only the frame it
+// lives in differs. The URL is absolute on purpose — an about:blank document has no base of
+// its own. Kept in its own file so the page needs no inline script.
+const ROOM = new URL('/chat', window.location.origin).href
 const hint = document.getElementById('hint')
 
 function say(text, bad) {

@@ -22,15 +22,13 @@ function roomLogger() {
   return logger
 }
 
-// Every front door opens the room: `/` plus the old launcher paths render the app in
-// place. No HTTP redirect — a preview host treats a 302 on the root document as a routing
-// failure — and no address-bar rewrite either: the preview only answers documents on the
-// path it served, so the dev server leaves the URL alone (web/src/main.jsx rewrites it in a
-// release build only). The release server does the same in server/index.js — keep this list
-// identical to ENTRY_PATHS there.
-// `/launcher.html` is deliberately not here: it is its own file in web/public (the two-choice
-// page that opens the room in about:blank or an iframe), so it must reach the browser untouched.
-const ENTRY_PATHS = new Set(['/', '/royal-angel', '/royal-angel.html'])
+// The launcher is the front door and the room lives at `/chat`: `/` serves the launcher card
+// (a real file in web/public) and these paths render the app in place. No HTTP redirect — a
+// preview host treats a 302 on the root document as a routing failure — and no address-bar
+// rewrite either: the preview only answers documents on the path it served, so the dev server
+// leaves the URL alone (web/src/main.jsx rewrites it in a release build only). The release
+// server does the same in server/index.js — keep this list identical to ENTRY_PATHS there.
+const ENTRY_PATHS = new Set(['/chat', '/royal-angel', '/royal-angel.html'])
 
 function frontDoorToChat() {
   return {
@@ -39,7 +37,8 @@ function frontDoorToChat() {
       server.middlewares.use((req, _res, next) => {
         if (req.method === 'GET') {
           const [pathname, query] = (req.url ?? '/').split('?')
-          if (ENTRY_PATHS.has(pathname)) req.url = '/index.html' + (query ? `?${query}` : '')
+          if (pathname === '/') req.url = '/launcher.html'
+          else if (ENTRY_PATHS.has(pathname)) req.url = '/index.html' + (query ? `?${query}` : '')
         }
         next()
       })
