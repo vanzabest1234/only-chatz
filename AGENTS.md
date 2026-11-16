@@ -89,8 +89,9 @@ Non-obvious things worth knowing before changing something:
   sites (snapshot, read, post, socket) on it.
   The custom tag itself takes any characters up to 20 — only control/invisible ones are stripped.
 - **Names are painted by what you hold** (`web/src/components/PlayerName.jsx`, styles at the end of
-  `console.css`): the owner is red with a 🔱, an MVP wears an animated rainbow with a 👑, a VIP is
-  gold. Every place a display name renders goes through that component — messages (channel and DM),
+  `console.css`): the owner is red with a 🔱, a co-owner is purple, an MVP wears an animated rainbow
+  with a 👑, a VIP is gold. A role outranks a flair, so a co-owner holding MVP still reads purple.
+  Every place a display name renders goes through that component — messages (channel and DM),
   the members panel, the who's-online board, the profile banner, and the sidebar's friends, DMs and
   me-card. **The owner check comes first on purpose:** owners hold the whole wheel, so without it
   every owner would wear the MVP rainbow instead of their trident. Purely cosmetic — never read a

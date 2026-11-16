@@ -2740,6 +2740,11 @@ body {
   text-shadow: 0 0 10px rgba(255, 95, 95, 0.4);
 }
 
+.player-name.is-coowner .player-name-text {
+  color: #b18cff;
+  text-shadow: 0 0 10px rgba(177, 140, 255, 0.4);
+}
+
 .player-name.is-mvp .player-name-text {
   background-image: linear-gradient(
     90deg,
