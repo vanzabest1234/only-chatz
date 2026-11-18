@@ -9,6 +9,7 @@
 //
 // A failure here is reported and skipped — the dev server must still start.
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -66,6 +67,16 @@ function build() {
     const data = `data:image/svg+xml,${encodeURIComponent(readFileSync(icon, 'utf8'))}`
     html = html.replace('href="./favicon.svg"', `href="${data}"`).replace('href="/favicon.svg"', `href="${data}"`)
   }
+
+  // The build this copy was made from, so a copy saved to disk can compare itself with the room's
+  // /only-chatz.html and swap in a newer one (web/src/lib/selfUpdate.js). Hashed from the finished
+  // document *before* the stamp is written, so identical source always produces the same value.
+  // Function replacement, like the bundle above: a string one would expand `$&` / `$'`.
+  const stamp = createHash('sha256').update(html).digest('hex').slice(0, 12)
+  html = html.replace(
+    '<html data-room="__CHATZ_ROOM__"',
+    () => `<html data-room="__CHATZ_ROOM__" data-build="${stamp}"`,
+  )
 
   return html
 }

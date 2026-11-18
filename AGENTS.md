@@ -315,6 +315,19 @@ Non-obvious things worth knowing before changing something:
   '<'" — the room then renders blank everywhere, served and downloaded alike.
   `main.jsx` also skips its `/chat` address-bar rewrite for this build via
   `import.meta.env.VITE_SINGLE_FILE`.
+  **A copy saved to disk updates itself.** `single-file.mjs` stamps the finished document with
+  `data-build` (a sha256 prefix of what it built, written *before* the stamp so identical source
+  always yields the same value), and `web/src/lib/selfUpdate.js` compares that stamp with the
+  `/only-chatz.html` the room serves — when the copy opens, and again whenever the build poll sees
+  the room move. When the room is newer the copy fetches the room's file and replaces its own
+  document in place with `document.write`, keeping the address and the saved session and showing
+  "new version — updating…" first, so a file downloaded a month ago renders today's chat without
+  being saved again. It only runs for the one-file build that carries a stamp and names a room
+  (`standaloneCopy()`); the copy the room serves itself keeps the plain reload, because there a
+  reload already fetches the new build. A failed fetch (offline, room down) leaves the copy running
+  its own bundle, and the swap dispatches `pagehide` first so the old socket closes the way a
+  reload closes it. A copy downloaded before the stamp existed cannot tell it is behind — one fresh
+  download fixes that for good.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
   same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
   an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer
