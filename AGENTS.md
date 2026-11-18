@@ -290,9 +290,19 @@ Non-obvious things worth knowing before changing something:
   (`a.download-link` in `Sidebar.jsx`) and the launcher's footer link to it as well, all with
   `download`**, so the browser saves the file instead of opening it; every href goes through
   `baseUrl()` so a copy opened elsewhere fetches it from its room.
-  **Opened from disk or another site, the copy asks for the room address** on the
-  sign-in screen (a copy that is not from disk probes the relative `/api/version` once — a missing
-  endpoint means no room stands behind that address, which is what makes the github.io copy ask):
+  **A copy downloaded from the room carries that room's address, so it never asks for one.**
+  `single-file.mjs` emits `<html data-room="__CHATZ_ROOM__">` and whichever server hands the file
+  out swaps that one attribute for its own browser-reachable origin as the file leaves
+  (`stampRoomAddress()` in `web/vite.config.js`, the `SERVE_WEB` block in `server/index.js`) — from
+  the page's `referer` when there is one, because a proxy in front rewrites `Host` to an internal
+  name and forwards no `X-Forwarded-Proto` (the preview host does exactly that). `bakedRoom()` in
+  `web/src/api.js` reads the attribute and is `getServer()`'s fallback, so a file on disk signs in
+  directly; it returns '' when the stamp equals the page's own origin, which keeps the served room
+  single-origin. The untouched placeholder — a copy taken straight from the repo, e.g. the one Pages
+  publishes — falls through to the old behaviour: **the copy asks for the room address** on the
+  sign-in screen (`AuthScreen.jsx` hides the field whenever `bakedRoom()` is set), and a copy that is
+  not from disk probes the relative `/api/version` once — a missing endpoint means no room stands
+  behind that address, which is what makes the github.io copy ask:
   `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
   `web/src/lib/version.js` polls the same base, and `pointAtRoom()` in `web/src/socket.js` moves
   the connection there before it opens. Nothing is stored and no field appears when the page is

@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
 import { createLogger, defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const API_TARGET = 'http://api:8000'
+// server/index.js swaps the same placeholder with its own address in a release.
+const ROOM_SLOT = 'data-room="__CHATZ_ROOM__"'
 
 // The room is opened from whatever address reaches it: the preview proxy, a phone on the
 // LAN by IP or machine name, a tunnel, a custom domain. Vite's default allowlist only
@@ -46,9 +49,47 @@ function frontDoorToChat() {
   }
 }
 
+// The address a visitor's browser can actually reach, which is the page they downloaded from:
+// a proxy in front (the preview host) rewrites Host to an internal name and forwards no
+// X-Forwarded-Proto, but the same-origin download carries that page as the referer.
+function roomOrigin(req) {
+  try {
+    const fromPage = new URL(req.headers.referer)
+    if (fromPage.protocol === 'http:' || fromPage.protocol === 'https:') return fromPage.origin
+  } catch {
+    // No usable referer: fall back to this request's own address.
+  }
+  const forwarded = String(req.headers['x-forwarded-proto'] ?? '').split(',')[0].trim()
+  const host = req.headers.host ?? ''
+  if (forwarded) return `${forwarded}://${host}`
+  return `${/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host) ? 'http' : 'https'}://${host}`
+}
+
+// The one-file room is downloaded from this server, so the file is stamped with this server's
+// address as it goes out: a copy saved to disk then signs in without being asked for a room
+// address. Served here it matches the page's own origin, which the app ignores.
+function stampRoomAddress() {
+  return {
+    name: 'stamp-room-address',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== 'GET' || (req.url ?? '').split('?')[0] !== '/only-chatz.html') return next()
+        let html
+        try {
+          html = readFileSync(new URL('./public/only-chatz.html', import.meta.url), 'utf8')
+        } catch {
+          return next()
+        }
+        res.setHeader('Content-Type', 'text/html; charset=utf-8')
+        res.end(html.replace(ROOM_SLOT, `data-room="${roomOrigin(req)}"`))
+      })
+    },
+  }
+}
+
 export default defineConfig({
   customLogger: roomLogger(),
-  plugins: [react(), frontDoorToChat()],
+  plugins: [react(), frontDoorToChat(), stampRoomAddress()],
   server: {
     host: '0.0.0.0',
     port: 5173,

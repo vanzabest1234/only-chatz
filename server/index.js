@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,6 +74,27 @@ if (process.env.SERVE_WEB === '1') {
   // bar to /chat in a release build). Registered before express.static; `/` is the launcher.
   app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'launcher.html')))
   app.get(ENTRY_PATHS, (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')))
+  // The one-file room goes out stamped with this server's address, so a copy saved to disk
+  // signs in without asking where the room is. Served here the stamp matches the page's own
+  // origin, which the app ignores. Same placeholder as web/vite.config.js.
+  app.get('/only-chatz.html', (req, res, next) => {
+    let html
+    try {
+      html = readFileSync(path.join(WEB_DIR, 'only-chatz.html'), 'utf8')
+    } catch {
+      return next()
+    }
+    let origin = `${req.protocol}://${req.get('host')}`
+    try {
+      // Behind a proxy (Caddy, the preview host) the browser-reachable address is the page the
+      // download came from, not the internal host name this request carries.
+      const fromPage = new URL(req.get('referer'))
+      if (fromPage.protocol === 'http:' || fromPage.protocol === 'https:') origin = fromPage.origin
+    } catch {
+      // No usable referer: keep this request's own address.
+    }
+    res.type('html').send(html.replace('data-room="__CHATZ_ROOM__"', `data-room="${origin}"`))
+  })
   app.use(express.static(WEB_DIR, { index: false }))
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next()

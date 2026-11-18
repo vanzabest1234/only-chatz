@@ -33,6 +33,12 @@ function build() {
 
   let html = readFileSync(path.join(OUT, 'index.html'), 'utf8')
 
+  // Whichever room serves this file stamps its own address over the placeholder, so a copy
+  // saved to disk signs in without being asked where the room is (web/vite.config.js in dev,
+  // server/index.js in a release). Left as the placeholder — a copy taken straight from the
+  // repo — the app still asks for the address.
+  html = html.replace('<html', '<html data-room="__CHATZ_ROOM__"')
+
   // The entry chunk becomes an inline classic script placed at the end of the body: a classic
   // script runs the moment it is parsed, so the app needs #root to already be in the document.
   let entry = ''

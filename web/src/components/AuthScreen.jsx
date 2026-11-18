@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
-import { api, getServer, normalizeServer, setServer, setToken } from '../api'
+import { api, bakedRoom, getServer, normalizeServer, setServer, setToken } from '../api'
 
 export default function AuthScreen({ onAuthed, notice }) {
   const [mode, setMode] = useState('login')
-  // Only a copy opened outside the room asks for one — served by the room, the address is
-  // this page's own origin and the field never appears.
+  // A copy downloaded from the room carries that address already, so nothing is asked. Only a
+  // copy with no room behind it (taken straight from the repo, or one that lost its address)
+  // shows the field.
   const [address, setAddress] = useState(getServer())
   const [standalone, setStandalone] = useState(
     window.location.protocol === 'file:' || Boolean(getServer()),
   )
+  const baked = bakedRoom()
 
   // The single-file build carries no server of its own, so a copy served by another static
   // host (GitHub Pages, another site) has nowhere for its relative /api calls to land. Ask
@@ -99,7 +101,7 @@ export default function AuthScreen({ onAuthed, notice }) {
           </div>
 
           <form className="auth-form" onSubmit={submit}>
-            {standalone && (
+            {standalone && !baked && (
               <label className="field">
                 <span>Room address</span>
                 <input

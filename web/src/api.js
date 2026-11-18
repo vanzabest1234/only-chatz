@@ -51,8 +51,21 @@ export function normalizeServer(value) {
   }
 }
 
+// Downloaded from the room, the file carries that room's address in its `<html data-room>`, so a
+// copy on disk signs in without being asked where the room is. The placeholder itself means this
+// copy never came from a room (a file taken straight from the repo), which still asks.
+const BAKED_MARKER = '__CHATZ_ROOM__'
+
+export function bakedRoom() {
+  const raw = document.documentElement.dataset.room
+  if (!raw || raw === BAKED_MARKER) return ''
+  const room = normalizeServer(raw)
+  // Served by the very room it names, the relative paths already reach it.
+  return room && room !== normalizeServer(window.location.origin) ? room : ''
+}
+
 export function getServer() {
-  return normalizeServer(read(SERVER_KEY))
+  return normalizeServer(read(SERVER_KEY)) || bakedRoom()
 }
 
 export function setServer(value) {
