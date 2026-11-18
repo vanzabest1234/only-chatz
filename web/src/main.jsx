@@ -13,7 +13,10 @@ import './styles/console.css'
 // Only the release build does this. The sandbox preview is a Vite dev server whose host
 // only resolves documents on the path it served, so rewriting the address bar there leaves
 // the pane asking for /chat and answering "not found".
-if (!import.meta.env.DEV && window.location.pathname !== '/chat') {
+// The single-file build (web/scripts/single-file.mjs) is opened under its own name, so it
+// keeps the address bar it was loaded from.
+const singleFile = import.meta.env.VITE_SINGLE_FILE === '1'
+if (!import.meta.env.DEV && !singleFile && window.location.pathname !== '/chat') {
   window.history.replaceState(null, '', `/chat${window.location.search}${window.location.hash}`)
 }
 

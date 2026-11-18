@@ -275,6 +275,17 @@ Non-obvious things worth knowing before changing something:
   `<script>`:** inline scripts do not run in the sandbox preview (the tag's text is rendered instead),
   so the page loads it with `<script src="/launcher.js" defer>`. Keep it inside `web/`: nothing
   outside that directory is served.
+- **`web/public/only-chatz.html` is the whole room in one file.** `web/scripts/single-file.mjs`
+  builds it — `vite.single.config.js` emits one iife bundle (a module script is blocked when a file
+  is opened from disk) plus one stylesheet, and the script folds both into the document with the
+  favicon as a data URI. `npm run dev` runs it through `predev`, so **every boot of the web server
+  regenerates it from current source**; `npm run single` does it on demand, and a failure only warns
+  so the dev server still starts. The build writes to a temp dir outside `web/` because anything
+  written inside the project makes Vite reload the room. The bundle is inlined at the end of
+  `<body>` (a classic script runs as it is parsed, so `#root` must already exist) and `main.jsx`
+  skips its `/chat` address-bar rewrite for this build via `import.meta.env.VITE_SINGLE_FILE`.
+  Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
+  same origin; opened from disk it still renders the sign-in screen.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
   with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
   wordmark, and a live "N online" chip on the right that opens the who's-online board. The button

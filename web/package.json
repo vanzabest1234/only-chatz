@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/single-file.mjs",
+    "single": "node scripts/single-file.mjs",
     "build": "vite build"
   },
   "dependencies": {
