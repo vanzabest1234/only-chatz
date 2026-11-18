@@ -236,6 +236,13 @@ Non-obvious things worth knowing before changing something:
   swallowed the downloaded copy's `Authorization` preflight before it ever reached the API — that
   endpoint echoes the caller's `Origin` itself (`server/index.js`), so turning Vite's off costs
   nothing and is what lets a copy opened on another site sign in.
+- **Filtered networks (school/office wifi) never leave a dead feed.** `web/src/socket.js` lists
+  both transports and sets `tryAllTransports: true`, so a proxy that drops the websocket upgrade
+  still connects over HTTPS polling, and one that refuses the poll handshake retries over the
+  websocket; `App.jsx` additionally refreshes the open room over `/api` every 5s while
+  `!socket.connected`, because posting is a plain HTTP call anyway. Keep both — the second one is
+  what keeps a room readable where the proxy blocks `/socket.io` outright. No asset may be loaded
+  from another origin (no CDN fonts/scripts): school filters block those and the room renders broken.
 - **A dropped socket is a network change, and the client catches up on it.** `web/src/socket.js`
   reconnects on `online` and on the tab becoming visible (only when a token exists — an anonymous
   handshake would just be refused), closes the socket on `pagehide`, and the `connect` handler in

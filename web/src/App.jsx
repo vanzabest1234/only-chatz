@@ -253,6 +253,17 @@ export default function App() {
     shareRoom()
   }, [view?.type, view?.id, shareRoom])
 
+  // A filtered network (a school proxy that drops the websocket upgrade and holds requests
+  // open) can leave the socket down while ordinary requests still work. Posting is already a
+  // plain HTTP call, so catch the open room up the same way instead of sitting on a dead feed.
+  useEffect(() => {
+    if (!me || !view) return
+    const timer = setInterval(() => {
+      if (!socket.connected) loadMessages().catch(() => {})
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [me?.user?.id, view, loadMessages])
+
   useEffect(() => {
     setReplyTo(null)
     setTyping([])

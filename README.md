@@ -114,6 +114,22 @@ through it) and is linked from the rooms drawer as **What's inside**. The page p
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.
 
+### From a school or office network
+
+School wifi (Denton ISD and the like) rarely blocks the site itself — it filters by address. So the
+room has to be reachable at an `https://` address on the normal port 443, which every deploy path
+above gives you; a bare `http://` link or a `:3000`/`:8080` address on a `trycloudflare.com` tunnel is
+what gets dropped. Use the `https` profile (your own domain) or Render, then open that one link.
+
+The app itself is built for filtered networks: it loads no fonts, scripts or images from anywhere
+else, everything arrives from its own address, and when the network blocks the websocket upgrade the
+connection falls back to plain HTTPS requests — if the socket cannot open at all, the open room
+still refreshes itself over HTTPS every five seconds, so you keep reading and posting. Nothing to
+configure: open the link and sign in.
+
+If the address is blocked by name (a fresh `*.onrender.com` link often is), the fix is a domain of
+your own pointed at the `https` profile, not a code change.
+
 ### Before you invite people
 
 - Registration is open to anyone with the URL; promote with `/role` and use `/ban` if a room turns

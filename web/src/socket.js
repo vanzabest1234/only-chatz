@@ -9,9 +9,15 @@ import { baseUrl, getToken } from './api'
 // address before the first connect.
 const webPage = typeof location === 'undefined' || /^https?:$/.test(location.protocol)
 
+// School and office networks usually let plain HTTPS through but drop the websocket upgrade,
+// and a few block the held-open poll instead. socket.io starts on polling and upgrades when it
+// can; `tryAllTransports` makes it retry over the other transport when the first handshake is
+// refused outright, instead of giving up on a network that only allows one of the two.
 export const socket = io(webPage ? undefined : 'http://localhost', {
   autoConnect: false,
   auth: { token: null },
+  transports: ['polling', 'websocket'],
+  tryAllTransports: true,
 })
 
 // A copy of only-chatz.html opened outside the room names its room on the sign-in screen, and
