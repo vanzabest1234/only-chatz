@@ -3,7 +3,9 @@
 #
 # The room itself (Express + Socket.IO + Postgres) cannot run on Pages, which only
 # serves static files. This page is the front door; the button points at the chat
-# server. Set the target with a repository variable named CHAT_URL
+# server, and `only-chatz.html` (the single-file room, built from `web/` and tracked)
+# is published beside it so github.io can open the room itself. Set the target with a
+# repository variable named CHAT_URL
 # (Settings -> Secrets and variables -> Actions -> Variables). When it is unset the
 # page falls back to the Render blueprint address from `render.yaml`.
 #
@@ -44,6 +46,8 @@ jobs:
           url="${CHAT_URL:-https://only-chatz.onrender.com}"
           mkdir -p _site
           cp site/index.html _site/index.html
+          # the whole room as one file, published beside the card so github.io can open it
+          cp web/public/only-chatz.html _site/only-chatz.html
           touch _site/.nojekyll
           CHAT_URL_RESOLVED="$url" python3 - <<'PY'
           import os, pathlib

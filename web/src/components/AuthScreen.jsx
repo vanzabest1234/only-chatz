@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, getServer, normalizeServer, setServer, setToken } from '../api'
 
 export default function AuthScreen({ onAuthed, notice }) {
@@ -6,7 +6,27 @@ export default function AuthScreen({ onAuthed, notice }) {
   // Only a copy opened outside the room asks for one — served by the room, the address is
   // this page's own origin and the field never appears.
   const [address, setAddress] = useState(getServer())
-  const standalone = window.location.protocol === 'file:' || Boolean(getServer())
+  const [standalone, setStandalone] = useState(
+    window.location.protocol === 'file:' || Boolean(getServer()),
+  )
+
+  // The single-file build carries no server of its own, so a copy served by another static
+  // host (GitHub Pages, another site) has nowhere for its relative /api calls to land. Ask
+  // that host once: no version endpoint means this copy needs the room's address.
+  useEffect(() => {
+    if (standalone || import.meta.env.VITE_SINGLE_FILE !== '1') return
+    let live = true
+    fetch('/api/version')
+      .then(response => {
+        if (live && !response.ok) setStandalone(true)
+      })
+      .catch(() => {
+        if (live) setStandalone(true)
+      })
+    return () => {
+      live = false
+    }
+  }, [standalone])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')

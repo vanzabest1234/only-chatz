@@ -289,7 +289,9 @@ Non-obvious things worth knowing before changing something:
   footer link to it with `download`**, so the browser saves the file instead of opening it; the
   drawer's href goes through `baseUrl()` so a copy opened elsewhere fetches it from its room.
   **Opened from disk or another site, the copy asks for the room address** on the
-  sign-in screen: `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
+  sign-in screen (a copy that is not from disk probes the relative `/api/version` once — a missing
+  endpoint means no room stands behind that address, which is what makes the github.io copy ask):
+  `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
   `web/src/lib/version.js` polls the same base, and `pointAtRoom()` in `web/src/socket.js` moves
   the connection there before it opens. Nothing is stored and no field appears when the page is
   served by the room, so the single-origin default is untouched — do not turn `baseUrl()` into a
@@ -442,7 +444,11 @@ third path (Vercel's own git integration, no workflow involved) — it is not ex
 
 **The github.io address is a front door, not the app.** GitHub Pages only serves static files, so
 `site/index.html` (a single self-contained card: wordmark, one line, "Enter the chat") is published
-there by `.github/workflows/pages.yml` on every push to `main`. The button's target is the `CHAT_URL`
+there by `.github/workflows/pages.yml` on every push to `main`. **The same job copies
+`web/public/only-chatz.html` into the published site**, and the card's second button
+("open the one-file room") points at it, so the github.io address can open the room itself — that
+copy is served from another origin, so it asks for the room address before signing in. The
+button's target is the `CHAT_URL`
 repository variable, substituted into the page's `__CHAT_URL__` placeholder at build time, falling
 back to the Render blueprint address from `render.yaml`. Keep that placeholder in the file — the
 workflow fails loudly without it. Two things are set in the repository, not in code: Pages must use

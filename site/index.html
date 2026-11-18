@@ -90,6 +90,20 @@
       .enter:hover { filter: brightness(1.06); transform: translateY(-1px); }
       .enter:active { transform: translateY(0); }
       .enter:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+      /* the same room as one file, published beside this page */
+      .enter.file {
+        margin-top: 10px;
+        background: var(--panel-2);
+        border-color: var(--seam);
+        color: var(--green);
+      }
+      .note {
+        margin: 10px auto 0;
+        max-width: 34ch;
+        color: var(--ink-dim);
+        font-size: 11px;
+        line-height: 1.6;
+      }
       footer {
         margin-top: 22px;
         padding-top: 16px;
@@ -108,6 +122,11 @@
       <h1>only chatz</h1>
       <p>a floaty little chatroom for everyone. pick a name, say hello.</p>
       <a class="enter" id="enter" href="__CHAT_URL__">Enter the chat</a>
+      <a class="enter file" href="./only-chatz.html">Open the one-file room</a>
+      <p class="note">
+        the second link is the whole room in one html file — it asks for the room address, then
+        signs you in. save it and it opens from disk too.
+      </p>
       <footer>
         the room lives on its own server · <a href="https://github.com/vanzabest1234/only-chatz">source</a>
       </footer>
