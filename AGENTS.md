@@ -279,8 +279,13 @@ Non-obvious things worth knowing before changing something:
   regenerates it from current source**; `npm run single` does it on demand, and a failure only warns
   so the dev server still starts. The build writes to a temp dir outside `web/` because anything
   written inside the project makes Vite reload the room. The bundle is inlined at the end of
-  `<body>` (a classic script runs as it is parsed, so `#root` must already exist) and `main.jsx`
-  skips its `/chat` address-bar rewrite for this build via `import.meta.env.VITE_SINGLE_FILE`.
+  `<body>` (a classic script runs as it is parsed, so `#root` must already exist) — through a
+  **function** replacement (`replace('</body>', () => …)`), never a string one: the minified
+  bundle is full of `$&` / `$'` sequences, and `String.replace` would expand them, pasting the
+  matched tag into the middle of the script and breaking the whole file with "Unexpected token
+  '<'" — the room then renders blank everywhere, served and downloaded alike.
+  `main.jsx` also skips its `/chat` address-bar rewrite for this build via
+  `import.meta.env.VITE_SINGLE_FILE`.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
   same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
   an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer

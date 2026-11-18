@@ -55,7 +55,10 @@ function build() {
     return ''
   })
 
-  if (entry) html = html.replace('</body>', `  <script>\n${entry}\n  </script>\n  </body>`)
+  // A *function* replacement: the bundle is minified code full of `$&` / `$'` sequences, and a
+  // string replacement lets String.replace expand them — which pasted the matched `</body>` into
+  // the middle of the script and broke the whole build with "Unexpected token '<'".
+  if (entry) html = html.replace('</body>', () => `  <script>\n${entry}\n  </script>\n  </body>`)
 
   // The tab icon travels with the file instead of pointing at a path that may not exist.
   const icon = path.join(ROOT, 'public', 'favicon.svg')
