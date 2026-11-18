@@ -1,5 +1,7 @@
 // The chat keeps itself current: every open tab polls the build fingerprint and reloads when
 // new code lands, so a friend on a tunnel sees an edit without pressing refresh.
+import { baseUrl } from '../api'
+
 const POLL_MS = 6000
 
 export function watchBuild(onChange) {
@@ -9,7 +11,7 @@ export function watchBuild(onChange) {
   const check = async () => {
     let build
     try {
-      const response = await fetch('/api/version', { cache: 'no-store' })
+      const response = await fetch(`${baseUrl()}/api/version`, { cache: 'no-store' })
       if (!response.ok) return
       build = (await response.json()).build
     } catch {

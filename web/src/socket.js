@@ -1,10 +1,18 @@
 import { io } from 'socket.io-client'
-import { getToken } from './api'
+import { baseUrl, getToken } from './api'
 
 export const socket = io({
   autoConnect: false,
   auth: { token: null },
 })
+
+// A copy of only-chatz.html opened outside the room names its room on the sign-in screen, and
+// that address is only known after the module above has been created. Point the connection at
+// it before it opens — a copy served by the room keeps the relative default.
+export function pointAtRoom() {
+  const room = baseUrl()
+  if (room && socket.io.uri !== room) socket.io.uri = room
+}
 
 // Phones sleep and laptops hop between wifi networks. The transport notices on its own
 // eventually, but not before its reconnect backoff; nudge it the moment the browser says the

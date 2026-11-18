@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import { api, setToken } from '../api'
+import { api, getServer, normalizeServer, setServer, setToken } from '../api'
 
 export default function AuthScreen({ onAuthed, notice }) {
   const [mode, setMode] = useState('login')
+  // Only a copy opened outside the room asks for one — served by the room, the address is
+  // this page's own origin and the field never appears.
+  const [address, setAddress] = useState(getServer())
+  const standalone = window.location.protocol === 'file:' || Boolean(getServer())
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -15,6 +19,14 @@ export default function AuthScreen({ onAuthed, notice }) {
     if (mode === 'join' && password !== confirm) {
       setError('Those passwords do not match.')
       return
+    }
+    if (standalone) {
+      const room = normalizeServer(address)
+      if (!room) {
+        setError('Enter the room address, like https://your-room.example.')
+        return
+      }
+      setServer(room)
     }
     setBusy(true)
     setError('')
@@ -67,6 +79,20 @@ export default function AuthScreen({ onAuthed, notice }) {
           </div>
 
           <form className="auth-form" onSubmit={submit}>
+            {standalone && (
+              <label className="field">
+                <span>Room address</span>
+                <input
+                  value={address}
+                  onChange={event => setAddress(event.target.value)}
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://your-room.example"
+                  required
+                />
+              </label>
+            )}
+
             <label className="field">
               <span>Username</span>
               <input

@@ -112,7 +112,9 @@ function startCoinClock() {
 }
 
 export function initRealtime(httpServer) {
-  io = new Server(httpServer)
+  // A copy of only-chatz.html opened outside the room connects from its own address; the
+  // handshake still has to present a session token, so the origin is not what admits it.
+  io = new Server(httpServer, { cors: { origin: true } })
   startTypingSweep()
   startPassClock()
   startCoinClock()

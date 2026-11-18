@@ -29,6 +29,20 @@ app.disable('x-powered-by')
 // what makes the per-IP limits use the real caller instead of the proxy's address.
 app.set('trust proxy', 1)
 
+// The room is single-origin, but a copy of only-chatz.html opened from disk names this server
+// and calls it from its own address. Sign-ins are bearer tokens in a header, never cookies, so
+// any origin may call: the echo below keeps the browser's same-origin rules satisfied for that
+// copy without weakening anything the served room relies on.
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', req.get('origin') || '*')
+  res.setHeader('Vary', 'Origin')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Max-Age', '600')
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  next()
+})
+
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff')
   res.set('Referrer-Policy', 'no-referrer')

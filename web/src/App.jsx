@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, getToken, setToken } from './api'
-import { socket } from './socket'
+import { pointAtRoom, socket } from './socket'
 import Background from './components/Background'
 import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
@@ -139,6 +139,7 @@ export default function App() {
   useEffect(() => {
     if (!me) return
 
+    pointAtRoom()
     socket.auth = { token: getToken() }
     if (!socket.connected) socket.connect()
 

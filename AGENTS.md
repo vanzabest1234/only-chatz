@@ -285,7 +285,14 @@ Non-obvious things worth knowing before changing something:
   `<body>` (a classic script runs as it is parsed, so `#root` must already exist) and `main.jsx`
   skips its `/chat` address-bar rewrite for this build via `import.meta.env.VITE_SINGLE_FILE`.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
-  same origin; opened from disk it still renders the sign-in screen.
+  same origin. **Opened from disk or another site, the copy asks for the room address** on the
+  sign-in screen: `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
+  `web/src/lib/version.js` polls the same base, and `pointAtRoom()` in `web/src/socket.js` moves
+  the connection there before it opens. Nothing is stored and no field appears when the page is
+  served by the room, so the single-origin default is untouched — do not turn `baseUrl()` into a
+  build-time URL. For that copy to sign in, the API echoes the caller's `Origin` (bearer tokens,
+  never cookies, so no `Access-Control-Allow-Credentials`) and Socket.IO accepts any origin
+  (`server/index.js`, `server/realtime.js`).
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
   with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
   wordmark, and a live "N online" chip on the right that opens the who's-online board. The button
