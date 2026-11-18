@@ -65,15 +65,17 @@ router.post('/flairs/spin', requireAuth, async (req, res) => {
   await ensureOwnerSeason(req.user)
   const user = (await freshUser(req.user.id)) ?? req.user
 
-  // One turn a day: the day's window is claimed by the same statement that pays for the turn,
-  // so a spent stamp is never left behind by a purse that came up short. A banked pass token
-  // is spent first, otherwise 1000 Royal Coins, and a second tab cannot spend either twice.
+  // One paid turn a day: the day's window is claimed by the same statement that pays for the turn,
+  // so a spent stamp is never left behind by a purse that came up short. A banked pass token is
+  // spent first and is never held back by the day — extra spins can be used at any time — but every
+  // turn stamps the day, so once the tokens are gone the 24 hour wait applies. A second tab cannot
+  // spend either twice.
   await accrueCoins(user.id)
   let coins = null
   if ((user.spin_tokens ?? 0) > 0) {
     const { rows: spent } = await q(
       `UPDATE users SET spin_tokens = spin_tokens - 1, flair_spun_at = now()
-        WHERE id = $1 AND spin_tokens > 0 AND ${WHEEL_OPEN_SQL}
+        WHERE id = $1 AND spin_tokens > 0
         RETURNING royal_coins, coins_claimed_at, role`,
       [user.id],
     )

@@ -59,7 +59,8 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
   const nextSpin = data?.nextSpinAt ? new Date(data.nextSpinAt).getTime() : 0
   const waitMs = Math.max(0, nextSpin - now)
   const cooling = waitMs > 0
-  const canSpin = Boolean(data) && !spinning && affordable && !cooling
+  // A banked free turn is spendable at any time; the 24 hour wait only gates the paid turn.
+  const canSpin = Boolean(data) && !spinning && affordable && (!cooling || tokens > 0)
 
   useEffect(() => {
     api('/api/flairs')
@@ -147,7 +148,8 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
           <div>
             <h2>Daily wheel</h2>
             <p>
-              one turn every 24 hours · wear up to {data?.maxEquipped ?? 3} flairs at once
+              a turn every 24 hours · free turns skip the wait · wear up to{' '}
+              {data?.maxEquipped ?? 3} flairs at once
             </p>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close the wheel">
@@ -201,10 +203,10 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
           <button className="btn-primary" onClick={spin} disabled={!canSpin}>
             {spinning
               ? 'spinning…'
-              : cooling
-                ? `come back in ${waitText(waitMs)}`
-                : tokens > 0
-                  ? `spin · ${tokens} free turn${tokens === 1 ? '' : 's'}`
+              : tokens > 0
+                ? `spin · ${tokens} free turn${tokens === 1 ? '' : 's'}`
+                : cooling
+                  ? `come back in ${waitText(waitMs)}`
                   : `spin · ${money(cost)} royal coins`}
           </button>
           {won && (
@@ -223,7 +225,10 @@ export default function FlairWheel({ coins, onClose, onChanged }) {
           )}
           {!won && !error && data && cooling && (
             <p className="wheel-hint">
-              one turn a day — the next turn lands {timeShort(data.nextSpinAt)}
+              {tokens > 0
+                ? 'free turns can be spent any time · the paid turn comes back '
+                : 'one turn a day — the next turn lands '}
+              {timeShort(data.nextSpinAt)}
             </p>
           )}
           {!won && !error && data && !cooling && !affordable && (

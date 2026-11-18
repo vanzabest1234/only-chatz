@@ -163,10 +163,11 @@ Non-obvious things worth knowing before changing something:
   richest purses (`LEADERBOARD_SIZE`, highest first, banned accounts left off). `GET /api/leaderboard`
   feeds the panel (`LeaderboardPanel.jsx`, opened from the sidebar) and `/leaderboard` (minRank 0)
   posts the same rows as a system message, so the two cannot drift.
-- **A turn of the wheel is one per 24 hours.** `users.flair_spun_at` holds the last turn; a second
-  turn inside the same day is refused with the remaining time, and a banked pass token
-  (`spin_tokens`) is the only way to skip the wait — it is spent instead of waiting and leaves the
-  stamp alone.
+- **A paid turn of the wheel is one per 24 hours.** `users.flair_spun_at` holds the last turn; a
+  paid second turn inside the same day is refused with the remaining time. A banked pass token
+  (`spin_tokens`) is never held back by the day — extras can be spun one after another at any time —
+  and it is spent first while it lasts. Every turn stamps the day, so once the tokens are gone the
+  24 hour wait starts from the last spin.
 - **The vault (`server/casino.js` + `routes/casino.js`) is the gambling table.** Four stakes,
   each with a house edge: steady 75% ×1.25, even 50% ×1.9, bold 25% ×3.6, royal 10% ×8.5. The d100
   roll happens server-side with `randomInt`, the stake and payout move in one `settleBet` statement,
