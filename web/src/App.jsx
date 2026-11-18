@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, getToken, setToken } from './api'
+import { api, baseUrl, getToken, setToken } from './api'
 import { pointAtRoom, socket } from './socket'
 import Background from './components/Background'
 import AuthScreen from './components/AuthScreen'
@@ -432,6 +432,18 @@ export default function App() {
             </span>
           </div>
           <div className="topbar-right">
+            {/* The whole room in one file, right from the chat: the browser saves it instead of
+                opening it. A copy opened away from the room fetches the file from its own server. */}
+            <a
+              className="topbar-save"
+              href={`${baseUrl()}/only-chatz.html`}
+              download="only-chatz.html"
+              aria-label="Download the room as one file"
+              title="Download the room as one file"
+            >
+              <Icon name="download" size={15} />
+              <span>save</span>
+            </a>
             <button
               type="button"
               className="topbar-coins"

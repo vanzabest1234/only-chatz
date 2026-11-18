@@ -285,9 +285,11 @@ Non-obvious things worth knowing before changing something:
   `<body>` (a classic script runs as it is parsed, so `#root` must already exist) and `main.jsx`
   skips its `/chat` address-bar rewrite for this build via `import.meta.env.VITE_SINGLE_FILE`.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
-  same origin. **Both the rooms drawer (`a.download-link` in `Sidebar.jsx`) and the launcher's
-  footer link to it with `download`**, so the browser saves the file instead of opening it; the
-  drawer's href goes through `baseUrl()` so a copy opened elsewhere fetches it from its room.
+  same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
+  an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer
+  (`a.download-link` in `Sidebar.jsx`) and the launcher's footer link to it as well, all with
+  `download`**, so the browser saves the file instead of opening it; every href goes through
+  `baseUrl()` so a copy opened elsewhere fetches it from its room.
   **Opened from disk or another site, the copy asks for the room address** on the
   sign-in screen (a copy that is not from disk probes the relative `/api/version` once — a missing
   endpoint means no room stands behind that address, which is what makes the github.io copy ask):

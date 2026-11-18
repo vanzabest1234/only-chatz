@@ -2294,8 +2294,32 @@ textarea:focus-visible,
   white-space: nowrap;
 }
 
+/* Saving the whole room as one file, from the bar itself. */
+.topbar-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.topbar-save:hover {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
 @media (max-width: 560px) {
-  .topbar-coins span {
+  .topbar-coins span,
+  .topbar-save span {
     display: none;
   }
 }
