@@ -21,9 +21,16 @@ function roomLogger() {
   logger.error = (message, options) => {
     if (typeof message === 'string' && message.includes('ws proxy socket error') && message.includes('ECONNRESET')) return
     // The API runs under `node --watch` in development, so an edit closes its port for a moment
-    // and a request landing in that gap comes back refused. The tab retries on its next poll and
-    // the healthcheck fails if the API stays down, so a restart reads as a notice, not a stack.
-    if (typeof message === 'string' && message.includes('http proxy error') && options?.error?.code === 'ECONNREFUSED') {
+    // and a request landing in that gap comes back refused. Recreating the container kills the
+    // request mid-flight (`read ECONNRESET`) and briefly drops its name from DNS (`ENOTFOUND`).
+    // The tab retries on its next poll and the healthcheck fails if the API stays down, so a
+    // restart reads as a notice, not a stack.
+    const restartCodes = ['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND']
+    if (
+      typeof message === 'string' &&
+      message.includes('http proxy error') &&
+      restartCodes.includes(options?.error?.code)
+    ) {
       const request = message.split('\n')[0].replace(/\u001b\[[0-9;]*m/g, '').replace(/^.*http proxy error:\s*/, '')
       logger.warn(`api restarting, ${request} retries on the next poll`, { timestamp: true })
       return

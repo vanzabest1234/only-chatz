@@ -252,9 +252,11 @@ Non-obvious things worth knowing before changing something:
   `App.jsx` (`resync`) re-reads `/api/me` and the open room's messages before re-sharing
   `presence:where`. So a wifi switch, a tunnel hiccup or a phone waking up shows the messages sent
   during the gap instead of a stale room. Don't narrow `connect` back to only `shareRoom`.
-  Vite's log is routed through `roomLogger()` in `web/vite.config.js`, which drops only the
-  `ws proxy socket error … read ECONNRESET` line a torn-down socket produces on every reload —
-  every other proxy error still prints.
+  Vite's log is routed through `roomLogger()` in `web/vite.config.js`: it drops the
+  `ws proxy socket error … read ECONNRESET` line a torn-down socket produces on every reload, and
+  folds an `http proxy error` carrying a restart code (`ECONNREFUSED` while `node --watch` closes
+  the port, `ECONNRESET`/`ENOTFOUND` while the container is recreated) into one "api restarting, …
+  retries on the next poll" notice — every other proxy error still prints.
 - **The room refreshes itself when new code lands.** `server/build.js` fingerprints the files the
   process serves — the `server/` sources, plus `web/dist` in a release and `web/src` when that
   directory is mounted — and `GET /api/version` (`server/routes/version.js`, public) hands it to the
