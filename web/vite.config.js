@@ -103,6 +103,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts,
+    // Vite's own CORS middleware answers an OPTIONS preflight itself (204, no
+    // Access-Control-Allow-Origin for an unexpected origin), so a copy of the room opened from
+    // another site never got its token request through the proxy. The API owns CORS — it echoes
+    // the caller's Origin for exactly this case — so let every request reach it instead.
+    cors: false,
     proxy: {
       // xfwd forwards the caller's address, so the API's per-IP limits see the real
       // client instead of the proxy container.

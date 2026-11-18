@@ -231,6 +231,11 @@ Non-obvious things worth knowing before changing something:
   every non-localhost *host name* with "Blocked request. This host ... is not allowed" — that is
   what made the app look like it only worked on one network. Releases are served by Express, which
   has no host check, so nothing there needs changing. Never hardcode a resolved `BASE44_*` hostname.
+  It also sets `server.cors: false`: Vite's own CORS middleware answers an `OPTIONS` preflight
+  itself with a 204 that carries no `Access-Control-Allow-Origin` for an unexpected origin, which
+  swallowed the downloaded copy's `Authorization` preflight before it ever reached the API — that
+  endpoint echoes the caller's `Origin` itself (`server/index.js`), so turning Vite's off costs
+  nothing and is what lets a copy opened on another site sign in.
 - **A dropped socket is a network change, and the client catches up on it.** `web/src/socket.js`
   reconnects on `online` and on the tab becoming visible (only when a token exists — an anonymous
   handshake would just be refused), closes the socket on `pagehide`, and the `connect` handler in
