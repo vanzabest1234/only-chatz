@@ -285,7 +285,10 @@ Non-obvious things worth knowing before changing something:
   `<body>` (a classic script runs as it is parsed, so `#root` must already exist) and `main.jsx`
   skips its `/chat` address-bar rewrite for this build via `import.meta.env.VITE_SINGLE_FILE`.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
-  same origin. **Opened from disk or another site, the copy asks for the room address** on the
+  same origin. **Both the rooms drawer (`a.download-link` in `Sidebar.jsx`) and the launcher's
+  footer link to it with `download`**, so the browser saves the file instead of opening it; the
+  drawer's href goes through `baseUrl()` so a copy opened elsewhere fetches it from its room.
+  **Opened from disk or another site, the copy asks for the room address** on the
   sign-in screen: `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
   `web/src/lib/version.js` polls the same base, and `pointAtRoom()` in `web/src/socket.js` moves
   the connection there before it opens. Nothing is stored and no field appears when the page is

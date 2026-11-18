@@ -207,6 +207,11 @@
         border-color: #2c7a52;
       }
 
+      .foot .sep {
+        margin: 0 6px;
+        color: #b9c6d1;
+      }
+
       /* the in-page room fills the whole viewport once it is chosen */
       body.staged {
         padding: 0;
@@ -275,7 +280,11 @@
         address bar — allow pop-ups if the browser blocks it.
       </p>
 
-      <p class="foot"><a href="/chat">just open the room →</a></p>
+      <p class="foot">
+        <a href="/chat">just open the room →</a>
+        <span class="sep">·</span>
+        <a href="/only-chatz.html" download="only-chatz.html">download the one-file room ⤓</a>
+      </p>
     </main>
 
     <!-- Logic lives in /launcher.js: this preview does not run inline scripts. -->

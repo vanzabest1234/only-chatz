@@ -205,6 +205,12 @@ textarea:focus-visible,
   border-radius: 0;
 }
 
+/* a real link dressed as a nav row (no underline, pointer like the buttons around it) */
+.nav-row.download-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .nav-label {
   text-transform: lowercase;
   font-size: 13px;

@@ -2,6 +2,7 @@ import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
 import PlayerName from './PlayerName'
+import { baseUrl } from '../api'
 import { relativeTime, snippet, walletText } from '../lib/format'
 
 export default function Sidebar({
@@ -151,6 +152,17 @@ export default function Sidebar({
               <span className="nav-label">Season pass</span>
               <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
             </button>
+            {/* The whole room in one file: the browser saves it instead of opening it. A copy
+                opened away from the room names its server, so the file comes from there. */}
+            <a
+              className="nav-row download-link"
+              href={`${baseUrl()}/only-chatz.html`}
+              download="only-chatz.html"
+            >
+              <span className="hash">⤓</span>
+              <span className="nav-label">Download room</span>
+              <span className="chip">1 file</span>
+            </a>
           </section>
         </div>
 
