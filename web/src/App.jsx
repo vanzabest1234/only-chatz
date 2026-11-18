@@ -256,13 +256,38 @@ export default function App() {
   // A filtered network (a school proxy that drops the websocket upgrade and holds requests
   // open) can leave the socket down while ordinary requests still work. Posting is already a
   // plain HTTP call, so catch the open room up the same way instead of sitting on a dead feed.
+  // The account is re-read on its own slower beat, so a room or a command added on the server
+  // shows up in the lists by itself rather than on the next reload.
+  const ACCOUNT_MS = 20000
   useEffect(() => {
-    if (!me || !view) return
-    const timer = setInterval(() => {
+    if (!me || !view) return undefined
+    let accountAt = Date.now()
+
+    const readAccount = () => {
+      accountAt = Date.now()
+      load().catch(() => {})
+    }
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return
       if (!socket.connected) loadMessages().catch(() => {})
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [me?.user?.id, view, loadMessages])
+      if (Date.now() - accountAt >= ACCOUNT_MS) readAccount()
+    }
+    // A tab that was asleep or offline comes back into sync at once instead of on the next tick.
+    const wake = () => {
+      if (document.visibilityState !== 'visible') return
+      loadMessages().catch(() => {})
+      readAccount()
+    }
+
+    const timer = setInterval(tick, 5000)
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('online', wake)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', wake)
+      window.removeEventListener('online', wake)
+    }
+  }, [me?.user?.id, view?.type, view?.id, load, loadMessages])
 
   useEffect(() => {
     setReplyTo(null)

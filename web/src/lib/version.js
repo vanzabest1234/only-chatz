@@ -32,8 +32,18 @@ export function watchBuild(onChange) {
     if (!stopped) check()
   }, POLL_MS)
 
+  // A backgrounded tab has its timers throttled, so it can come back minutes behind. Check the
+  // moment it is visible again instead of waiting out the next poll with old code on screen.
+  const onVisible = () => {
+    if (!stopped && document.visibilityState === 'visible') check()
+  }
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible)
+
   return () => {
     stopped = true
     window.clearInterval(timer)
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }
 }

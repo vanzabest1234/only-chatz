@@ -241,8 +241,11 @@ Non-obvious things worth knowing before changing something:
   still connects over HTTPS polling, and one that refuses the poll handshake retries over the
   websocket; `App.jsx` additionally refreshes the open room over `/api` every 5s while
   `!socket.connected`, because posting is a plain HTTP call anyway. Keep both — the second one is
-  what keeps a room readable where the proxy blocks `/socket.io` outright. No asset may be loaded
-  from another origin (no CDN fonts/scripts): school filters block those and the room renders broken.
+  what keeps a room readable where the proxy blocks `/socket.io` outright. The same loop also
+  re-reads `/api/me` every 20s (and at once when the tab becomes visible or the network returns),
+  so a room or a command added on the server appears in the lists without a reload. No asset may be
+  loaded from another origin (no CDN fonts/scripts): school filters block those and the room renders
+  broken.
 - **A dropped socket is a network change, and the client catches up on it.** `web/src/socket.js`
   reconnects on `online` and on the tab becoming visible (only when a token exists — an anonymous
   handshake would just be refused), closes the socket on `pagehide`, and the `connect` handler in
@@ -256,11 +259,14 @@ Non-obvious things worth knowing before changing something:
   process serves — the `server/` sources, plus `web/dist` in a release and `web/src` when that
   directory is mounted — and `GET /api/version` (`server/routes/version.js`, public) hands it to the
   browser. `AutoUpdate` is mounted in `web/src/main.jsx` beside `App` (so the sign-in screen gets it
-  too) and polls through `web/src/lib/version.js` every 6s; a value different from the one the page
-  loaded with shows "new version — reloading…" for 1.2s and reloads. A failed poll (the API
-  restarting under `node --watch`) is ignored — never treated as a new build — so a restart alone
-  does not trip a reload. In the sandbox this is what carries a server-side change to every open
-  tab, and in a release it is the only path, since Vite's HMR is not running there.
+  too) and polls through `web/src/lib/version.js` every 6s (and immediately when a backgrounded tab
+  becomes visible again); a value different from the one the page loaded with shows "new version —
+  reloading…" for 1.2s and reloads. A failed poll (the API restarting under `node --watch`) is
+  ignored — never treated as a new build — so a restart alone does not trip a reload. In the sandbox
+  this is what carries a server-side change to every open tab, and in a release it is the only path,
+  since Vite's HMR is not running there. The sandbox compose mounts `./web` into the API at `/web`
+  as well as `./server` at `/app`; without that second mount `sourceBuild()` cannot see `web/src`,
+  so a client edit would never move the fingerprint.
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
