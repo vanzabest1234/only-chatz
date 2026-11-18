@@ -76,6 +76,17 @@ export default function Composer({
     }
   }
 
+  // A picture copied from the screen or another page arrives as an image file on the paste
+  // event, not as text: take it the same way the attach button does, so it is a normal picture.
+  function paste(event) {
+    const items = Array.from(event.clipboardData?.items ?? [])
+    const shot = items.find(item => item.kind === 'file' && item.type.startsWith('image/'))
+    const file = shot?.getAsFile()
+    if (!file) return
+    event.preventDefault()
+    attach(file)
+  }
+
   function pick(command) {
     setValue(`/${command.name} `)
     area.current?.focus()
@@ -166,6 +177,7 @@ export default function Composer({
             resize(event.target)
             if (event.target.value.trim()) pingTyping()
           }}
+          onPaste={paste}
           onKeyDown={event => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
