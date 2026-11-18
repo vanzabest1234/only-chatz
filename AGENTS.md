@@ -268,10 +268,18 @@ Non-obvious things worth knowing before changing something:
   skips that rewrite** (`!import.meta.env.DEV`): the preview host only answers documents on the path
   it served, so a rewritten `/chat` comes back as a "not found" pane even though `curl /chat` is
   200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
-  **There is no launcher page any more** (the old `web/public/launcher.html` + `launcher.js` with its
-  "open in about:blank" / "open in iframe" choices were removed): `/` serves the room itself, so a
-  visitor lands in the chat with nothing to click first. Do not put a card, splash or two-choice page
-  back in front of it.
+  **`web/public/launcher.html` is an index page behind the room, never in front of it.** `/` still
+  serves the room itself, so a visitor lands in the chat with nothing to click first — do not route
+  `/` through the launcher and do not put a card, splash or two-choice page in front of the room.
+  The launcher is a plain public page at `/launcher.html` (linked from the rooms drawer as **What's
+  inside**), listing the rooms, people, roles, message tools, flairs and the wheel, royal coins, the
+  vault, the season pass, the Royal Aide and every command, with buttons into the room and to the
+  one-file download. It carries **its own copy of the build poll** — `/api/version` every 6s, a
+  "new version — reloading…" note then a reload, failed polls ignored — so a page left open follows
+  the room onto a new build; editing the file moves `server/build.js`'s fingerprint, which is what
+  makes open room tabs reload too. It lives in `web/public`, so Vite serves it in dev and copies it
+  into `web/dist` for a release (Express's static handler answers it before the SPA fallback).
+  Its links keep the query string (`data-room`), so a hosted preview's access token survives.
 - **`web/public/only-chatz.html` is the whole room in one file.** `web/scripts/single-file.mjs`
   builds it — `vite.single.config.js` emits one iife bundle (a module script is blocked when a file
   is opened from disk) plus one stylesheet, and the script folds both into the document with the

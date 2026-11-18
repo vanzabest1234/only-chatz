@@ -163,6 +163,12 @@ export default function Sidebar({
               <span className="nav-label">Download room</span>
               <span className="chip">1 file</span>
             </a>
+            {/* The index of everything inside the room — rooms, systems, commands — with its
+                own build poll, so a page left open follows the room onto a new build. */}
+            <a className="nav-row launcher-link" href={`${baseUrl()}/launcher.html`}>
+              <span className="hash">◍</span>
+              <span className="nav-label">What&apos;s inside</span>
+            </a>
           </section>
         </div>
 

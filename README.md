@@ -105,6 +105,12 @@ a rewritten `/chat` there answers "not found". There is no client-side router, s
 rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
 `server/index.js` for releases, and the client's URL fix-up in `web/src/main.jsx`.
 
+`/launcher.html` is a plain index of what lives inside — the rooms, the roles, the wheel, the
+coins, the vault, the pass, the Royal Aide and every command — with buttons into the room and to
+the one-file download. It sits behind the room rather than in front of it (nothing routes `/`
+through it) and is linked from the rooms drawer as **What's inside**. The page polls
+`/api/version` on its own, so a copy left open reloads itself onto a new build like the room does.
+
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.
 
