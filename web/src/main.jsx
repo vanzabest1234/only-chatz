@@ -6,10 +6,9 @@ import './styles/base.css'
 import './styles/app.css'
 import './styles/console.css'
 
-// The launcher is the front door (`/`); this app renders on /chat and the old launcher
-// paths, and the address bar is pointed at /chat from the client — a server redirect on the
-// root document reads as a routing failure in some hosts. The query string (a preview's
-// access token) is kept.
+// The room is the front door: `/` renders this app directly, and the address bar is pointed
+// at /chat from the client — a server redirect on the root document reads as a routing
+// failure in some hosts. The query string (a preview's access token) is kept.
 // Only the release build does this. The sandbox preview is a Vite dev server whose host
 // only resolves documents on the path it served, so rewriting the address bar there leaves
 // the pane asking for /chat and answering "not found".

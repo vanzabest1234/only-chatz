@@ -20,9 +20,9 @@ import versionRoutes from './routes/version.js'
 
 const PORT = Number(process.env.PORT ?? 8000)
 const WEB_DIR = process.env.WEB_DIR || fileURLToPath(new URL('../web/dist', import.meta.url))
-// The launcher (web/public) is the front door on `/`; these paths render the room in place.
+// The room is the front door on `/`; these paths render the app in place.
 // Mirrors ENTRY_PATHS in web/vite.config.js so dev and release agree.
-const ENTRY_PATHS = ['/chat', '/royal-angel', '/royal-angel.html']
+const ENTRY_PATHS = ['/', '/chat', '/royal-angel', '/royal-angel.html']
 
 const app = express()
 app.disable('x-powered-by')
@@ -71,8 +71,7 @@ app.use('/api', chatRoutes)
 // The sandbox preview leaves this off and Vite serves the source instead.
 if (process.env.SERVE_WEB === '1') {
   // Every front door renders the app in place, no redirect (the client moves the address
-  // bar to /chat in a release build). Registered before express.static; `/` is the launcher.
-  app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'launcher.html')))
+  // bar to /chat in a release build). Registered before express.static.
   app.get(ENTRY_PATHS, (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')))
   // The one-file room goes out stamped with this server's address, so a copy saved to disk
   // signs in without asking where the room is. Served here the stamp matches the page's own

@@ -95,21 +95,15 @@ The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can
 `DATABASE_URL`, leave the port alone (the app reads `PORT`), and that is the whole setup. Free tiers
 change their limits, so check the current offering before relying on one.
 
-### Launcher page and `/chat`
+### `/chat`
 
-The room is the front door. `/`, `/royal-angel.html` and `/royal-angel` all render the
-app immediately — no splash to click through — and, in a release build, the address bar is pointed
-at `/chat` on load, query string kept so an access token survives. The dev server (the sandbox
-preview) leaves the address bar alone: its host only resolves the document path it served, so a
-rewritten `/chat` there answers "not found". There is no client-side router, so every path ends up
+The room is the front door. `/`, `/chat`, `/royal-angel.html` and `/royal-angel` all render the
+app immediately — no splash or launcher page to click through — and, in a release build, the address
+bar is pointed at `/chat` on load, query string kept so an access token survives. The dev server (the
+sandbox preview) leaves the address bar alone: its host only resolves the document path it served, so
+a rewritten `/chat` there answers "not found". There is no client-side router, so every path ends up
 rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
 `server/index.js` for releases, and the client's URL fix-up in `web/src/main.jsx`.
-
-`web/public/launcher.html` is served as its own page (it is not an entry path, so the file wins over
-the SPA fallback). It offers two ways into the room: "open in about:blank" drops the chat into a bare
-tab whose address bar stays `about:blank`, and "open in iframe" shows the same room inside the page
-with a `×` to return to the two choices. Its logic is `web/public/launcher.js` (a separate file — the
-preview does not run inline scripts), and it opens the room at `/` in both cases.
 
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.

@@ -257,7 +257,7 @@ Non-obvious things worth knowing before changing something:
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
-- **The room is the front door; no path stops at a splash.** `/`, `/launcher.html`,
+- **The room is the front door; no path stops at a splash.** `/`, `/chat`,
   `/royal-angel.html` and `/royal-angel` all render the app in place: the `frontDoorToChat` plugin in
   `web/vite.config.js` rewrites them to `index.html` in dev, and the `SERVE_WEB` block in
   `server/index.js` answers them with the built `index.html` registered before `express.static` (so
@@ -268,18 +268,10 @@ Non-obvious things worth knowing before changing something:
   skips that rewrite** (`!import.meta.env.DEV`): the preview host only answers documents on the path
   it served, so a rewritten `/chat` comes back as a "not found" pane even though `curl /chat` is
   200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
-  `web/public/launcher.html` is the exception and **is not in `ENTRY_PATHS`**: it is a real file
-  served from `web/public` in dev and from `web/dist` in a release, and it must stay out of both
-  lists or the built `index.html` wins. It is the two-choice page — a light card on the room's slate
-  background listing what the app holds (rooms, daily wheel, royal coins, the Aide, the leaderboard)
-  above the two ways in: "open in about:blank" writes a
-  full-bleed `<iframe>` of `/` into a blank tab with `document.write` (the address bar stays
-  about:blank; about:blank inherits this origin, so the session comes along), and "open in iframe"
-  swaps the card for the same room inside this page with a `×` to get back. Both use one absolute
-  `ROOM` URL, and the card's own link goes to `/`. **The logic is `/launcher.js`, not an inline
-  `<script>`:** inline scripts do not run in the sandbox preview (the tag's text is rendered instead),
-  so the page loads it with `<script src="/launcher.js" defer>`. Keep it inside `web/`: nothing
-  outside that directory is served.
+  **There is no launcher page any more** (the old `web/public/launcher.html` + `launcher.js` with its
+  "open in about:blank" / "open in iframe" choices were removed): `/` serves the room itself, so a
+  visitor lands in the chat with nothing to click first. Do not put a card, splash or two-choice page
+  back in front of it.
 - **`web/public/only-chatz.html` is the whole room in one file.** `web/scripts/single-file.mjs`
   builds it — `vite.single.config.js` emits one iife bundle (a module script is blocked when a file
   is opened from disk) plus one stylesheet, and the script folds both into the document with the
@@ -292,7 +284,7 @@ Non-obvious things worth knowing before changing something:
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
   same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
   an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer
-  (`a.download-link` in `Sidebar.jsx`) and the launcher's footer link to it as well, all with
+  (`a.download-link` in `Sidebar.jsx`) links to it as well, both with
   `download`**, so the browser saves the file instead of opening it; every href goes through
   `baseUrl()` so a copy opened elsewhere fetches it from its room.
   **A copy downloaded from the room carries that room's address, so it never asks for one.**
@@ -351,10 +343,10 @@ Non-obvious things worth knowing before changing something:
   layout, so restyle there instead of editing component CSS. Its root tokens are a slate room
   (`--void #2e3339`, panels `#373d44`) with phosphor green kept as the accent, and the trailing
   "blended front door" block rounds the surfaces, fills the send button and turns `.auth-card` into
-  the launcher's light card — that block sits last on purpose so it wins over the older flat-console
+  a light card — that block sits last on purpose so it wins over the older flat-console
   rules above it. Keep any `border-radius: 0` leftovers after the media-query radius rules in
   `app.css` (later import order is what lets them win).
-- **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
+- **Icons are `web/public/favicon.svg`,** linked from `index.html`; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
   the check treats anything under 500 as alive; the web check fetches `/` plus the proxied `/api/me`
