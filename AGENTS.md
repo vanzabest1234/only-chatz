@@ -480,14 +480,15 @@ branch through a pull request, so nothing deploys from a feature branch. `vercel
 third path (Vercel's own git integration, no workflow involved) — it is not exercised here.
 
 **The github.io address is a front door, not the app.** GitHub Pages only serves static files, so
-`site/index.html` (a single self-contained card: wordmark, one line, "Enter the chat") is published
-there by `.github/workflows/pages.yml` on every push to `main`. **The same job copies
-`web/public/only-chatz.html` into the published site**, and the card's second button
-("open the one-file room") points at it, so the github.io address can open the room itself — that
-copy is served from another origin, so it asks for the room address before signing in. The
-button's target is the `CHAT_URL`
-repository variable, substituted into the page's `__CHAT_URL__` placeholder at build time, falling
-back to the Render blueprint address from `render.yaml`. Keep that placeholder in the file — the
+`site/index.html` is published there by `.github/workflows/pages.yml` on every push to `main`.
+**It does not ask for a click:** the page ends with `location.replace('__CHAT_URL__')`, so opening
+the github.io address lands in the room itself; the card is only what a browser without the script
+sees, and its one link is the one-file room. **The same job copies `web/public/only-chatz.html`
+into the published site**, so that link opens the whole room in a file — that copy is served from
+another origin, so it asks for the room address before signing in. The redirect target is the
+`CHAT_URL` repository variable, substituted into the page's `__CHAT_URL__` placeholder at build
+time, falling back to the Render blueprint address from `render.yaml`. Keep that placeholder in the
+file — the workflow fails loudly without it. Keep that placeholder in the file — the
 workflow fails loudly without it. Two things are set in the repository, not in code: Pages must use
 source "GitHub Actions", and no custom domain may be configured (a domain that does not resolve
 301s every github.io request away from the site, whatever is deployed).

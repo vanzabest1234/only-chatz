@@ -120,16 +120,20 @@
     <main class="card">
       <div class="mark" aria-hidden="true">◍</div>
       <h1>only chatz</h1>
-      <p>a floaty little chatroom for everyone. pick a name, say hello.</p>
-      <a class="enter" id="enter" href="__CHAT_URL__">Enter the chat</a>
+      <p>a floaty little chatroom for everyone. opening the room…</p>
       <a class="enter file" href="./only-chatz.html">Open the one-file room</a>
       <p class="note">
-        the second link is the whole room in one html file — it asks for the room address, then
-        signs you in. save it and it opens from disk too.
+        this page walks straight into the room on its own — nothing to press. the link above is
+        the whole room in one html file: it asks for the room address, then signs you in.
       </p>
       <footer>
         the room lives on its own server · <a href="https://github.com/vanzabest1234/only-chatz">source</a>
       </footer>
     </main>
+    <!-- The front door is a doorway: no click to reach the room. This card only shows if the
+         script cannot run, and its one link is the one-file room published beside it. -->
+    <script>
+      location.replace('__CHAT_URL__')
+    </script>
   </body>
 </html>

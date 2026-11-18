@@ -2,8 +2,8 @@
 # address always opens a real page that leads into the live chatroom.
 #
 # The room itself (Express + Socket.IO + Postgres) cannot run on Pages, which only
-# serves static files. This page is the front door; the button points at the chat
-# server, and `only-chatz.html` (the single-file room, built from `web/` and tracked)
+# serves static files. This page is the front door: it forwards straight into the chat
+# server on load (no button), and `only-chatz.html` (the single-file room, built from `web/` and tracked)
 # is published beside it so github.io can open the room itself. Set the target with a
 # repository variable named CHAT_URL
 # (Settings -> Secrets and variables -> Actions -> Variables). When it is unset the
