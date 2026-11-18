@@ -307,6 +307,14 @@ Non-obvious things worth knowing before changing something:
   build-time URL. For that copy to sign in, the API echoes the caller's `Origin` (bearer tokens,
   never cookies, so no `Access-Control-Allow-Credentials`) and Socket.IO accepts any origin
   (`server/index.js`, `server/realtime.js`).
+  **A copy opened from disk has to connect live, not just sign in.** socket.io reads both the
+  address *and the namespace* from the page's own URL the moment `io()` runs, and a `file://` page
+  gives it `//file://` — the room answers "Invalid namespace", so the copy silently rendered only
+  what its REST loads brought in and every new line needed a refresh. `web/src/socket.js` starts
+  from an explicit `http://localhost` placeholder on a non-web page (which keeps the namespace
+  `/`) and `pointAtRoom()` swaps in the room's real address before the first connect; on an
+  http(s) page the relative default is untouched. Changing the manager's `uri` alone is not
+  enough — that only fixes the address, never the namespace.
 - **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
   with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
   wordmark, and a live "N online" chip on the right that opens the who's-online board. The button

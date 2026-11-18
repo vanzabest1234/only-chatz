@@ -1,7 +1,15 @@
 import { io } from 'socket.io-client'
 import { baseUrl, getToken } from './api'
 
-export const socket = io({
+// socket.io takes both the connection's address and its namespace from the page's own URL the
+// moment it is created. A copy of only-chatz.html opened from disk has no web origin, so that
+// namespace came out as "//file://" and the room refused the handshake with "Invalid namespace":
+// the copy stayed quiet and only a refresh showed new lines. On a non-web page, start from an
+// explicit placeholder so the namespace stays "/"; pointAtRoom() below swaps in the room's real
+// address before the first connect.
+const webPage = typeof location === 'undefined' || /^https?:$/.test(location.protocol)
+
+export const socket = io(webPage ? undefined : 'http://localhost', {
   autoConnect: false,
   auth: { token: null },
 })
