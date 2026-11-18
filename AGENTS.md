@@ -213,6 +213,12 @@ Non-obvious things worth knowing before changing something:
   settings and validated in `routes/profile.js`. Everyone may pick any theme; NULL means the
   account's own role's theme, which is also the fallback `ProfileCard.jsx` uses. Purely decorative
   (`banner-<theme>` gradients at the end of `console.css`) — never read it as a role.
+- **An emoji palette sits by the send box.** `EmojiPicker.jsx` (mounted from `Composer.jsx`, right
+  before the send button) is one flat grid of 48 characters reusing the `.attach` button and the
+  `.cmd-menu` panel, so it matches the composer without new chrome. Picking one calls `addEmoji`,
+  which inserts it at the caret and puts the caret back after it — a plain character in the message
+  text, nothing rendered specially on the way out. It closes on pick, on Escape and on any tap
+  outside. The smiley glyph is the `smile` path in `Icon.jsx`.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
   `SettingsModal.jsx`; no file storage involved.
 - **Pictures can be sent with a message.** `messages.image_url` holds a data URL that

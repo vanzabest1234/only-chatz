@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
+import EmojiPicker from './EmojiPicker'
 import { fileToImage } from '../lib/image'
 
 export default function Composer({
@@ -90,6 +91,22 @@ export default function Composer({
   function pick(command) {
     setValue(`/${command.name} `)
     area.current?.focus()
+  }
+
+  // An emoji lands where the cursor is, not at the end, so it can be dropped into the middle of a
+  // sentence being written. The caret goes back after it so typing simply continues.
+  function addEmoji(emoji) {
+    const element = area.current
+    const start = element?.selectionStart ?? value.length
+    const end = element?.selectionEnd ?? value.length
+    setValue(`${value.slice(0, start)}${emoji}${value.slice(end)}`)
+    requestAnimationFrame(() => {
+      if (!element) return
+      element.focus()
+      element.selectionStart = start + emoji.length
+      element.selectionEnd = start + emoji.length
+      resize(element)
+    })
   }
 
   return (
@@ -185,6 +202,7 @@ export default function Composer({
             }
           }}
         />
+        <EmojiPicker onPick={addEmoji} disabled={disabled || busy} />
         <button
           className="send"
           type="submit"

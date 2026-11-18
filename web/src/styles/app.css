@@ -553,6 +553,33 @@
   text-align: left;
 }
 
+/* The emoji palette rides on .cmd-menu for its glass, position and entrance; this is only the
+   grid inside it. It hangs off the composer wrapper, so the trigger stays a plain flex item. */
+.emoji-wrap {
+  display: flex;
+  flex: none;
+}
+
+.emoji-menu {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  padding: 8px;
+  max-height: 208px;
+}
+
+.emoji-pick {
+  padding: 5px 0;
+  border-radius: 9px;
+  font-size: 17px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.emoji-pick:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
 .cmd-item:hover {
   background: rgba(255, 255, 255, 0.07);
 }
