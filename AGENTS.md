@@ -327,7 +327,10 @@ Non-obvious things worth knowing before changing something:
   reload already fetches the new build. A failed fetch (offline, room down) leaves the copy running
   its own bundle, and the swap dispatches `pagehide` first so the old socket closes the way a
   reload closes it. A copy downloaded before the stamp existed cannot tell it is behind — one fresh
-  download fixes that for good.
+  download fixes that for good. That fetch is cross-origin (a `file:` copy, or one on another
+  site), so `stampRoomAddress()` in `web/vite.config.js` echoes the caller's `Origin` on this one
+  route — the same echo `server/index.js` already does for every path — or the update would be
+  blocked in the preview while working in a release.
   Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
   same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
   an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer

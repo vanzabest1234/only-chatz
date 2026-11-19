@@ -95,6 +95,12 @@ function stampRoomAddress() {
           return next()
         }
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
+        // A copy saved to disk pulls this file back to update itself, and it asks from its own
+        // address (file:, or another site), which the browser treats as cross-origin. The release
+        // server already echoes the caller's Origin on every path; this is the same echo for the
+        // one route the dev server answers itself, so the update works from the preview too.
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*')
+        res.setHeader('Vary', 'Origin')
         res.end(html.replace(ROOM_SLOT, `data-room="${roomOrigin(req)}"`))
       })
     },
