@@ -336,6 +336,7 @@ export default function MessageList({
   messages,
   kind,
   me,
+  historyRestricted = false,
   onReact,
   onReply,
   onEditMessage,
@@ -353,9 +354,11 @@ export default function MessageList({
     return (
       <div className="messages">
         <p className="empty">
-          {kind === 'dm'
-            ? 'This is the start of your conversation. Say something nice.'
-            : 'Nothing here yet — be the first to say something.'}
+          {historyRestricted
+            ? 'Only the Owner can read back through this room — you see lines as they arrive.'
+            : kind === 'dm'
+              ? 'This is the start of your conversation. Say something nice.'
+              : 'Nothing here yet — be the first to say something.'}
         </p>
       </div>
     )

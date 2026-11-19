@@ -25,6 +25,7 @@ export default function App() {
   const [booting, setBooting] = useState(true)
   const [view, setView] = useState(null)
   const [messages, setMessages] = useState([])
+  const [historyRestricted, setHistoryRestricted] = useState(false)
   const [notice, setNotice] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
@@ -64,7 +65,9 @@ export default function App() {
         ? `/api/channels/${target.id}/messages`
         : `/api/dm/${target.id}/messages`
     const data = await api(path)
-    setMessages(data.messages)
+    setHistoryRestricted(Boolean(data.historyRestricted))
+    // A restricted room answers with no scrollback, so the lines that arrived live here stay.
+    setMessages(previous => (data.historyRestricted ? previous : data.messages))
   }, [])
 
   const signOut = useCallback(() => {
@@ -292,10 +295,9 @@ export default function App() {
   useEffect(() => {
     setReplyTo(null)
     setTyping([])
-    if (!view) {
-      setMessages([])
-      return
-    }
+    // A new room starts empty on screen; a restricted room only ever fills from live lines.
+    setMessages([])
+    if (!view) return
     loadMessages().catch(() => setMessages([]))
   }, [view, loadMessages])
 
@@ -579,6 +581,7 @@ export default function App() {
             channel={channel}
             thread={thread}
             messages={messages}
+            historyRestricted={historyRestricted}
             onSend={send}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenMembers={() => setMembersOpen(value => !value)}

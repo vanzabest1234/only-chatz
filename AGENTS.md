@@ -45,6 +45,12 @@ Non-obvious things worth knowing before changing something:
   from a non-owner, and the client disables the composer for them. Everyone still sees the room
   and its messages — the flag only gates writing. Adding another announcement room means setting
   the same column, not adding a second rule.
+- **The scrollback is the Owner's.** `GET /api/channels/:id/messages` answers a non-owner with
+  `{ messages: [], historyRestricted: true }`, so a member opens a room empty and only sees the
+  lines that arrive while they are in it (`message:new`); the Owner reads the last 80 as before.
+  The client keeps that live list on a refresh (`loadMessages` in `App.jsx` does not overwrite it
+  when the room is restricted) and `MessageList.jsx` prints the reason instead of the usual empty
+  line. DM history is untouched — it is already private to the two members of the thread.
 - **Messages can be edited, replied to and reacted to.** `messages.edited_at` and
   `messages.reply_to_id` plus the `message_reactions` table carry it.
   `PATCH /api/messages/:id` only touches your own message and always stamps `edited_at`, which the

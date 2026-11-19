@@ -16,6 +16,7 @@ export default function ChatPane({
   channel,
   thread,
   messages,
+  historyRestricted,
   onSend,
   onOpenSidebar,
   onOpenMembers,
@@ -99,6 +100,7 @@ export default function ChatPane({
         messages={messages}
         kind={kind}
         me={me}
+        historyRestricted={historyRestricted && kind === 'channel'}
         onReact={onReact}
         onReply={onReply}
         onEditMessage={onEditMessage}

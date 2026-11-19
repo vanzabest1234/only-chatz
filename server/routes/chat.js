@@ -350,6 +350,10 @@ router.get('/channels/:id/messages', requireAuth, async (req, res) => {
     return res.status(403).json({ error: fencedRoomError(channel) })
   }
 
+  // The scrollback belongs to the Owner: everyone else only sees the lines that arrive while
+  // they are in the room, so the conversation already held here stays with the house.
+  if (req.user.role !== 'owner') return res.json({ messages: [], historyRestricted: true })
+
   res.json({ messages: await listMessages('channel_id', channelId) })
 })
 
