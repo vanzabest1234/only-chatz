@@ -6,8 +6,28 @@
   height: 100%;
   padding: 16px;
   display: grid;
-  grid-template-columns: 284px minmax(0, 1fr) 258px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 14px;
+}
+
+/* The top bar opens the rooms panel, so the wordmark and its three-line button
+   travel together on the left while the live chip stays on the right. */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topbar-menu {
+  color: var(--phosphor);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .sidebar,
@@ -43,6 +63,86 @@
 .brand p {
   font-size: 11px;
   color: #9aa0c4;
+}
+
+/* The rooms panel hangs off the top bar as a drop-down menu at every width: it opens
+   under the three-line button, over the room, and the chat keeps the space when shut.
+   `--topbar-h` is the bar's own height (its padding plus the 32px icon button). */
+:root {
+  --topbar-h: 55px;
+}
+
+.sidebar {
+  position: fixed;
+  top: calc(var(--topbar-h) + 1px);
+  left: 10px;
+  width: min(276px, 86vw);
+  height: auto;
+  max-height: min(640px, calc(100dvh - var(--topbar-h) - 32px));
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: 26px 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.sidebar.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+/* The menu drops off the button instead of filling the side of the room: a shadowed
+   sheet, a caret pointing back at the three-line button, and menu-density rows. */
+.app .sidebar {
+  overflow: visible;
+  border-radius: 14px;
+  box-shadow: 0 22px 48px -16px rgba(0, 0, 0, 0.8), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 11px;
+  height: 11px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 2px 0 0 0;
+  transform: rotate(45deg);
+}
+
+.app .sidebar .brand {
+  padding: 11px 12px 9px;
+}
+
+.app .sidebar .brand h1 {
+  font-size: 13px;
+}
+
+.app .sidebar .brand p {
+  font-size: 10.5px;
+}
+
+.app .sidebar .sidebar-scroll {
+  padding: 0 8px 8px;
+}
+
+.app .sidebar .nav-row {
+  padding: 7px 9px;
+}
+
+.app .sidebar .section + .section {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.app .sidebar .me-card {
+  border-radius: 0 0 14px 14px;
 }
 
 .sidebar-scroll {
@@ -196,14 +296,9 @@
   transform: translateY(-1px);
 }
 
-.drawer-close,
 .members-close,
 .hamburger {
   display: none;
-}
-
-.hamburger {
-  display: grid;
 }
 
 /* ---------- chat ---------- */
@@ -277,10 +372,10 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 12px 4px;
+  padding: 4px 0 4px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
 }
 
 .empty {
@@ -292,12 +387,17 @@
 
 .msg {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 10px;
-  padding: 6px 10px;
-  border-radius: 15px;
+  padding: 9px 14px;
+  border-radius: 0;
   animation: msg-in 0.2s ease both;
   transition: background 0.18s ease;
+}
+
+/* chatflux's log is one flat list: a hairline between messages, nothing around system lines. */
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
 }
 
 .msg:hover {
@@ -312,7 +412,13 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  row-gap: 2px;
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.msg-head .msg-time {
+  flex: none;
 }
 
 .msg-name {
@@ -447,6 +553,33 @@
   text-align: left;
 }
 
+/* The emoji palette rides on .cmd-menu for its glass, position and entrance; this is only the
+   grid inside it. It hangs off the composer wrapper, so the trigger stays a plain flex item. */
+.emoji-wrap {
+  display: flex;
+  flex: none;
+}
+
+.emoji-menu {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  padding: 8px;
+  max-height: 208px;
+}
+
+.emoji-pick {
+  padding: 5px 0;
+  border-radius: 9px;
+  font-size: 17px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.emoji-pick:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
 .cmd-item:hover {
   background: rgba(255, 255, 255, 0.07);
 }
@@ -545,10 +678,11 @@
 
 .members-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 15px 14px 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .members-head h2 {
@@ -569,17 +703,23 @@
 }
 
 .member-group {
-  margin-top: 8px;
+  margin-top: 2px;
 }
 
 .member-group .section-title {
-  margin: 8px 8px 4px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 8px 8px 3px;
 }
 
 .member-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  min-height: 38px;
+  padding-right: 4px;
   border-radius: 13px;
   transition: background 0.18s ease;
 }
@@ -591,29 +731,34 @@
 .member-open {
   flex: 1;
   min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 6px;
+  display: grid;
+  gap: 1px;
+  padding: 3px 6px 3px 7px;
   text-align: left;
 }
 
-.member-text {
-  display: grid;
-  min-width: 0;
-  flex: 1;
-}
-
 .member-name {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.member-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .member-handle {
-  font-size: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 1.2;
   color: #7d83a7;
   white-space: nowrap;
   overflow: hidden;
@@ -665,59 +810,44 @@
 
 /* ---------- responsive ---------- */
 
+/* Every PC width keeps the three columns of the reference — rooms, the room, the people.
+   They narrow rather than disappear, so the people list is never behind a toggle. */
 @media (max-width: 1180px) {
   .shell {
-    grid-template-columns: 268px minmax(0, 1fr);
-  }
-
-  .members-toggle {
-    display: flex;
-  }
-
-  .members {
-    position: fixed;
-    top: 12px;
-    bottom: 12px;
-    right: 12px;
-    width: min(280px, 84vw);
-    z-index: 60;
-    transform: translateX(calc(100% + 24px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .members.open {
-    transform: none;
-  }
-
-  .members-close {
-    display: grid;
+    grid-template-columns: minmax(0, 1fr) 232px;
   }
 }
 
 @media (max-width: 900px) {
+  :root {
+    --topbar-h: 51px;
+  }
+
   .shell {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 168px;
     padding: 8px;
     gap: 8px;
   }
 
-  .sidebar {
-    position: fixed;
-    top: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: min(300px, 86vw);
-    z-index: 60;
-    transform: translateX(calc(-100% - 24px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* the side columns drop their second line so a name still fits */
+  .sidebar .dm-time,
+  .sidebar .chip,
+  .sidebar .dm-row .badge,
+  .me-card .meta .badge,
+  .member-meta {
+    display: none;
   }
 
-  .sidebar.open {
-    transform: none;
+  .members-head {
+    padding: 10px 8px;
   }
 
-  .drawer-close {
-    display: grid;
+  .members-head h2 {
+    font-size: 12.5px;
+  }
+
+  .members-head p {
+    display: none;
   }
 
   .chat {
@@ -742,18 +872,18 @@
   }
 
   .messages {
-    padding: 10px 6px 2px;
+    padding: 4px 0 2px;
   }
 
   .msg {
-    grid-template-columns: 32px minmax(0, 1fr);
-    gap: 8px;
-    padding: 6px 8px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 9px;
+    padding: 8px 10px;
   }
 
   .msg .avatar {
-    width: 32px !important;
-    height: 32px !important;
+    width: 36px !important;
+    height: 36px !important;
     font-size: 12px !important;
   }
 
@@ -792,19 +922,47 @@
     padding: 5px 4px 0;
     font-size: 10px;
   }
+}
+
+/* Past this the columns cannot give any more width, so they become drawers and the
+   quick bar carries the rooms and shortcuts above the chat. */
+@media (max-width: 660px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hamburger {
+    display: grid;
+  }
+
+  .members-toggle {
+    display: flex;
+  }
+
+  .members-close {
+    display: grid;
+  }
 
   .members {
-    width: min(300px, 88vw);
+    position: fixed;
     top: 8px;
     bottom: 8px;
     right: 8px;
+    width: min(300px, 88vw);
+    z-index: 60;
+    transform: translateX(calc(100% + 24px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .members.open {
+    transform: none;
   }
 }
 
 @media (max-width: 420px) {
   .msg .avatar {
-    width: 30px !important;
-    height: 30px !important;
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .msg-name {
@@ -1010,21 +1168,35 @@
   min-height: 0;
 }
 
+.board .board-list {
+  margin-top: 8px;
+  gap: 1px;
+}
+
+.board-group {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 8px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: #8f96bb;
+}
+
 .board-row {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 4px 8px;
   border-radius: 14px;
   text-align: left;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: transparent;
   transition: background 0.18s ease;
 }
 
 .board-row:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .board-text {
@@ -1032,6 +1204,14 @@
   min-width: 0;
   display: grid;
   gap: 1px;
+}
+
+.board-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .board-name {
@@ -1064,4 +1244,97 @@
   background: #4ee6cf;
   box-shadow: 0 0 10px #4ee6cf;
   margin-left: 3px;
+}
+
+/* ---------- quick bar ---------- */
+
+/* Under 660px the columns collapse into drawers, so the rooms, the DMs and the
+   shortcuts ride an up-bar beneath the top bar instead of a column beside the chat. */
+.quick-bar {
+  display: none;
+}
+
+.chat-me {
+  display: none;
+}
+
+/* once the people column is narrow, the settings avatar keeps its corner spot */
+@media (max-width: 900px) {
+  .chat-me {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 660px) {
+  .quick-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    scrollbar-width: none;
+  }
+
+  .quick-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .qb-item {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: #a7b0bd;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .qb-item.active {
+    color: #fff;
+    border-color: rgba(116, 240, 166, 0.5);
+    background: rgba(116, 240, 166, 0.14);
+  }
+
+  .qb-mark {
+    color: #74f0a6;
+  }
+
+  .qb-coin .qb-mark {
+    color: #ffd166;
+  }
+
+  .qb-dm {
+    padding: 0 10px 0 5px;
+  }
+}
+
+/* ---------- column boundaries ----------
+   The room is the middle of three columns, so its two vertical edges are drawn on
+   purpose: a brighter, green-tinted hairline where the rooms list ends and where the
+   people list begins, instead of the same card border every panel carries. Phones
+   stack the columns, so no seam is drawn there. The `.shell` prefix is what lets this
+   beat the card border in `console.css`, which is imported last. */
+
+:root {
+  --seam: rgba(116, 240, 166, 0.45);
+}
+
+@media (min-width: 661px) {
+  .shell .chat {
+    border-left-color: var(--seam);
+    border-right-color: var(--seam);
+  }
 }

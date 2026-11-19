@@ -1,7 +1,9 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
-import { relativeTime, snippet } from '../lib/format'
+import PlayerName from './PlayerName'
+import { baseUrl } from '../api'
+import { relativeTime, snippet, walletText } from '../lib/format'
 
 export default function Sidebar({
   me,
@@ -14,6 +16,10 @@ export default function Sidebar({
   onOpenMembers,
   onOpenSettings,
   onOpenBoard,
+  onOpenFlairs,
+  onOpenPass,
+  onOpenCasino,
+  onOpenLeaders,
   onSignOut,
 }) {
   const friendUsers = me.friends
@@ -39,29 +45,6 @@ export default function Sidebar({
 
         <div className="sidebar-scroll">
           <section className="section">
-            <button className="nav-row board-link" onClick={onOpenBoard}>
-              <span className="live-dot" />
-              <span className="nav-label">Who&apos;s online</span>
-              <span className="chip">{me.online.length}</span>
-            </button>
-          </section>
-
-          <section className="section">
-            <h2 className="section-title">Text Channels</h2>
-            {me.channels.map(channel => (
-              <button
-                key={channel.id}
-                className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
-                onClick={() => onPickChannel(channel)}
-              >
-                <span className="hash">#</span>
-                <span className="nav-label">{channel.name}</span>
-                {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
-              </button>
-            ))}
-          </section>
-
-          <section className="section">
             <h2 className="section-title">Direct Messages</h2>
 
             <h3 className="sub-title">Friends</h3>
@@ -81,7 +64,12 @@ export default function Sidebar({
                   online={isOnline(friend.id)}
                   src={friend.avatarUrl}
                 />
-                <span className="nav-label">{friend.displayName}</span>
+                <PlayerName
+                  className="nav-label"
+                  name={friend.displayName}
+                  role={friend.role}
+                  flairs={friend.flairs}
+                />
                 <RoleBadge role={friend.role} />
               </button>
             ))}
@@ -101,7 +89,12 @@ export default function Sidebar({
                   src={thread.peer.avatarUrl}
                 />
                 <span className="dm-text">
-                  <span className="nav-label">{thread.peer.displayName}</span>
+                  <PlayerName
+                    className="nav-label"
+                    name={thread.peer.displayName}
+                    role={thread.peer.role}
+                    flairs={thread.peer.flairs}
+                  />
                   <span className="dm-snippet">
                     {thread.lastMessage ? snippet(thread.lastMessage.content) : 'Say hello'}
                   </span>
@@ -115,6 +108,68 @@ export default function Sidebar({
               <span className="nav-label">Start a conversation</span>
             </button>
           </section>
+
+          <section className="section">
+            <h2 className="section-title">Text Channels</h2>
+            {me.channels.map(channel => (
+              <button
+                key={channel.id}
+                className={`nav-row ${channel.id === channelId ? 'active' : ''}`}
+                onClick={() => onPickChannel(channel)}
+              >
+                <span className="hash">#</span>
+                <span className="nav-label">{channel.name}</span>
+                {channel.slowmode > 0 && <span className="chip">{channel.slowmode}s</span>}
+              </button>
+            ))}
+          </section>
+
+          <section className="section">
+            <button className="nav-row coin-link" onClick={onOpenCasino}>
+              <span className="hash">◉</span>
+              <span className="nav-label">Royal vault</span>
+              <span className="chip">
+                {walletText(me.user.coins)}
+              </span>
+            </button>
+            <button className="nav-row ladder-link" onClick={onOpenLeaders}>
+              <span className="hash">≡</span>
+              <span className="nav-label">Coin leaderboard</span>
+              <span className="chip">top 10</span>
+            </button>
+            <button className="nav-row board-link" onClick={onOpenBoard}>
+              <span className="live-dot" />
+              <span className="nav-label">Who&apos;s online</span>
+              <span className="chip">{me.online.length}</span>
+            </button>
+            <button className="nav-row flair-link" onClick={onOpenFlairs}>
+              <span className="hash">✦</span>
+              <span className="nav-label">Daily wheel</span>
+              <span className="chip">1/day</span>
+            </button>
+            <button className="nav-row pass-link" onClick={onOpenPass}>
+              <span className="hash">▮</span>
+              <span className="nav-label">Season pass</span>
+              <span className="chip">tier {me.user.pass?.tier ?? 0}</span>
+            </button>
+            {/* The whole room in one file: the browser saves it instead of opening it. A copy
+                opened away from the room names its server, so the file comes from there. */}
+            <a
+              className="nav-row download-link"
+              href={`${baseUrl()}/only-chatz.html`}
+              download="only-chatz.html"
+            >
+              <span className="hash">⤓</span>
+              <span className="nav-label">Download room</span>
+              <span className="chip">1 file</span>
+            </a>
+            {/* The index of everything inside the room — rooms, systems, commands — with its
+                own build poll, so a page left open follows the room onto a new build. */}
+            <a className="nav-row launcher-link" href={`${baseUrl()}/launcher.html`}>
+              <span className="hash">◍</span>
+              <span className="nav-label">What&apos;s inside</span>
+            </a>
+          </section>
         </div>
 
         <div className="me-card">
@@ -126,7 +181,12 @@ export default function Sidebar({
             src={me.user.avatarUrl}
           />
           <div className="meta">
-            <span className="name">{me.user.displayName}</span>
+            <PlayerName
+              className="name"
+              name={me.user.displayName}
+              role={me.user.role}
+              flairs={me.user.flairs}
+            />
             <RoleBadge role={me.user.role} />
           </div>
           <button

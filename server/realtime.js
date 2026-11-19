@@ -2,6 +2,9 @@ import { Server } from 'socket.io'
 import { q } from './db.js'
 import { sessionUser } from './auth.js'
 import { audit, take } from './guard.js'
+import { addPresenceMinutes } from './pass.js'
+import { accrueCoins } from './coins.js'
+import { CHANNEL_ACCESS_SQL } from './flairs.js'
 
 let io = null
 const online = new Map()
@@ -14,12 +17,107 @@ const MAX_SOCKETS_PER_USER = 5
 const PRESENCE_LIMIT = 10
 const PRESENCE_WINDOW = 10_000
 
+// Who is typing where. In memory only, like presence: an entry lives for a few seconds
+// after the last keystroke and is dropped by the sweep, so nobody stays "typing" forever.
+const typing = new Map()
+const TYPING_LIMIT = 30
+const TYPING_WINDOW = 10_000
+const TYPING_TTL = 4_000
+
 function whereSnapshot() {
   return Object.fromEntries(where)
 }
 
+function typingRoom(kind, id) {
+  return kind === 'dm' ? `thread:${id}` : `channel:${id}`
+}
+
+function typingNames(key) {
+  const people = typing.get(key)
+  return people ? [...people.values()].map(person => person.name) : []
+}
+
+/** Tell a room who is typing right now; `exclude` skips the socket that just typed. */
+function broadcastTyping(key, exclude) {
+  const split = key.indexOf(':')
+  const kind = key.slice(0, split)
+  const id = Number(key.slice(split + 1))
+  const payload = { kind, id, names: typingNames(key) }
+  if (exclude) exclude.to(typingRoom(kind, id)).emit('typing:update', payload)
+  else io?.to(typingRoom(kind, id)).emit('typing:update', payload)
+}
+
+function forgetTypist(userId) {
+  for (const [key, people] of typing) {
+    if (!people.delete(userId)) continue
+    if (!people.size) typing.delete(key)
+    broadcastTyping(key)
+  }
+}
+
+function startTypingSweep() {
+  const timer = setInterval(() => {
+    const now = Date.now()
+    for (const [key, people] of typing) {
+      let changed = false
+      for (const [userId, person] of people) {
+        if (person.expiresAt <= now) {
+          people.delete(userId)
+          changed = true
+        }
+      }
+      if (!people.size) typing.delete(key)
+      if (changed) broadcastTyping(key)
+    }
+  }, 1_000)
+  timer.unref?.()
+  return timer
+}
+
+/**
+ * The season pass counts minutes with a socket open. A minute is a tick, and the tick is
+ * the only writer, so closing the tab stops the clock and the pass cannot be farmed offline.
+ */
+function startPassClock() {
+  const timer = setInterval(() => {
+    for (const userId of [...online.keys()]) {
+      addPresenceMinutes(userId, 1)
+        .then(state => {
+          if (state) emitTo(`user:${userId}`, 'pass:update', state)
+        })
+        .catch(() => {})
+    }
+  }, 60_000)
+  timer.unref?.()
+  return timer
+}
+
+/**
+ * Royal Coins drip while a socket is open: every ten seconds the online accounts are
+ * asked for anything the clock owes them, and only an actual payout is broadcast, so a
+ * quiet balance never causes a repaint.
+ */
+function startCoinClock() {
+  const timer = setInterval(() => {
+    for (const userId of [...online.keys()]) {
+      accrueCoins(userId)
+        .then(({ state, awarded }) => {
+          if (awarded) emitTo(`user:${userId}`, 'coins:update', state)
+        })
+        .catch(() => {})
+    }
+  }, 10_000)
+  timer.unref?.()
+  return timer
+}
+
 export function initRealtime(httpServer) {
-  io = new Server(httpServer)
+  // A copy of only-chatz.html opened outside the room connects from its own address; the
+  // handshake still has to present a session token, so the origin is not what admits it.
+  io = new Server(httpServer, { cors: { origin: true } })
+  startTypingSweep()
+  startPassClock()
+  startCoinClock()
 
   io.use(async (socket, next) => {
     const forwarded = String(socket.handshake.headers?.['x-forwarded-for'] ?? '').split(',')[0].trim()
@@ -47,7 +145,13 @@ export function initRealtime(httpServer) {
 
     const [threads, channels] = await Promise.all([
       q('SELECT thread_id FROM dm_members WHERE user_id = $1', [user.id]),
-      q('SELECT id FROM channels'),
+      // Open rooms only: a fenced one is joined when its flair opens it (presence:where).
+      q(
+        `SELECT c.id FROM channels c
+          WHERE c.flair IS NULL
+             OR EXISTS (SELECT 1 FROM user_flairs f WHERE f.user_id = $1 AND f.flair = c.flair)`,
+        [user.id],
+      ),
     ])
     threads.rows.forEach(row => socket.join(`thread:${row.thread_id}`))
     channels.rows.forEach(row => socket.join(`channel:${row.id}`))
@@ -73,14 +177,55 @@ export function initRealtime(httpServer) {
                 id,
                 user.id,
               ])
-            : await q('SELECT 1 FROM channels WHERE id = $1 LIMIT 1', [id])
+            : await q(CHANNEL_ACCESS_SQL, [id, user.id])
         if (!rows.length) return
+        // Opening a room subscribes this socket to it, so a fenced room starts arriving
+        // only once its flair has opened it — never at connect for everyone.
+        if (kind === 'channel') socket.join(`channel:${id}`)
       } catch {
         return
       }
 
       where.set(user.id, { kind, id })
       io.emit('presence:where', whereSnapshot())
+    })
+
+    socket.on('typing', async payload => {
+      // Typing pings are cheap and frequent, so each socket gets a small allowance.
+      if (!take(`typing:${socket.id}`, TYPING_LIMIT, TYPING_WINDOW).ok) return
+
+      const kind = payload?.kind === 'dm' ? 'dm' : 'channel'
+      const id = Number(payload?.id)
+      if (!Number.isInteger(id) || id <= 0) return
+
+      try {
+        // Only relay a room the person actually belongs to.
+        const { rows } =
+          kind === 'dm'
+            ? await q('SELECT 1 FROM dm_members WHERE thread_id = $1 AND user_id = $2 LIMIT 1', [
+                id,
+                user.id,
+              ])
+            : await q(CHANNEL_ACCESS_SQL, [id, user.id])
+        if (!rows.length) return
+        // Opening a room subscribes this socket to it, so a fenced room starts arriving
+        // only once its flair has opened it — never at connect for everyone.
+        if (kind === 'channel') socket.join(`channel:${id}`)
+      } catch {
+        return
+      }
+
+      const key = `${kind}:${id}`
+      let people = typing.get(key)
+      if (!people) {
+        people = new Map()
+        typing.set(key, people)
+      }
+      people.set(user.id, {
+        name: user.display_name || user.username,
+        expiresAt: Date.now() + TYPING_TTL,
+      })
+      broadcastTyping(key, socket)
     })
 
     socket.on('disconnect', () => {
@@ -92,6 +237,7 @@ export function initRealtime(httpServer) {
       if (remaining <= 0) {
         online.delete(user.id)
         where.delete(user.id)
+        forgetTypist(user.id)
       } else {
         online.set(user.id, remaining)
       }

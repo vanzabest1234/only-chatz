@@ -16,6 +16,9 @@ export const ROLE_LABELS = {
 
 export const ASSIGNABLE_ROLES = ['member', 'mod', 'admin', 'co-owner']
 
+/** The profile banner strips, one per role theme. Everyone may pick any of them. */
+export const BANNERS = ['member', 'mod', 'admin', 'co-owner', 'owner']
+
 export const rankOf = role => RANKS[role] ?? 0
 
 export const labelFor = role => ROLE_LABELS[role] ?? 'Member'

@@ -2,8 +2,12 @@ import { useState } from 'react'
 import Avatar from './Avatar'
 import Icon from './Icon'
 import { api } from '../api'
+import { roleLabel } from '../lib/roles'
 
 const COLORS = ['#93c5fd', '#fca5a5', '#a7f3d0', '#fcd34d', '#c4b5fd', '#f9a8d4', '#7dd3fc', '#fdba74']
+
+// The banner strips on sale to everyone: one theme per role, pick any of them.
+const BANNERS = ['member', 'mod', 'admin', 'co-owner', 'owner']
 
 // The browser crops the picture to a square and shrinks it to 256px, so what we
 // send the API is a small data URL and the server needs no file storage.
@@ -33,8 +37,11 @@ function shrinkToAvatar(file) {
 export default function SettingsModal({ user, onClose, onSaved }) {
   const [displayName, setDisplayName] = useState(user.displayName)
   const [bio, setBio] = useState(user.bio || '')
+  const [pronouns, setPronouns] = useState(user.pronouns || '')
   const [color, setColor] = useState(user.color)
+  const [customTag, setCustomTag] = useState(user.customTag || '')
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
+  const [banner, setBanner] = useState(user.banner || '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -60,7 +67,15 @@ export default function SettingsModal({ user, onClose, onSaved }) {
     try {
       const data = await api('/api/me/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ displayName, bio, color, avatarUrl: avatarUrl || null }),
+        body: JSON.stringify({
+          displayName,
+          bio,
+          pronouns,
+          color,
+          banner,
+          avatarUrl: avatarUrl || null,
+          ...(user.ownsCustomTag ? { customTag } : {}),
+        }),
       })
       onSaved(data.user)
       onClose()
@@ -118,6 +133,16 @@ export default function SettingsModal({ user, onClose, onSaved }) {
           </label>
 
           <label className="field">
+            <span>Pronouns</span>
+            <input
+              value={pronouns}
+              maxLength={24}
+              placeholder="they/them"
+              onChange={event => setPronouns(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
             <span>Bio</span>
             <textarea
               value={bio}
@@ -128,6 +153,21 @@ export default function SettingsModal({ user, onClose, onSaved }) {
             />
             <em className="settings-count">{bio.length}/160</em>
           </label>
+
+          {user.ownsCustomTag && (
+            <label className="field">
+              <span>Custom tag</span>
+              <input
+                value={customTag}
+                maxLength={20}
+                placeholder="your word"
+                onChange={event => setCustomTag(event.target.value)}
+              />
+              <em className="settings-count">
+                the 0.01% wheel win · anything you like, up to 20 characters
+              </em>
+            </label>
+          )}
 
           <div className="field">
             <span>Accent colour</span>
@@ -143,6 +183,34 @@ export default function SettingsModal({ user, onClose, onSaved }) {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="field">
+            <span>Profile banner</span>
+            <div className="banner-options">
+              <button
+                type="button"
+                className={`banner-option ${banner === '' ? 'on' : ''}`}
+                onClick={() => setBanner('')}
+                aria-pressed={banner === ''}
+              >
+                <span className={`banner-preview banner-${user.role}`} />
+                <span>my role · {roleLabel(user.role)}</span>
+              </button>
+              {BANNERS.map(theme => (
+                <button
+                  key={theme}
+                  type="button"
+                  className={`banner-option ${banner === theme ? 'on' : ''}`}
+                  onClick={() => setBanner(theme)}
+                  aria-pressed={banner === theme}
+                >
+                  <span className={`banner-preview banner-${theme}`} />
+                  <span>{roleLabel(theme)}</span>
+                </button>
+              ))}
+            </div>
+            <em className="settings-count">the strip across the top of your profile card</em>
           </div>
 
           {error && <p className="auth-error">{error}</p>}

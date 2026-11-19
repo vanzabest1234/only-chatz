@@ -59,10 +59,101 @@ CREATE TABLE IF NOT EXISTS messages (
 -- profile customisation (added after the first schema; keeps older databases in step)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pronouns TEXT NOT NULL DEFAULT '';
 
--- Exactly one owner, even if two people register at the same instant.
-CREATE UNIQUE INDEX IF NOT EXISTS users_single_owner ON users (role) WHERE role = 'owner';
+-- chatting unlocks only after the 10 rules are accepted (NULL = not yet agreed)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_accepted_at TIMESTAMPTZ;
+
+-- announcement rooms: everyone reads, only the Owner posts
+ALTER TABLE channels ADD COLUMN IF NOT EXISTS announce BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- fenced rooms: the flair that opens this channel (NULL = open to everyone)
+ALTER TABLE channels ADD COLUMN IF NOT EXISTS flair TEXT;
+
+-- More than one owner is allowed (ownership can be shared between accounts).
+-- The first account on a fresh server still becomes the only owner of that moment: the
+-- check runs under a transaction advisory lock in routes/auth.js, so two people
+-- registering at the same instant cannot both grab it.
+DROP INDEX IF EXISTS users_single_owner;
 CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
 
 CREATE INDEX IF NOT EXISTS messages_channel_idx ON messages (channel_id, id DESC);
 CREATE INDEX IF NOT EXISTS messages_thread_idx ON messages (thread_id, id DESC);
+
+-- fixing a typo, quoting someone, and reacting to a message
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+
+-- a picture sent with a message: a data URL the browser downscales before posting
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id BIGINT REFERENCES messages(id) ON DELETE SET NULL;
+
+-- collectible cosmetic flairs: won on the wheel, worn next to your name, no powers at all
+CREATE TABLE IF NOT EXISTS user_flairs (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  flair TEXT NOT NULL,
+  equipped BOOLEAN NOT NULL DEFAULT TRUE,
+  obtained_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, flair)
+);
+
+-- when this account last turned the wheel (NULL = never spun)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS flair_spun_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS message_reactions (
+  message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id, emoji)
+);
+
+-- "@username" said in a message, recorded so the person can be told rather than noticing late
+CREATE TABLE IF NOT EXISTS message_mentions (
+  message_id BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id)
+);
+
+-- the custom tag: a 0.01% wheel win that unlocks a word of your own next to your name
+ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_tag TEXT;
+
+-- season pass: a minute with a socket open is XP, and tiers hand out cosmetics (never flairs)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_season TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_xp INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_minutes INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_tier INTEGER NOT NULL DEFAULT 0;
+-- which token rewards were already paid this season, so a restart cannot pay twice
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_spin_awarded INTEGER NOT NULL DEFAULT 0;
+
+-- extra turns of the wheel, handed out by the season pass
+ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_tokens INTEGER NOT NULL DEFAULT 0;
+
+-- Royal Coins: 100 drop every 10 minutes, a wheel turn costs 1000, the vault can double them.
+-- coins_claimed_at is the start of the current 10-minute window, so the accrual never drifts.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS royal_coins INTEGER NOT NULL DEFAULT 0;
+-- A purse can be handed a fortune far past what BIGINT holds, so the balance is NUMERIC.
+ALTER TABLE users ALTER COLUMN royal_coins TYPE NUMERIC;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS coins_claimed_at TIMESTAMPTZ NOT NULL DEFAULT now();
+-- how many ranks this account has bought in the shop, which is what raises the next price
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ranks_bought INTEGER NOT NULL DEFAULT 0;
+-- the member number painted on the profile banner; NULL means "use the account id"
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_no INTEGER;
+-- staff roles that already paid their joining bonus, so a promotion pays 10,000 once per role
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role_bonus_paid TEXT[] NOT NULL DEFAULT '{}';
+-- the role-themed strip across the top of this person's profile card (NULL = their own role)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS banner TEXT;
+
+-- what the vault paid out, so the last few rolls can be shown back to the player
+CREATE TABLE IF NOT EXISTS coin_bets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  wager INTEGER NOT NULL,
+  risk TEXT NOT NULL,
+  roll INTEGER NOT NULL,
+  won BOOLEAN NOT NULL,
+  payout INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS coin_bets_user_idx ON coin_bets (user_id, id DESC);

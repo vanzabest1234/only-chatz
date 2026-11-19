@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "type": "service",
+      "service": "chatz",
+      "format": "url",
+      "env": "CHATZ_URL"
+    }
+  ]
+}

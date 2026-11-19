@@ -4,7 +4,9 @@ import { q } from './db.js'
 
 const scryptAsync = promisify(scrypt)
 const KEY_LEN = 64
-const WEEK = 7 * 24 * 60 * 60 * 1000
+// Signing in lasts until you sign out. The stamp is kept far enough out that it still says
+// what it means, and the lookup below never reads it as a deadline.
+const SESSION_LIFE = 100 * 365 * 24 * 60 * 60 * 1000
 
 export const MAX_PASSWORD = 128
 export const MIN_PASSWORD = 8
@@ -35,11 +37,10 @@ const TOKEN_PATTERN = /^[a-f0-9]{64}$/
 
 export async function createSession(userId) {
   const token = randomBytes(32).toString('hex')
-  await q('DELETE FROM sessions WHERE expires_at < now()')
   await q('INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)', [
     digest(token),
     userId,
-    new Date(Date.now() + WEEK),
+    new Date(Date.now() + SESSION_LIFE),
   ])
   return token
 }
@@ -53,9 +54,11 @@ export async function destroyUserSessions(userId) {
   await q('DELETE FROM sessions WHERE user_id = $1', [userId])
 }
 
+// No deadline here on purpose: a session ends when it is signed out or revoked (logout,
+// kick, ban), never because time passed. Rows stamped by the old 7-day rule keep working.
 const SESSION_LOOKUP = `SELECT u.* FROM sessions s
      JOIN users u ON u.id = s.user_id
-     WHERE s.token = $1 AND s.expires_at > now()`
+     WHERE s.token = $1`
 
 export async function sessionUser(token) {
   if (typeof token !== 'string' || !TOKEN_PATTERN.test(token)) return null

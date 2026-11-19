@@ -1,25 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, getToken, setToken } from './api'
-import { socket } from './socket'
+import { api, baseUrl, getToken, setToken } from './api'
+import { pointAtRoom, socket } from './socket'
 import Background from './components/Background'
 import AuthScreen from './components/AuthScreen'
 import Sidebar from './components/Sidebar'
+import QuickBar from './components/QuickBar'
 import ChatPane from './components/ChatPane'
+import Icon from './components/Icon'
 import MembersPanel from './components/MembersPanel'
 import SettingsModal from './components/SettingsModal'
 import OnlineBoard from './components/OnlineBoard'
+import RulesGate from './components/RulesGate'
+import ProfileCard from './components/ProfileCard'
+import FlairWheel from './components/FlairWheel'
+import PassPanel from './components/PassPanel'
+import CasinoPanel from './components/CasinoPanel'
+import LeaderboardPanel from './components/LeaderboardPanel'
+import SendCoins from './components/SendCoins'
+import { playPing } from './lib/mentions'
+import { money, walletText } from './lib/format'
 
 export default function App() {
   const [me, setMe] = useState(null)
   const [booting, setBooting] = useState(true)
   const [view, setView] = useState(null)
   const [messages, setMessages] = useState([])
+  const [historyRestricted, setHistoryRestricted] = useState(false)
   const [notice, setNotice] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [boardOpen, setBoardOpen] = useState(false)
+  const [flairOpen, setFlairOpen] = useState(false)
+  const [passOpen, setPassOpen] = useState(false)
+  const [casinoOpen, setCasinoOpen] = useState(false)
+  const [leadersOpen, setLeadersOpen] = useState(false)
+  const [sendOpen, setSendOpen] = useState(false)
+  const [ping, setPing] = useState(null)
+  const pingTimer = useRef(null)
   const [where, setWhere] = useState({})
+  const [replyTo, setReplyTo] = useState(null)
+  const [profileId, setProfileId] = useState(null)
+  const [typing, setTyping] = useState([])
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [rulesDeclined, setRulesDeclined] = useState(false)
+  const [rulesBusy, setRulesBusy] = useState(false)
+  const [rulesError, setRulesError] = useState('')
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -39,7 +65,9 @@ export default function App() {
         ? `/api/channels/${target.id}/messages`
         : `/api/dm/${target.id}/messages`
     const data = await api(path)
-    setMessages(data.messages)
+    setHistoryRestricted(Boolean(data.historyRestricted))
+    // A restricted room answers with no scrollback, so the lines that arrived live here stay.
+    setMessages(previous => (data.historyRestricted ? previous : data.messages))
   }, [])
 
   const signOut = useCallback(() => {
@@ -49,6 +77,19 @@ export default function App() {
     setMessages([])
     setView(null)
     setWhere({})
+    setRulesOpen(false)
+    setRulesDeclined(false)
+    setProfileId(null)
+  }, [])
+
+  // A ping names the room it came from, so answering it is one tap.
+  const answerPing = useCallback(payload => {
+    window.clearTimeout(pingTimer.current)
+    setPing(null)
+    const room = payload?.room
+    if (!room?.id) return
+    setView({ type: room.kind === 'dm' ? 'dm' : 'channel', id: room.id })
+    setSidebarOpen(false)
   }, [])
 
   // Tell the server which room we are looking at, so the online board can show it.
@@ -58,9 +99,17 @@ export default function App() {
     socket.emit('presence:where', { kind: target.type, id: target.id })
   }, [])
 
+  // Tell the room someone is writing; the server expires the note after a few seconds.
+  const shareTyping = useCallback(() => {
+    const target = viewRef.current
+    if (!target || !socket.connected) return
+    socket.emit('typing', { kind: target.type, id: target.id })
+  }, [])
+
   const finishAuth = useCallback(async () => {
     const data = await load()
-    const first = data.channels[0]
+    // Land in #general by name, so a fresh tab opens straight into the main room.
+    const first = data.channels.find(channel => channel.name === 'general') ?? data.channels[0]
     setView(first ? { type: 'channel', id: first.id } : null)
   }, [load])
 
@@ -69,22 +118,45 @@ export default function App() {
       setBooting(false)
       return
     }
-    finishAuth()
-      .catch(() => {
-        setToken(null)
-        setMe(null)
-      })
-      .finally(() => setBooting(false))
+    // Only a refused session ends a sign-in. A blip — the API restarting, a dropped
+    // connection — keeps the saved token and gets one more try before the sign-in screen.
+    const settle = error => {
+      if (error.status === 401 || error.status === 403) setToken(null)
+      setMe(null)
+    }
+    const boot = async () => {
+      try {
+        await finishAuth()
+      } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+          settle(error)
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        await finishAuth().catch(settle)
+      }
+    }
+    boot().finally(() => setBooting(false))
   }, [finishAuth])
 
   useEffect(() => {
     if (!me) return
 
+    pointAtRoom()
     socket.auth = { token: getToken() }
     if (!socket.connected) socket.connect()
 
     const refresh = () => {
       load().catch(() => {})
+    }
+
+    // A disconnect is a network change (another wifi, a tunnel hiccup, a phone waking up), so
+    // every (re)connection catches up on the account and the open room instead of trusting the
+    // view fetched before the drop — otherwise messages sent during the gap are never shown.
+    const resync = () => {
+      refresh()
+      loadMessages().catch(() => {})
+      shareRoom()
     }
 
     const handlers = {
@@ -113,6 +185,26 @@ export default function App() {
           )
         }
       },
+      'message:update': message => {
+        const target = viewRef.current
+        const matches =
+          target &&
+          (target.type === 'channel'
+            ? message.channelId === target.id
+            : message.threadId === target.id)
+        if (matches) {
+          setMessages(previous =>
+            previous.map(item => (item.id === message.id ? message : item)),
+          )
+        }
+        setReplyTo(previous => (previous?.id === message.id ? { ...previous, ...message } : previous))
+      },
+      'message:delete': payload => {
+        const id = payload?.id
+        if (!id) return
+        setMessages(previous => previous.filter(item => item.id !== id))
+        setReplyTo(previous => (previous?.id === id ? null : previous))
+      },
       'messages:refresh': () => {
         loadMessages().catch(() => {})
       },
@@ -125,7 +217,29 @@ export default function App() {
       'presence:update': ids =>
         setMe(previous => (previous ? { ...previous, online: ids } : previous)),
       'presence:where': payload => setWhere(payload ?? {}),
-      connect: shareRoom,
+      'typing:update': payload => {
+        const target = viewRef.current
+        if (!target || payload?.kind !== target.type || payload?.id !== target.id) return
+        setTyping(Array.isArray(payload.names) ? payload.names : [])
+      },
+      // Someone said "@you": chime, and keep the toast up long enough to answer it.
+      'ping:new': payload => {
+        if (!payload?.message) return
+        playPing()
+        setPing(payload)
+        window.clearTimeout(pingTimer.current)
+        pingTimer.current = window.setTimeout(() => setPing(null), 12_000)
+      },
+      'pass:update': state =>
+        setMe(previous =>
+          previous ? { ...previous, user: { ...previous.user, pass: state } } : previous,
+        ),
+      // The ten-minute drip pays over the socket; the vault answers with the same shape.
+      'coins:update': state =>
+        setMe(previous =>
+          previous ? { ...previous, user: { ...previous.user, coins: state } } : previous,
+        ),
+      connect: resync,
       'session:revoke': payload => {
         setNotice(payload?.message || 'You were removed from this server.')
         signOut()
@@ -142,13 +256,86 @@ export default function App() {
     shareRoom()
   }, [view?.type, view?.id, shareRoom])
 
+  // A filtered network (a school proxy that drops the websocket upgrade and holds requests
+  // open) can leave the socket down while ordinary requests still work. Posting is already a
+  // plain HTTP call, so catch the open room up the same way instead of sitting on a dead feed.
+  // The account is re-read on its own slower beat, so a room or a command added on the server
+  // shows up in the lists by itself rather than on the next reload.
+  const ACCOUNT_MS = 20000
   useEffect(() => {
-    if (!view) {
-      setMessages([])
-      return
+    if (!me || !view) return undefined
+    let accountAt = Date.now()
+
+    const readAccount = () => {
+      accountAt = Date.now()
+      load().catch(() => {})
     }
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return
+      if (!socket.connected) loadMessages().catch(() => {})
+      if (Date.now() - accountAt >= ACCOUNT_MS) readAccount()
+    }
+    // A tab that was asleep or offline comes back into sync at once instead of on the next tick.
+    const wake = () => {
+      if (document.visibilityState !== 'visible') return
+      loadMessages().catch(() => {})
+      readAccount()
+    }
+
+    const timer = setInterval(tick, 5000)
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('online', wake)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', wake)
+      window.removeEventListener('online', wake)
+    }
+  }, [me?.user?.id, view?.type, view?.id, load, loadMessages])
+
+  useEffect(() => {
+    setReplyTo(null)
+    setTyping([])
+    // A new room starts empty on screen; a restricted room only ever fills from live lines.
+    setMessages([])
+    if (!view) return
     loadMessages().catch(() => setMessages([]))
   }, [view, loadMessages])
+
+  useEffect(() => {
+    if (!notice || !me) return
+    const timer = setTimeout(() => setNotice(''), 5000)
+    return () => clearTimeout(timer)
+  }, [notice, me])
+
+  // No agreement yet, no composer: the gate opens on its own until the account accepts.
+  useEffect(() => {
+    if (me && !me.user.rulesAccepted) setRulesOpen(true)
+  }, [me?.user?.id, me?.user?.rulesAccepted])
+
+  const openRules = () => {
+    setRulesError('')
+    setRulesOpen(true)
+  }
+
+  const acceptRules = async () => {
+    setRulesBusy(true)
+    setRulesError('')
+    try {
+      const data = await api('/api/rules/accept', { method: 'POST' })
+      setMe(previous => (previous ? { ...previous, user: data.user } : previous))
+      setRulesOpen(false)
+      setRulesDeclined(false)
+    } catch (problem) {
+      setRulesError(problem.message)
+    } finally {
+      setRulesBusy(false)
+    }
+  }
+
+  const declineRules = () => {
+    setRulesOpen(false)
+    setRulesDeclined(true)
+  }
 
   const openChannel = channel => {
     setView({ type: 'channel', id: channel.id })
@@ -176,14 +363,18 @@ export default function App() {
     }
   }
 
-  const send = async content => {
+  const send = async (content, imageUrl) => {
     const target = viewRef.current
     if (!target) return
     const path =
       target.type === 'channel'
         ? `/api/channels/${target.id}/messages`
         : `/api/dm/${target.id}/messages`
-    const data = await api(path, { method: 'POST', body: JSON.stringify({ content }) })
+    const body = { content }
+    if (imageUrl) body.imageUrl = imageUrl
+    if (replyTo) body.replyToId = replyTo.id
+    const data = await api(path, { method: 'POST', body: JSON.stringify(body) })
+    setReplyTo(null)
     if (data.message) {
       setMessages(previous =>
         previous.some(item => item.id === data.message.id) ? previous : [...previous, data.message],
@@ -192,6 +383,47 @@ export default function App() {
       await load()
     }
   }
+
+  const replaceMessage = message => {
+    setMessages(previous => previous.map(item => (item.id === message.id ? message : item)))
+  }
+
+  const react = async (messageId, emoji) => {
+    try {
+      const data = await api(`/api/messages/${messageId}/reactions`, {
+        method: 'POST',
+        body: JSON.stringify({ emoji }),
+      })
+      replaceMessage(data.message)
+    } catch (problem) {
+      setNotice(problem.message)
+    }
+  }
+
+  const editMessage = async (messageId, content) => {
+    try {
+      const data = await api(`/api/messages/${messageId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content }),
+      })
+      replaceMessage(data.message)
+    } catch (problem) {
+      setNotice(problem.message)
+      throw problem
+    }
+  }
+
+  const deleteMessage = async messageId => {
+    try {
+      await api(`/api/messages/${messageId}`, { method: 'DELETE' })
+      setMessages(previous => previous.filter(item => item.id !== messageId))
+      setReplyTo(previous => (previous?.id === messageId ? null : previous))
+    } catch (problem) {
+      setNotice(problem.message)
+    }
+  }
+
+  const startReply = message => setReplyTo(message)
 
   if (booting) {
     return (
@@ -216,11 +448,91 @@ export default function App() {
 
   const channel = view?.type === 'channel' ? me.channels.find(item => item.id === view.id) : null
   const thread = view?.type === 'dm' ? me.threads.find(item => item.id === view.id) : null
+  const profileMember = profileId ? me.members.find(member => member.id === profileId) : null
 
   return (
     <>
       <Background />
-      <div className="shell">
+      <div className="app">
+        <header className="topbar">
+          <div className="topbar-left">
+            <button
+              type="button"
+              className="icon-btn topbar-menu"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open your rooms"
+            >
+              <Icon name="menu" />
+            </button>
+            <span className="topbar-brand">
+              <span className="brand-glyph topbar-glyph">◍</span>
+              only chatz
+            </span>
+          </div>
+          <div className="topbar-right">
+            {/* The whole room in one file, right from the chat: the browser saves it instead of
+                opening it. A copy opened away from the room fetches the file from its own server. */}
+            <a
+              className="topbar-save"
+              href={`${baseUrl()}/only-chatz.html`}
+              download="only-chatz.html"
+              aria-label="Download the room as one file"
+              title="Download the room as one file"
+            >
+              <Icon name="download" size={15} />
+              <span>save</span>
+            </a>
+            <button
+              type="button"
+              className="topbar-coins"
+              onClick={() => setSendOpen(true)}
+              aria-label="Send royal coins"
+              title="Send royal coins"
+            >
+              <Icon name="coin" size={15} />
+              <span>{walletText(me.user.coins)}</span>
+            </button>
+            <button
+              type="button"
+              className="topbar-live"
+              onClick={() => setBoardOpen(true)}
+              aria-label="Who is online"
+            >
+              <span className="topbar-dot" />
+              {me.online.length} online
+            </button>
+          </div>
+        </header>
+
+        <QuickBar
+          me={me}
+          channelId={channel?.id}
+          threadId={thread?.id}
+          onPickChannel={openChannel}
+          onOpenDm={openDm}
+          onOpenBoard={() => setBoardOpen(true)}
+          onOpenCasino={() => setCasinoOpen(true)}
+          onOpenLeaders={() => setLeadersOpen(true)}
+          onOpenFlairs={() => setFlairOpen(true)}
+          onOpenPass={() => setPassOpen(true)}
+        />
+
+        <div className="shell">
+        {notice && <p className="toast">{notice}</p>}
+
+        {ping && (
+          <button type="button" className="ping-toast" onClick={() => answerPing(ping)}>
+            <span className="ping-glint" aria-hidden="true">
+              @
+            </span>
+            <span className="ping-text">
+              <strong>{ping.from?.displayName ?? 'someone'}</strong> pinged you in{' '}
+              {ping.room?.label ?? 'a room'}
+            </span>
+            <span className="ping-answer">answer</span>
+          </button>
+        )}
+
         <Sidebar
           me={me}
           channelId={channel?.id}
@@ -241,6 +553,22 @@ export default function App() {
             setBoardOpen(true)
             setSidebarOpen(false)
           }}
+          onOpenFlairs={() => {
+            setFlairOpen(true)
+            setSidebarOpen(false)
+          }}
+          onOpenPass={() => {
+            setPassOpen(true)
+            setSidebarOpen(false)
+          }}
+          onOpenCasino={() => {
+            setCasinoOpen(true)
+            setSidebarOpen(false)
+          }}
+          onOpenLeaders={() => {
+            setLeadersOpen(true)
+            setSidebarOpen(false)
+          }}
           onSignOut={() => {
             api('/api/auth/logout', { method: 'POST' }).catch(() => {})
             signOut()
@@ -253,9 +581,21 @@ export default function App() {
             channel={channel}
             thread={thread}
             messages={messages}
+            historyRestricted={historyRestricted}
             onSend={send}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenMembers={() => setMembersOpen(value => !value)}
+            onOpenSettings={() => setSettingsOpen(true)}
+            replyTo={replyTo}
+            onReply={startReply}
+            onCancelReply={() => setReplyTo(null)}
+            typing={typing}
+            onTyping={shareTyping}
+            onReact={react}
+            onEditMessage={editMessage}
+            onDeleteMessage={deleteMessage}
+            onOpenRules={openRules}
+            onOpenProfile={setProfileId}
           />
         ) : (
           <section className="chat glass">
@@ -269,6 +609,7 @@ export default function App() {
           onClose={() => setMembersOpen(false)}
           onOpenDm={openDm}
           onToggleFriend={toggleFriend}
+          onOpenProfile={setProfileId}
         />
 
         {boardOpen && (
@@ -279,6 +620,32 @@ export default function App() {
             onOpenDm={openDm}
           />
         )}
+
+        {flairOpen && (
+          <FlairWheel
+            coins={me.user.coins}
+            onClose={() => setFlairOpen(false)}
+            onChanged={() => load().catch(() => {})}
+          />
+        )}
+
+        {casinoOpen && <CasinoPanel me={me} onClose={() => setCasinoOpen(false)} />}
+
+        {leadersOpen && <LeaderboardPanel me={me} onClose={() => setLeadersOpen(false)} />}
+
+        {sendOpen && (
+          <SendCoins
+            me={me}
+            onClose={() => setSendOpen(false)}
+            onSent={coins =>
+              setMe(previous =>
+                previous ? { ...previous, user: { ...previous.user, coins } } : previous,
+              )
+            }
+          />
+        )}
+
+        {passOpen && <PassPanel pass={me.user.pass} onClose={() => setPassOpen(false)} />}
 
         {settingsOpen && (
           <SettingsModal
@@ -299,6 +666,27 @@ export default function App() {
             }
           />
         )}
+
+        {rulesOpen && (
+          <RulesGate
+            declined={rulesDeclined}
+            busy={rulesBusy}
+            error={rulesError}
+            onAccept={acceptRules}
+            onDecline={declineRules}
+          />
+        )}
+
+        {profileMember && (
+          <ProfileCard
+            member={profileMember}
+            online={me.online.includes(profileMember.id)}
+            isSelf={profileMember.id === me.user.id}
+            onClose={() => setProfileId(null)}
+            onOpenDm={openDm}
+          />
+        )}
+        </div>
       </div>
     </>
   )

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { q } from '../db.js'
+import { pool, q } from '../db.js'
 import {
   MAX_PASSWORD,
   MIN_PASSWORD,
@@ -45,29 +45,30 @@ router.post('/register', limiter('register', 10, 60 * 60_000), async (req, res) 
   const color = COLORS[Math.floor(Math.random() * COLORS.length)]
   const passwordHash = await hashPassword(password)
   // The first account on a fresh server owns it; everyone after that starts as a member.
-  // A unique index on role = 'owner' settles two simultaneous first signups: the loser
-  // simply registers as a member instead of creating a second owner.
-  const owners = await q("SELECT 1 FROM users WHERE role = 'owner' LIMIT 1")
-  const role = owners.rows.length ? 'member' : 'owner'
-
-  const insert = async assignedRole =>
-    q(
+  // More than one owner may exist afterwards (ownership can be shared), so the first-signup
+  // decision runs under a transaction advisory lock instead of a unique index: two
+  // simultaneous first signups still produce exactly one owner, the loser registers as a
+  // member.
+  let rows
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['chatz:first-owner'])
+    const owners = await client.query("SELECT 1 FROM users WHERE role = 'owner' LIMIT 1")
+    ;({ rows } = await client.query(
       `INSERT INTO users (username, display_name, password_hash, role, color)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [username, displayName, passwordHash, assignedRole, color],
-    )
-
-  let rows
-  try {
-    ;({ rows } = await insert(role))
+      [username, displayName, passwordHash, owners.rows.length ? 'member' : 'owner', color],
+    ))
+    await client.query('COMMIT')
   } catch (error) {
-    if (error.constraint === 'users_single_owner' && role === 'owner') {
-      ;({ rows } = await insert('member'))
-    } else if (error.constraint === 'users_username_key') {
+    await client.query('ROLLBACK').catch(() => {})
+    if (error.constraint === 'users_username_key') {
       return res.status(409).json({ error: 'That username is already taken.' })
-    } else {
-      throw error
     }
+    throw error
+  } finally {
+    client.release()
   }
 
   const token = await createSession(rows[0].id)

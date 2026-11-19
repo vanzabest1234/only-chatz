@@ -52,6 +52,42 @@ Free plan, so expect two things: the site sleeps after ~15 minutes idle and take
 wake on the next visit, and the free database expires 30 days after creation (14-day grace period
 before its data is deleted). Upgrade the database when the room should last.
 
+### A public link with no account anywhere
+
+No sign-up, no card, no domain, no open port: Cloudflare's quick tunnel dials out from the machine
+running the stack and hands back a random `https://` address.
+
+```bash
+cp deploy.env.example .env                        # set POSTGRES_PASSWORD (any random text)
+docker compose -f docker-compose.prod.yml --profile public up -d --build
+docker compose -f docker-compose.prod.yml logs tunnel | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
+```
+
+Open that link on any device — the site, the API and the WebSocket all arrive through it. Two things
+to know: the address is **random and changes every time the stack starts**, and it **lasts only while
+the `tunnel` container runs** (stop it, or sleep the machine, and the link dies). That makes it the
+right tool for showing the room to people today; for a link that never moves, point a domain at the
+machine and use the `https` profile above — still no third-party account.
+
+Leave `APP_PORT` alone unless 3000 is taken locally (the tunnel talks to the app container directly,
+so the published port only matters for your own machine).
+
+### Deploy on push
+
+The branch that ships is **`main`**, and a push to it releases without anyone pressing a button:
+
+- **Render** — handled by Render itself. `render.yaml` sets `branch: main` and
+  `autoDeployTrigger: commit`, so every merge rebuilds the image, runs the boot migration and swaps
+  the service over. Nothing to configure.
+- **Any other host** — add its deploy hook as a repository secret named `DEPLOY_HOOK_URL`
+  (Render's *Deploy Hook* URL, Coolify's webhook, or any endpoint that takes a `POST`). Merging to
+  `main` then calls it from `.github/workflows/deploy.yml`, which also has a manual **Run workflow**
+  button. With no secret set the job logs that and exits successfully, so it never clashes with a
+  host that already watches the repository itself.
+
+Feature work lands on a branch and goes in through a pull request, so `main` is always what is
+live — an unreviewed push to a working branch never deploys.
+
 ### Managed hosting
 
 The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can build the
@@ -59,21 +95,40 @@ The image is self-contained, so any Docker-capable host (Koyeb, Fly.io, …) can
 `DATABASE_URL`, leave the port alone (the app reads `PORT`), and that is the whole setup. Free tiers
 change their limits, so check the current offering before relying on one.
 
-### Launcher page and `/chat`
+### `/chat`
 
-`web/public/launcher.html` is the landing page: `/` serves it, and it has two ways in —
-**Open in a new tab** and **Load it here**, which embeds the room in an iframe. If the browser (or a
-sandboxed iframe) refuses the new tab, it loads the room in place instead. It points at `/chat` on
-whatever site serves it, so it needs no configuration. Hosting it somewhere else? Set `APP_URL` at
-the top of the file, or pass `?chat=https://your-app-url`.
+The room is the front door. `/`, `/chat`, `/royal-angel.html` and `/royal-angel` all render the
+app immediately — no splash or launcher page to click through — and, in a release build, the address
+bar is pointed at `/chat` on load, query string kept so an access token survives. The dev server (the
+sandbox preview) leaves the address bar alone: its host only resolves the document path it served, so
+a rewritten `/chat` there answers "not found". There is no client-side router, so every path ends up
+rendering the same app. The entry list lives in `web/vite.config.js` for dev and in
+`server/index.js` for releases, and the client's URL fix-up in `web/src/main.jsx`.
 
-The room lives on `/chat`: there is no client-side router, and both the Vite dev server and the
-release server fall back to `index.html` for every path except `/`, so `/chat` (and anything else)
-serves the room. The launcher is the only exception, mapped to `/` in `web/vite.config.js` for dev
-and in `server/index.js` for releases.
+`/launcher.html` is a plain index of what lives inside — the rooms, the roles, the wheel, the
+coins, the vault, the pass, the Royal Aide and every command — with buttons into the room and to
+the one-file download. It sits behind the room rather than in front of it (nothing routes `/`
+through it) and is linked from the rooms drawer as **What's inside**. The page polls
+`/api/version` on its own, so a copy left open reloads itself onto a new build like the room does.
 
 Accounts are **username + password** only — no email anywhere. Signing up asks for the password
 twice and refuses a mismatch.
+
+### From a school or office network
+
+School wifi (Denton ISD and the like) rarely blocks the site itself — it filters by address. So the
+room has to be reachable at an `https://` address on the normal port 443, which every deploy path
+above gives you; a bare `http://` link or a `:3000`/`:8080` address on a `trycloudflare.com` tunnel is
+what gets dropped. Use the `https` profile (your own domain) or Render, then open that one link.
+
+The app itself is built for filtered networks: it loads no fonts, scripts or images from anywhere
+else, everything arrives from its own address, and when the network blocks the websocket upgrade the
+connection falls back to plain HTTPS requests — if the socket cannot open at all, the open room
+still refreshes itself over HTTPS every five seconds, so you keep reading and posting. Nothing to
+configure: open the link and sign in.
+
+If the address is blocked by name (a fresh `*.onrender.com` link often is), the fix is a domain of
+your own pointed at the `https` profile, not a code change.
 
 ### Before you invite people
 

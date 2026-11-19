@@ -4,17 +4,20 @@
    Imported after base.css and app.css so it wins without rewriting them. */
 
 :root {
-  --void: #0a0f14;
-  --panel: #111a20;
-  --panel-deep: #0d141a;
-  --line: #1d2a33;
-  --line-soft: #16222a;
-  --phosphor: #74f0a6;
-  --phosphor-bright: #a6ffcb;
+  /* The room is a slate grey (a talk-room grey, not the old near-black), with the
+     phosphor green kept as the accent — close to the reference chat sites in
+     surface and action colour, still its own thing in type and glow. */
+  --void: #2e3339;
+  --panel: #373d44;
+  --panel-deep: #31373d;
+  --line: #4a535b;
+  --line-soft: #414a52;
+  --phosphor: #7cf0ae;
+  --phosphor-bright: #adffcd;
   --phosphor-dim: #4fc884;
-  --slate: #8fa3b0;
-  --ink: #c4d3dc;
-  --muted: #5d717e;
+  --slate: #c6d1d9;
+  --ink: #eaf1f6;
+  --muted: #9aabb5;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
 }
 
@@ -57,8 +60,8 @@ textarea:focus-visible,
 .sky {
   background-color: var(--void);
   background-image:
-    linear-gradient(rgba(116, 240, 166, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(116, 240, 166, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -202,6 +205,12 @@ textarea:focus-visible,
   border-radius: 0;
 }
 
+/* a real link dressed as a nav row (no underline, pointer like the buttons around it) */
+.nav-row.download-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .nav-label {
   text-transform: lowercase;
   font-size: 13px;
@@ -244,14 +253,46 @@ textarea:focus-visible,
   background: var(--panel-deep);
 }
 
+/* chatflux's log: a small name and time, then the message in the larger type. */
 .msg-name {
   font-weight: 400;
   color: var(--ink);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+}
+
+.msg-head .msg-time {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.msg-head .badge {
+  padding: 1px 5px;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+}
+
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top-color: var(--line-soft);
 }
 
 .msg-text {
   color: var(--ink);
   font-size: 13.5px;
+}
+
+/* pictures sent with a message stay inside the row on every width */
+.msg-image {
+  display: block;
+  margin-top: 6px;
+  max-width: min(360px, 100%);
+  max-height: 260px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  background: var(--void);
+  border-radius: 0;
 }
 
 .system-line {
@@ -339,6 +380,82 @@ textarea:focus-visible,
   opacity: 0.35;
 }
 
+/* a picture waiting to be sent, above the box */
+.composer-attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--panel-deep);
+}
+
+.composer-attach img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.attach-note {
+  flex: 1;
+  min-width: 0;
+  color: var(--phosphor);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.attach-cancel {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.attach-cancel:hover {
+  color: #ff8fa3;
+  border-color: rgba(255, 143, 163, 0.6);
+}
+
+/* the file input is only ever opened by the button beside the box */
+.attach-input {
+  display: none;
+}
+
+.attach {
+  flex: none;
+  align-self: flex-end;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 3px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.attach:hover:not(:disabled) {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.attach:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .composer-foot {
   letter-spacing: 0.04em;
 }
@@ -377,8 +494,16 @@ textarea:focus-visible,
   border-radius: 0;
 }
 
+.members-head {
+  border-bottom: 1px solid var(--line);
+}
+
 .member-row:hover {
   background: var(--panel-deep);
+}
+
+.member-group .section-title {
+  background: var(--panel);
 }
 
 .member-name {
@@ -609,8 +734,19 @@ textarea:focus-visible,
   border-bottom: 1px solid var(--line);
 }
 
+.board-row {
+  border-radius: 0;
+}
+
 .board-row:hover {
   background: var(--panel-deep);
+}
+
+.board-group {
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: lowercase;
 }
 
 .board-name {
@@ -624,4 +760,2130 @@ textarea:focus-visible,
 .board-link .live-dot {
   background: var(--phosphor);
   box-shadow: 0 0 10px var(--phosphor);
+}
+
+/* ---------- edits, replies, reactions ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 60;
+  margin: 0;
+  padding: 7px 12px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--phosphor);
+  background: var(--panel-deep);
+  border: 1px solid rgba(116, 240, 166, 0.45);
+}
+
+.msg {
+  position: relative;
+}
+
+.msg-tools {
+  position: absolute;
+  top: 3px;
+  right: 8px;
+  display: none;
+  gap: 1px;
+  padding: 2px;
+  z-index: 4;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.msg:hover .msg-tools,
+.msg:focus-within .msg-tools,
+.msg-tools.open {
+  display: flex;
+}
+
+/* Touch screens have no hover: the actions stay visible. */
+@media (hover: none) {
+  .msg-tools {
+    display: flex;
+  }
+}
+
+.msg-tool {
+  width: 24px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.msg-tool:hover {
+  color: var(--phosphor);
+  background: rgba(116, 240, 166, 0.1);
+}
+
+/* Deleting a message is the one destructive action: it reads red, never phosphor. */
+.msg-tool-del:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.reaction-picker {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  display: flex;
+  gap: 1px;
+  padding: 3px;
+  z-index: 6;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.reaction-picker button {
+  padding: 2px 4px;
+  font-size: 15px;
+  line-height: 1.2;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reaction-picker button:hover {
+  background: rgba(116, 240, 166, 0.12);
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reaction:hover {
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.reaction.mine {
+  color: var(--phosphor);
+  background: rgba(116, 240, 166, 0.1);
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.reaction-count {
+  font-size: 11px;
+}
+
+.reply-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  margin: 2px 0 3px;
+  padding-left: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  border-left: 2px solid rgba(116, 240, 166, 0.45);
+}
+
+.reply-quote .reply-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-who {
+  color: var(--phosphor);
+}
+
+.reply-arrow {
+  color: var(--phosphor-dim);
+}
+
+.msg-edited {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.msg-edit textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--panel-deep);
+  border: 1px solid rgba(116, 240, 166, 0.4);
+  border-radius: 0;
+  resize: vertical;
+}
+
+.msg-edit-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.msg-edit-actions button {
+  padding: 2px 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.msg-edit-actions button:hover {
+  color: var(--phosphor);
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.composer-reply {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+  border-left: 2px solid rgba(116, 240, 166, 0.5);
+}
+
+.composer-reply .reply-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-cancel {
+  margin-left: auto;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.reply-cancel:hover {
+  color: var(--phosphor);
+}
+
+/* Live "who is typing" line, above the composer */
+.typing-line {
+  min-height: 16px;
+  padding: 0 14px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- the 10 rules gate ---------- */
+
+.rules {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.rules-head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rules-head h2 {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+  color: var(--phosphor);
+}
+
+.rules-head p {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rules-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-list li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+  border-left: 2px solid rgba(116, 240, 166, 0.35);
+}
+
+.rules-num {
+  color: var(--phosphor-dim);
+  letter-spacing: 0.06em;
+}
+
+.rules-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.rules-foot {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* the locked-composer notice that reopens the gate */
+.rules-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px 6px;
+  padding: 6px 9px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #ffd08a;
+  background: rgba(255, 208, 138, 0.07);
+  border: 1px solid rgba(255, 208, 138, 0.28);
+}
+
+.rules-banner .text-btn {
+  margin-left: auto;
+  padding: 0;
+  font-size: 11px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* ---------- profile banner ---------- */
+
+/* any avatar that opens a profile */
+.avatar-btn,
+.member-avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.member-avatar {
+  padding: 3px 0 3px 6px;
+}
+
+.avatar-btn:hover .avatar,
+.member-avatar:hover .avatar {
+  outline: 1px solid var(--phosphor-dim);
+  outline-offset: 2px;
+}
+
+.profile-card {
+  width: min(92vw, 340px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-id {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-id h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-handle {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* The account's serial: "member #7", the order this person joined the room in. */
+.profile-number {
+  margin-left: 7px;
+  padding-left: 7px;
+  border-left: 1px solid var(--line-soft);
+  color: #ffd166;
+  letter-spacing: 0.04em;
+}
+
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.profile-pronouns,
+.profile-status {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  color: var(--slate);
+}
+
+.profile-pronouns {
+  color: var(--phosphor);
+  border-color: rgba(116, 240, 166, 0.35);
+}
+
+.profile-status.is-on {
+  color: var(--phosphor-bright);
+  border-color: rgba(116, 240, 166, 0.35);
+}
+
+.profile-bio {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.profile-bio.is-empty {
+  color: var(--muted);
+}
+
+.profile-dm {
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* ---------- flairs: worn badges and the wheel ---------- */
+
+.flair-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.flair {
+  --flair: var(--phosphor);
+  display: inline-block;
+  padding: 0 5px;
+  font-size: 9px;
+  line-height: 1.7;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--flair);
+  border: 1px solid color-mix(in srgb, var(--flair) 55%, transparent);
+  background: color-mix(in srgb, var(--flair) 14%, transparent);
+}
+
+.flair-row.is-compact .flair {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  padding: 0 4px;
+}
+
+.member-meta .flair-row,
+.board-meta .flair-row {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.wheel-modal {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 16px 16px 18px;
+  animation: rise 0.22s ease both;
+}
+
+.wheel-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 16px 0 10px;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 14px solid var(--phosphor);
+  filter: drop-shadow(0 0 6px rgba(116, 240, 166, 0.6));
+}
+
+.wheel-disc {
+  width: min(272px, 66vw);
+  aspect-ratio: 1;
+  will-change: transform;
+}
+
+.wheel-disc svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wheel-label {
+  font-family: var(--mono);
+  font-size: 6.4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  fill: #08131a;
+}
+
+.wheel-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  margin-top: 4px;
+}
+
+.wheel-actions .btn-primary {
+  width: 100%;
+}
+
+.wheel-actions .btn-primary:disabled {
+  opacity: 0.55;
+}
+
+.wheel-result {
+  --flair: var(--phosphor);
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--flair);
+  text-align: center;
+}
+
+.wheel-hint {
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: lowercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.flair-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.flair-item {
+  --flair: var(--phosphor);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.flair-item.is-locked {
+  opacity: 0.45;
+}
+
+.flair-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: var(--flair);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--flair) 60%, transparent);
+}
+
+.flair-item-name {
+  color: var(--ink);
+  letter-spacing: 0.06em;
+}
+
+.flair-odds {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.flair-toggle {
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.flair-toggle.is-on {
+  color: var(--void);
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+/* the auto-update note sits above the composer, clear of a ping toast */
+.toast.auto-update {
+  bottom: 84px;
+  z-index: 80;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- pings ---------- */
+
+.ping-toast {
+  position: fixed;
+  right: 14px;
+  bottom: 76px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(330px, calc(100vw - 24px));
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--ink);
+  background: var(--panel-deep);
+  border: 1px solid rgba(116, 240, 166, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(116, 240, 166, 0.12),
+    0 12px 30px rgba(0, 0, 0, 0.55);
+  animation: ping-in 0.18s ease both;
+}
+
+.ping-toast:hover {
+  border-color: var(--phosphor);
+}
+
+.ping-glint {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--phosphor);
+  background: rgba(116, 240, 166, 0.12);
+  border: 1px solid rgba(116, 240, 166, 0.5);
+  animation: ping-pulse 1.1s ease-in-out infinite;
+}
+
+.ping-text {
+  min-width: 0;
+}
+
+.ping-text strong {
+  color: var(--phosphor);
+  font-weight: 400;
+}
+
+.ping-answer {
+  flex: none;
+  margin-left: auto;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--phosphor-dim);
+}
+
+/* ---------- season pass ---------- */
+
+.pass-modal {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 16px 16px 18px;
+  animation: rise 0.22s ease both;
+}
+
+.pass-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 10px;
+}
+
+.pass-tier {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex: none;
+  padding: 3px 8px;
+  border: 1px solid rgba(116, 240, 166, 0.4);
+  background: var(--panel-deep);
+  line-height: 1.1;
+}
+
+.pass-tier-num {
+  font-size: 24px;
+  color: var(--phosphor);
+}
+
+.pass-tier-cap {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.pass-meter {
+  flex: 1;
+  min-width: 0;
+}
+
+.pass-bar {
+  height: 6px;
+  background: var(--void);
+  border: 1px solid var(--line);
+}
+
+.pass-bar span {
+  display: block;
+  height: 100%;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px rgba(116, 240, 166, 0.55);
+  transition: width 0.3s ease;
+}
+
+.pass-progress {
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--slate);
+}
+
+.pass-note,
+.pass-foot {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.pass-tokens {
+  margin: 8px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--phosphor);
+}
+
+.pass-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.pass-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+}
+
+.pass-row.is-open {
+  color: var(--ink);
+  border-color: rgba(116, 240, 166, 0.35);
+}
+
+.pass-row-tier {
+  letter-spacing: 0.08em;
+  color: var(--slate);
+}
+
+.pass-row.is-open .pass-row-tier {
+  color: var(--phosphor-dim);
+}
+
+.pass-row-state {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+.pass-row.is-open .pass-row-state {
+  color: var(--phosphor);
+}
+
+/* ---------- pass cosmetics ---------- */
+
+.pass-badge {
+  padding: 1px 5px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--void);
+  background: var(--phosphor);
+}
+
+/* The frame sits on a negative margin so wrapping an avatar never changes the layout. */
+.avatar-frame {
+  display: inline-grid;
+  flex: none;
+  padding: 2px;
+  margin: -2px;
+  line-height: 0;
+}
+
+.avatar-frame.frame-ember {
+  background: linear-gradient(140deg, #ff9f5a, #ff5a3c);
+  box-shadow: 0 0 10px rgba(255, 122, 69, 0.5);
+}
+
+.avatar-frame.frame-frost {
+  background: linear-gradient(140deg, #cfefff, #7db8e8);
+  box-shadow: 0 0 10px rgba(143, 214, 255, 0.5);
+}
+
+.avatar-frame.frame-void {
+  background: linear-gradient(140deg, #c9a4ff, #6d4bd6);
+  box-shadow: 0 0 10px rgba(176, 140, 255, 0.5);
+}
+
+.avatar-frame.frame-aurora {
+  background: linear-gradient(140deg, #74f0a6, #7df9ff, #c9a4ff);
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.45);
+}
+
+/* ---------- royal coins and the vault ---------- */
+
+.coin-link .hash {
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.45);
+}
+
+.coin-link .chip {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+  /* a fortune-sized purse ellipses inside the row instead of widening the sidebar */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-modal {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 16px 16px 18px;
+  animation: rise 0.22s ease both;
+}
+
+/* ---------- sending coins ---------- */
+
+.coin-send {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 16px 16px 18px;
+  animation: rise 0.22s ease both;
+}
+
+.coin-people {
+  display: grid;
+  gap: 4px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+/* Person rows reuse the ladder's shape, but they pick a target instead of ranking one. */
+.coin-person {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.coin-person:hover {
+  border-color: rgba(255, 209, 102, 0.45);
+}
+
+.coin-person.is-picked {
+  border-color: #ffd166;
+  box-shadow: inset 0 0 0 1px rgba(255, 209, 102, 0.28);
+}
+
+.coin-person .board-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.coin-person svg {
+  flex: none;
+  color: #ffd166;
+}
+
+.coin-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.coin-sent {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: #ffd166;
+}
+
+/* ---------- ranks for sale (inside the wheel) ---------- */
+
+.wheel-ranks {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.wheel-ranks-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wheel-ranks-head h3 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffd166;
+}
+
+.wheel-ranks-head span {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.rank-wallet {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.rank-list {
+  display: grid;
+  gap: 4px;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+}
+
+.rank-row.is-held {
+  border-color: rgba(116, 240, 166, 0.4);
+}
+
+.rank-row.is-locked {
+  opacity: 0.5;
+}
+
+.rank-locked {
+  flex: none;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rank-badge {
+  flex: none;
+  width: 20px;
+  font-size: 11px;
+  text-align: right;
+  letter-spacing: 0.06em;
+  color: #ffd166;
+}
+
+.rank-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rank-name {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.rank-note {
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.rank-held {
+  flex: none;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(116, 240, 166, 0.8);
+}
+
+.rank-buy {
+  flex: none;
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+.rank-buy:disabled {
+  opacity: 0.45;
+}
+
+.rank-done {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: #74f0a6;
+}
+
+.vault-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 6px;
+  padding: 10px 12px;
+  background: var(--panel-deep);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+}
+
+.vault-coin {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #ffd166;
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.5);
+}
+
+.vault-balance {
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: #ffd166;
+  /* a purse of 74 digits wraps inside the panel rather than running off its edge */
+  overflow-wrap: anywhere;
+}
+
+.vault-balance-unit {
+  margin-left: 7px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vault-drip {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.vault-risks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.risk-btn {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  font-family: var(--mono);
+  text-align: left;
+  color: var(--muted);
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.risk-btn:hover {
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.risk-btn.is-picked {
+  color: var(--ink);
+  border-color: var(--phosphor);
+  box-shadow: inset 0 0 0 1px rgba(116, 240, 166, 0.3);
+}
+
+.risk-name {
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.risk-btn.is-picked .risk-name {
+  color: var(--phosphor);
+}
+
+.risk-odds,
+.risk-mult {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+
+.risk-mult {
+  color: #ffd166;
+}
+
+.vault-bet {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.vault-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--void);
+  border: 1px solid var(--line);
+}
+
+.vault-field span {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vault-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: #ffd166;
+  background: none;
+  border: 0;
+  outline: none;
+}
+
+.vault-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.vault-presets button {
+  flex: 1;
+  padding: 3px 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.vault-presets button:hover {
+  color: var(--phosphor);
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.vault-roll {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.vault-roll:disabled {
+  opacity: 0.55;
+}
+
+.vault-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line);
+}
+
+.vault-result.is-win {
+  border-color: rgba(116, 240, 166, 0.5);
+}
+
+.vault-result.is-loss {
+  border-color: rgba(255, 107, 107, 0.45);
+}
+
+.vault-die {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  color: var(--ink);
+  background: var(--void);
+  border: 1px solid var(--line);
+}
+
+.vault-result.is-win .vault-die {
+  color: var(--phosphor);
+  border-color: rgba(116, 240, 166, 0.5);
+}
+
+.vault-result.is-loss .vault-die {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.45);
+}
+
+.vault-result strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vault-result.is-win strong {
+  color: var(--phosphor);
+}
+
+.vault-result.is-loss strong {
+  color: #ff6b6b;
+}
+
+.vault-result-line {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.vault-hint,
+.vault-foot {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.vault-history {
+  display: grid;
+  gap: 3px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.vault-history h3 {
+  margin: 0 0 4px;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vault-hist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+}
+
+.vault-hist-roll {
+  color: var(--ink);
+}
+
+.vault-hist-risk {
+  margin-left: auto;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vault-hist-net {
+  min-width: 62px;
+  text-align: right;
+}
+
+.vault-hist-net.is-win {
+  color: var(--phosphor);
+}
+
+.vault-hist-net.is-loss {
+  color: #ff6b6b;
+}
+
+@keyframes ping-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- royal coin ladder ---------- */
+
+.ladder-link .hash {
+  color: #ffd166;
+}
+
+.ladder-link .chip {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+.ladder {
+  width: min(430px, 100%);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  animation: rise 0.22s ease both;
+}
+
+.ladder-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  background: var(--panel-deep);
+  border: 1px solid var(--line-soft);
+}
+
+.ladder-row.is-me {
+  border-color: rgba(116, 240, 166, 0.45);
+}
+
+.ladder-rank {
+  flex: none;
+  width: 20px;
+  font-size: 11px;
+  text-align: right;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.ladder-rank.is-podium {
+  color: #ffd166;
+}
+
+.ladder-rank.is-1 {
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.6);
+}
+
+.ladder-coins {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #ffd166;
+}
+
+@keyframes ping-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- welcome chrome: a brand bar over the room, centred sign-in ---------- */
+
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app .shell {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-deep);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--phosphor);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  text-shadow: 0 0 14px rgba(116, 240, 166, 0.28);
+}
+
+.topbar-glyph {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.topbar-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.topbar-live:hover {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.topbar-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--phosphor);
+  box-shadow: 0 0 10px var(--phosphor);
+}
+
+/* The purse in the bar: a coin icon that opens the hand-out window, and the balance. */
+.topbar-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 40vw;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  border-radius: 0;
+  background: transparent;
+  color: #ffd166;
+  cursor: pointer;
+}
+
+.topbar-coins:hover {
+  border-color: #ffd166;
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.28);
+}
+
+.topbar-coins span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Saving the whole room as one file, from the bar itself. */
+.topbar-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.topbar-save:hover {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+@media (max-width: 560px) {
+  .topbar-coins span,
+  .topbar-save span {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 9px 12px;
+  }
+}
+
+/* ---------- sign-in: logo, welcome line and form in one centred column ---------- */
+
+.auth-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 28px;
+}
+
+.auth-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: auto;
+  width: min(430px, 100%);
+}
+
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.auth-wordmark {
+  margin: 2px 0 0;
+  color: var(--phosphor);
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: lowercase;
+  text-shadow: 0 0 22px rgba(116, 240, 166, 0.38);
+}
+
+.auth-welcome {
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+}
+
+.auth-lede {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.auth-stack .auth-card {
+  width: 100%;
+  padding: 18px 20px 16px;
+}
+
+.auth-foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-foot .text-btn {
+  font-size: 12px;
+  padding: 0;
+}
+
+/* ---------- the blended front door ----------
+   Drawspace's light centred card and chatflux's slate room in one palette: the chat keeps
+   the phosphor type and glow, the surfaces sit on a talk-room grey instead of near-black,
+   corners round off, and the sign-in card is the light card from the front page. Every
+   rule here is later in the file than the flat-console pass, so it wins without edits
+   above. */
+
+.glass,
+.chat,
+.auth-card,
+.settings,
+.board,
+.board-card,
+.cmd-menu,
+.composer,
+.composer-attach,
+.msg-edit,
+.msg-edit textarea,
+.system-line,
+.bubble,
+.reply-quote,
+.msg-image,
+.composer-attach img {
+  border-radius: 10px;
+}
+
+.send,
+.attach,
+.attach-cancel,
+.btn-primary,
+.btn,
+.pill-btn,
+.icon-btn,
+.msg-tool,
+.reaction,
+.cmd-item,
+.field input,
+.field textarea,
+.chip,
+.toast,
+.ping-toast {
+  border-radius: 8px;
+}
+
+/* the action button is filled, like both reference sites */
+.send {
+  color: #102a1c;
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+.send:hover:not(:disabled) {
+  color: #102a1c;
+  background: var(--phosphor-bright);
+  border-color: var(--phosphor-bright);
+}
+
+/* sign-in sits in the same light card as the front page */
+.auth-card {
+  background: #f7f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
+}
+
+.auth-card .auth-tabs {
+  background: #eaeff4;
+  border: 1px solid #d7e0e8;
+}
+
+.auth-card .auth-tabs button {
+  color: #64707b;
+}
+
+.auth-card .auth-tabs button.active {
+  color: #162a4a;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #c9d5e0;
+}
+
+.auth-card .field span {
+  color: #4b5a6b;
+  letter-spacing: 0.14em;
+}
+
+.auth-card .field input,
+.auth-card .field textarea {
+  color: #162a4a;
+  background: #ffffff;
+  border: 1px solid #cfd8e0;
+}
+
+.auth-card .field input::placeholder,
+.auth-card .field textarea::placeholder {
+  color: #9aa7b0;
+}
+
+.auth-card .field input:focus,
+.auth-card .field textarea:focus {
+  border-color: #2f9e57;
+  box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.16);
+}
+
+.auth-card .btn-primary {
+  color: #ffffff;
+  background: #2f9e57;
+  letter-spacing: 0.1em;
+}
+
+.auth-card .btn-primary:hover:not(:disabled) {
+  color: #ffffff;
+  background: #37b463;
+  box-shadow: 0 0 0 3px rgba(47, 158, 87, 0.18);
+}
+
+.auth-card .auth-note {
+  color: #8a6a1f;
+  background: #fdf6e3;
+  border-color: #ecdcae;
+}
+
+.auth-card .auth-error {
+  color: #a3313f;
+  background: #fdeef0;
+  border-color: #f0c8cf;
+}
+
+/* the pill above the sign-in wordmark, matching the front page's badge */
+.auth-badge {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--slate);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+/* ---------- the reference room ----------
+   Both reference sites (chatflux.tech and drawspace.online) put a rounded, softly raised
+   card on a plain charcoal wall: a dark band across the top with a bold white title, white
+   message names, outline pill tags and one filled green action button. This pass brings
+   that language into the room — a deeper wall, the chat standing on it as a card, the
+   header as the band, heavy white names, pill tags, and the filled green send pill. The
+   type stays monospace and the palette stays ours. */
+
+:root {
+  --wall: #1e2226;
+  --card: #2b2f34;
+  --card-deep: #24282c;
+  --band: #23272b;
+  --edge: #3a4046;
+  --name: #f2f6fa;
+}
+
+body {
+  background: var(--wall);
+}
+
+.sky {
+  background-color: var(--wall);
+  background-image:
+    radial-gradient(1100px 520px at 50% -18%, rgba(124, 240, 174, 0.09), transparent 62%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+
+/* the room is the card; the wall shows around it on every width */
+.chat {
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  box-shadow:
+    0 26px 64px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* the band across the top */
+.chat-header {
+  padding: 12px 14px;
+  background: var(--band);
+  border-bottom: 1px solid var(--edge);
+  border-radius: 18px 18px 0 0;
+}
+
+.chat-title h2 {
+  color: var(--name);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.hash-big {
+  color: var(--phosphor);
+}
+
+.chat-topic {
+  color: #8a949e;
+}
+
+.members-toggle {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--edge);
+}
+
+.members-count {
+  color: var(--name);
+}
+
+/* the log: white heavy names, quiet time, hairlines between rows */
+.msg {
+  padding: 10px 14px;
+}
+
+.msg:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.messages:not(.dm-list) .msg:not(.system) + .msg:not(.system) {
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.msg-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--name);
+}
+
+.msg-time {
+  color: #79838d;
+}
+
+.msg-text {
+  color: #dde5ec;
+  line-height: 1.55;
+}
+
+.msg-image {
+  border-color: var(--edge);
+  border-radius: 10px;
+}
+
+/* tags read as outline pills, like the reference tag rows */
+.badge,
+.chip {
+  border-radius: 999px;
+}
+
+/* composer: one soft pill with the prompt, and the filled green send */
+.composer-wrap {
+  padding: 10px 14px 12px;
+}
+
+.composer {
+  padding: 6px 6px 6px 12px;
+  border-radius: 20px;
+  background: var(--card-deep);
+  border: 1px solid var(--edge);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+}
+
+.composer:focus-within {
+  border-color: rgba(124, 240, 174, 0.6);
+  box-shadow: 0 0 0 3px rgba(124, 240, 174, 0.12);
+}
+
+.composer::before {
+  color: #6fe0a2;
+}
+
+.send {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: #102a1c;
+  background: var(--phosphor);
+  border: 1px solid var(--phosphor);
+  box-shadow: 0 8px 18px rgba(124, 240, 174, 0.22);
+}
+
+.send:hover:not(:disabled) {
+  color: #102a1c;
+  background: var(--phosphor-bright);
+  border-color: var(--phosphor-bright);
+}
+
+.attach {
+  border-radius: 999px;
+}
+
+.composer-foot {
+  color: #79838d;
+}
+
+/* direct messages keep the bubble, one step rounder than the row */
+.bubble {
+  border-radius: 12px;
+}
+
+/* ---------- the reference room, part two ----------
+   The room the Owner pointed at uses round portraits, roomier rows and a pill around
+   every @mention. Taken as shape only: ours keeps its own green, its hairlines and its
+   monospace, and nothing about how the room works changes. */
+
+.avatar,
+.avatar-img,
+.avatar-frame,
+.avatar-dot {
+  border-radius: 50%;
+}
+
+.msg {
+  padding: 11px 14px;
+}
+
+.msg-mention {
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--phosphor-bright);
+  background: rgba(124, 240, 174, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(124, 240, 174, 0.3);
+}
+
+.msg-mention.is-me {
+  color: #102a1c;
+  font-weight: 600;
+  background: var(--phosphor);
+  box-shadow: none;
+}
+
+/* Names wear what their owner holds: a rainbow and a crown for MVP, gold for VIP,
+   red with a trident for the owner. `PlayerName.jsx` picks the tone. */
+.player-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22em;
+  min-width: 0;
+}
+
+.player-name .name-mark {
+  font-size: 0.92em;
+  line-height: 1;
+}
+
+/* A name you can tap: opens that person's profile banner, "member #7" and all. */
+.player-name.is-clickable {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.player-name.is-clickable:hover .player-name-text {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.player-name.is-vip .player-name-text {
+  color: #ffd166;
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.35);
+}
+
+.player-name.is-owner .player-name-text {
+  color: #ff5f5f;
+  text-shadow: 0 0 10px rgba(255, 95, 95, 0.4);
+}
+
+.player-name.is-coowner .player-name-text {
+  color: #b18cff;
+  text-shadow: 0 0 10px rgba(177, 140, 255, 0.4);
+}
+
+.player-name.is-mvp .player-name-text {
+  background-image: linear-gradient(
+    90deg,
+    #ff6b6b,
+    #ffd166,
+    #8ef58a,
+    #7df9ff,
+    #c9a4ff,
+    #ff6b6b
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: name-rainbow 6s linear infinite;
+}
+
+@keyframes name-rainbow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 220% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-name.is-mvp .player-name-text {
+    animation: none;
+  }
+}
+
+/* ---------- profile banner strip ----------
+   The band across the top of the profile card: one theme per role, and everyone may pick
+   any of them in settings (a blank pick wears your own role's). */
+
+.profile-banner {
+  position: relative;
+  height: 46px;
+  margin: -16px -16px 14px;
+  border-radius: 9px 9px 0 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.profile-banner::after,
+.banner-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.14) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+.banner-member {
+  background: linear-gradient(115deg, #2a3037, #6b7681);
+}
+
+.banner-mod {
+  background: linear-gradient(115deg, #0f3a33, #38d9c0);
+}
+
+.banner-admin {
+  background: linear-gradient(115deg, #3a1420, #ff5c8a);
+}
+
+.banner-co-owner {
+  background: linear-gradient(115deg, #241a4a, #8b7bff);
+}
+
+.banner-owner {
+  background: linear-gradient(115deg, #3a2a08, #ffb347);
+}
+
+.banner-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.banner-option {
+  display: grid;
+  gap: 6px;
+  min-width: 76px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  background: none;
+  border-radius: 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  cursor: pointer;
+}
+
+.banner-option.on {
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+}
+
+.banner-preview {
+  position: relative;
+  display: block;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
 }

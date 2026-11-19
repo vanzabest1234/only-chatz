@@ -6,27 +6,65 @@ import { publicMessage, publicUser } from '../serializers.js'
 import { rankOf } from '../roles.js'
 import { audit, cleanText, recentAudit, take } from '../guard.js'
 import { commandCatalog, runCommand } from '../commands.js'
+import { canEnterChannel, flairLabel, grantOwnerWheel } from '../flairs.js'
+import { ensureOwnerSeason, passState } from '../pass.js'
+import { accrueCoins } from '../coins.js'
+import { answerAi, isAiMessage } from '../ai.js'
+import { isRealImage } from '../images.js'
 
 const router = Router()
 
 const MAX_MESSAGE = 2000
 const MAX_COMMAND = 400
+// A picture arrives as a data URL the browser already shrank; the cap keeps one post well
+// under the JSON body limit (server/index.js).
+const MAX_IMAGE_CHARS = 900000
+const IMAGE_PATTERN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/
+// A fixed palette instead of free text: reactions stay one tap and cannot be abused for spam.
+const REACTIONS = ['👍', '❤️', '😂', '🔥', '👀', '🎉']
 
 // Only identifiers this module chooses may be interpolated into SQL.
 const MESSAGE_COLUMNS = new Set(['channel_id', 'thread_id'])
+
+// The flairs someone is wearing ride along with their messages and member row, so the
+// client never has to fetch them separately.
+const EQUIPPED_FLAIRS = userExpr => `COALESCE(
+  (SELECT array_agg(f.flair ORDER BY f.obtained_at, f.flair)
+     FROM user_flairs f WHERE f.user_id = ${userExpr} AND f.equipped), '{}')`
 
 function readId(raw) {
   const id = Number(raw)
   return Number.isInteger(id) && id > 0 ? id : null
 }
 
+/** What a fenced room answers someone who does not hold the flair that opens it. */
+function fencedRoomError(channel) {
+  return `#${channel.name} is for ${flairLabel(channel.flair)} members — win that flair on the wheel.`
+}
+
 /** Text a person typed, minus control/invisible characters, within the length cap. */
-function readContent(raw) {
+function readContent(raw, hasImage = false) {
+  if (raw === undefined || raw === null || raw === '') {
+    // A picture on its own is a whole message; a note is what may be left out.
+    return hasImage ? { content: '' } : { error: 'Type a message first.' }
+  }
   if (typeof raw !== 'string') return { error: 'Messages have to be text.' }
   const content = cleanText(raw, MAX_MESSAGE + 1).trim()
-  if (!content) return { error: 'Type a message first.' }
+  if (!content && !hasImage) return { error: 'Type a message first.' }
   if (content.length > MAX_MESSAGE) return { error: 'Messages top out at 2000 characters.' }
   return { content }
+}
+
+/** A picture rides along with the message it was sent with. */
+function readImage(raw) {
+  if (raw === undefined || raw === null || raw === '') return { imageUrl: null }
+  if (typeof raw !== 'string' || !IMAGE_PATTERN.test(raw) || !isRealImage(raw)) {
+    return { error: 'That picture could not be read — try a JPG or PNG.' }
+  }
+  if (raw.length > MAX_IMAGE_CHARS) {
+    return { error: 'That picture is too large — pick a smaller one.' }
+  }
+  return { imageUrl: raw }
 }
 
 /** Burst + sustained allowance per account; a scripted flood trips the first one. */
@@ -44,17 +82,56 @@ function overPostingLimit(user, res) {
   return true
 }
 
+// "@name" is how people call each other over here, so a mention is recorded and pushed
+// to that account's sockets instead of quietly sitting in the scrollback.
+const MENTION = /@([a-z0-9_]{2,32})/gi
+
+async function notifyMentions(message, actor, room) {
+  const names = [...new Set((message.content.match(MENTION) ?? []).map(hit => hit.slice(1).toLowerCase()))]
+  if (!names.length) return
+
+  const { rows } = await q(
+    'SELECT id FROM users WHERE banned = FALSE AND lower(username) = ANY($1::text[]) AND id <> $2',
+    [names, actor.id],
+  )
+  if (!rows.length) return
+
+  await q(
+    `INSERT INTO message_mentions (message_id, user_id)
+     SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING`,
+    [message.id, rows.map(row => row.id)],
+  )
+
+  const payload = {
+    message,
+    from: { id: actor.id, displayName: actor.display_name, username: actor.username },
+    room,
+  }
+  rows.forEach(row => emitTo(`user:${row.id}`, 'ping:new', payload))
+}
+
 async function loadSnapshot(user) {
-  const [channels, members, friends, threads] = await Promise.all([
-    q('SELECT id, name, topic, slowmode, position FROM channels ORDER BY position, id'),
-    q('SELECT * FROM users WHERE banned = FALSE ORDER BY id'),
+  const [channels, members, friends, threads, tag] = await Promise.all([
+    // A fenced room only shows up for the flair that opens it (channels.flair).
+    q(
+      `SELECT c.id, c.name, c.topic, c.slowmode, c.position, c.announce
+         FROM channels c
+        WHERE c.flair IS NULL
+           OR EXISTS (SELECT 1 FROM user_flairs f WHERE f.user_id = $1 AND f.flair = c.flair)
+        ORDER BY c.position, c.id`,
+      [user.id],
+    ),
+    q(
+      `SELECT *, ${EQUIPPED_FLAIRS('users.id')} AS flairs
+         FROM users WHERE banned = FALSE ORDER BY id`,
+    ),
     q('SELECT friend_id FROM friendships WHERE user_id = $1', [user.id]),
     q(
       `SELECT t.id AS thread_id,
               peer.id AS peer_id, peer.display_name AS peer_name,
               peer.role AS peer_role, peer.color AS peer_color,
               peer.avatar_url AS peer_avatar,
-              lm.id AS last_id, lm.content AS last_content,
+              lm.id AS last_id, lm.content AS last_content, lm.image_url AS last_image,
               lm.created_at AS last_at, lm.author_id AS last_author
          FROM dm_threads t
          JOIN dm_members me ON me.thread_id = t.id AND me.user_id = $1
@@ -65,7 +142,7 @@ async function loadSnapshot(user) {
             LIMIT 1
          ) peer ON TRUE
          LEFT JOIN LATERAL (
-           SELECT m.id, m.content, m.created_at, m.author_id
+           SELECT m.id, m.content, m.image_url, m.created_at, m.author_id
              FROM messages m
             WHERE m.thread_id = t.id
             ORDER BY m.id DESC
@@ -74,10 +151,23 @@ async function loadSnapshot(user) {
         ORDER BY COALESCE(lm.id, 0) DESC`,
       [user.id],
     ),
+    q(`SELECT EXISTS (
+         SELECT 1 FROM user_flairs WHERE user_id = $1 AND flair = 'custom'
+       ) AS owns_custom_tag`, [user.id]),
   ])
 
+  // Owners sit at the top of the pass; the fill-in only happens once per season.
+  const pass = (await ensureOwnerSeason(user)) ?? passState(user)
+  // Opening the app collects whatever the ten-minute clock owes, so the balance is current.
+  const { state: coins } = await accrueCoins(user.id)
+
   return {
-    user: publicUser(user),
+    user: {
+      ...publicUser(user),
+      coins,
+      ownsCustomTag: Boolean(tag.rows[0]?.owns_custom_tag),
+      pass,
+    },
     channels: channels.rows,
     members: members.rows.map(publicUser),
     friends: friends.rows.map(row => row.friend_id),
@@ -93,7 +183,7 @@ async function loadSnapshot(user) {
       lastMessage: row.last_id
         ? {
             id: Number(row.last_id),
-            content: row.last_content,
+            content: row.last_content || (row.last_image ? 'sent a picture' : ''),
             createdAt: row.last_at,
             authorId: row.last_author,
           }
@@ -105,30 +195,108 @@ async function loadSnapshot(user) {
   }
 }
 
+/** Reactions, plus the quoted line a reply points at, attached to a page of messages. */
+async function withExtras(rows) {
+  const messages = rows.map(publicMessage)
+  if (!messages.length) return messages
+
+  const ids = messages.map(message => message.id)
+  const { rows: reactionRows } = await q(
+    `SELECT message_id, emoji, user_id FROM message_reactions
+      WHERE message_id = ANY($1::bigint[])
+      ORDER BY created_at`,
+    [ids],
+  )
+  const tally = new Map()
+  reactionRows.forEach(row => {
+    const id = Number(row.message_id)
+    if (!tally.has(id)) tally.set(id, new Map())
+    const group = tally.get(id)
+    group.set(row.emoji, [...(group.get(row.emoji) ?? []), row.user_id])
+  })
+
+  const replyIds = [...new Set(messages.map(message => message.replyToId).filter(Boolean))]
+  const quotes = new Map()
+  if (replyIds.length) {
+    const { rows: quoteRows } = await q(
+      `SELECT m.id, m.content, m.image_url, COALESCE(u.display_name, m.author_name) AS author
+         FROM messages m LEFT JOIN users u ON u.id = m.author_id
+        WHERE m.id = ANY($1::bigint[])`,
+      [replyIds],
+    )
+    quoteRows.forEach(row => quotes.set(Number(row.id), row))
+  }
+
+  return messages.map(message => {
+    const group = tally.get(message.id)
+    const quote = message.replyToId ? quotes.get(message.replyToId) : null
+    return {
+      ...message,
+      reactions: group ? [...group].map(([emoji, userIds]) => ({ emoji, userIds })) : [],
+      replyTo: quote
+        ? {
+            id: Number(quote.id),
+            authorName: quote.author,
+            content: (quote.content || (quote.image_url ? 'sent a picture' : '')).slice(0, 140),
+          }
+        : null,
+    }
+  })
+}
+
 async function hydrateMessage(id) {
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, u.custom_tag, u.pass_tier,
+            ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.id = $1`,
     [id],
   )
-  return publicMessage(rows[0])
+  const [message] = await withExtras(rows)
+  return message
 }
 
 async function listMessages(column, id) {
   if (!MESSAGE_COLUMNS.has(column)) throw new Error(`unknown message column: ${column}`)
   const { rows } = await q(
-    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url
+    `SELECT m.*, u.display_name, u.role, u.color, u.avatar_url, u.custom_tag, u.pass_tier,
+            ${EQUIPPED_FLAIRS('u.id')} AS author_flairs
        FROM messages m LEFT JOIN users u ON u.id = m.author_id
       WHERE m.${column} = $1
       ORDER BY m.id DESC
       LIMIT 80`,
     [id],
   )
-  return rows.reverse().map(publicMessage)
+  return withExtras(rows.reverse())
+}
+
+/** An edit or a reaction changes a message everyone is looking at, so it goes out to its room. */
+function broadcastMessage(event, message) {
+  if (message.channelId) emitTo(`channel:${message.channelId}`, event, message)
+  else emitTo(`thread:${message.threadId}`, event, message)
+}
+
+/** A reply only ever points at a message in the same room; anything else is treated as stale. */
+async function readReply(body, column, roomId) {
+  const raw = body?.replyToId
+  if (raw === undefined || raw === null || raw === '') return { replyToId: null }
+  const id = readId(raw)
+  if (!id) return { error: 'The message you replied to is gone.' }
+  const { rows } = await q(`SELECT ${column} AS room FROM messages WHERE id = $1`, [id])
+  if (!rows.length || rows[0].room !== roomId) {
+    return { error: 'The message you replied to is gone.' }
+  }
+  return { replyToId: id }
 }
 
 async function checkCanSpeak(user, channel) {
+  // Reading is always open; posting waits for an explicit "I accept" on the rules.
+  if (!user.rules_accepted_at) {
+    return { status: 403, error: 'Accept the 10 rules before you can chat.' }
+  }
+  if (channel?.announce && user.role !== 'owner') {
+    return { status: 403, error: `Only the Owner can post in #${channel.name}.` }
+  }
   if (user.muted_until && new Date(user.muted_until) > new Date()) {
     return { status: 403, error: 'You are muted right now.' }
   }
@@ -148,7 +316,21 @@ async function checkCanSpeak(user, channel) {
 }
 
 router.get('/me', requireAuth, async (req, res) => {
+  // Owners hold the whole wheel, so this is where their missing flairs get filled in.
+  await grantOwnerWheel(req.user)
   res.json(await loadSnapshot(req.user))
+})
+
+// Agreeing to the 10 rules is what unlocks posting (see checkCanSpeak).
+router.post('/rules/accept', requireAuth, async (req, res) => {
+  if (req.user.rules_accepted_at) return res.json({ user: publicUser(req.user) })
+
+  const { rows } = await q(
+    'UPDATE users SET rules_accepted_at = now() WHERE id = $1 RETURNING *',
+    [req.user.id],
+  )
+  audit('rules-accepted', { userId: req.user.id, username: req.user.username })
+  res.json({ user: publicUser(rows[0]) })
 })
 
 // Owner-visible trail of refused logins, floods and privileged actions.
@@ -161,8 +343,16 @@ router.get('/channels/:id/messages', requireAuth, async (req, res) => {
   const channelId = readId(req.params.id)
   if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
 
-  const channel = await q('SELECT 1 FROM channels WHERE id = $1', [channelId])
-  if (!channel.rows.length) return res.status(404).json({ error: 'That channel no longer exists.' })
+  const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
+  const channel = rows[0]
+  if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+  if (!(await canEnterChannel(req.user.id, channel))) {
+    return res.status(403).json({ error: fencedRoomError(channel) })
+  }
+
+  // The scrollback belongs to the Owner: everyone else only sees the lines that arrive while
+  // they are in the room, so the conversation already held here stays with the house.
+  if (req.user.role !== 'owner') return res.json({ messages: [], historyRestricted: true })
 
   res.json({ messages: await listMessages('channel_id', channelId) })
 })
@@ -171,13 +361,19 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
   const channelId = readId(req.params.id)
   if (!channelId) return res.status(400).json({ error: 'That channel no longer exists.' })
 
-  const read = readContent(req.body?.content)
+  const picture = readImage(req.body?.imageUrl)
+  if (picture.error) return res.status(400).json({ error: picture.error })
+  const read = readContent(req.body?.content, Boolean(picture.imageUrl))
   if (read.error) return res.status(400).json({ error: read.error })
   const content = read.content
 
   const { rows } = await q('SELECT * FROM channels WHERE id = $1', [channelId])
   const channel = rows[0]
   if (!channel) return res.status(404).json({ error: 'That channel no longer exists.' })
+
+  if (!(await canEnterChannel(req.user.id, channel))) {
+    return res.status(403).json({ error: fencedRoomError(channel) })
+  }
 
   if (overPostingLimit(req.user, res)) return
 
@@ -193,13 +389,148 @@ router.post('/channels/:id/messages', requireAuth, async (req, res) => {
     return res.json({ ok: true })
   }
 
+  const reply = await readReply(req.body, 'channel_id', channelId)
+  if (reply.error) return res.status(400).json({ error: reply.error })
+
   const { rows: inserted } = await q(
-    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [channelId, req.user.id, req.user.display_name, req.user.role, content],
+    `INSERT INTO messages (channel_id, author_id, author_name, author_role, content, reply_to_id, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [
+      channelId,
+      req.user.id,
+      req.user.display_name,
+      req.user.role,
+      content,
+      reply.replyToId,
+      picture.imageUrl,
+    ],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`channel:${channelId}`, 'message:new', message)
+  await notifyMentions(message, req.user, {
+    kind: 'channel',
+    id: channelId,
+    label: `#${channel.name}`,
+  })
+
+  // "!ask …" is answered by the Royal Aide, in the room, under the question. The answer
+  // arrives over the socket like any other message, so this response does not wait for it.
+  if (isAiMessage(content) && take(`ai:${req.user.id}`, 6, 60_000).ok) {
+    answerAi({ actor: req.user, channel, content }).catch(error => {
+      console.error('ai reply failed', error)
+    })
+  }
+
+  res.json({ message })
+})
+
+// Fix a typo: only the author edits, and the message keeps a visible "edited" mark.
+router.patch('/messages/:id', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const read = readContent(req.body?.content)
+  if (read.error) return res.status(400).json({ error: read.error })
+
+  if (!take(`edit:${req.user.id}`, 10, 60_000).ok) {
+    return res.status(429).json({ error: 'Easy on the edits — try again in a moment.' })
+  }
+
+  const { rows } = await q('SELECT author_id, content, system FROM messages WHERE id = $1', [id])
+  const existing = rows[0]
+  if (!existing || existing.system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+  if (existing.author_id !== req.user.id) {
+    return res.status(403).json({ error: 'You can only edit your own messages.' })
+  }
+  if (existing.content === read.content) return res.json({ message: await hydrateMessage(id) })
+
+  await q('UPDATE messages SET content = $1, edited_at = now() WHERE id = $2', [read.content, id])
+  const message = await hydrateMessage(id)
+  broadcastMessage('message:update', message)
+  res.json({ message })
+})
+
+// Take a message down: the author may remove their own, the Owner may remove anyone's.
+router.delete('/messages/:id', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const { rows } = await q(
+    'SELECT author_id, channel_id, thread_id, system FROM messages WHERE id = $1',
+    [id],
+  )
+  const existing = rows[0]
+  if (!existing || existing.system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+
+  const own = existing.author_id === req.user.id
+  if (!own && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'You can only delete your own messages.' })
+  }
+  if (!take(`delete:${req.user.id}`, 20, 60_000).ok) {
+    return res.status(429).json({ error: 'Easy on the deletes — try again in a moment.' })
+  }
+
+  await q('DELETE FROM messages WHERE id = $1', [id])
+  if (!own) {
+    audit('message-deleted', {
+      actor: req.user.username,
+      messageId: id,
+      authorId: existing.author_id,
+    })
+  }
+
+  // Everyone looking at the room drops it too; the payload is just where it lived.
+  const gone = { id, channelId: existing.channel_id, threadId: existing.thread_id }
+  if (existing.channel_id) emitTo(`channel:${existing.channel_id}`, 'message:delete', gone)
+  else emitTo(`thread:${existing.thread_id}`, 'message:delete', gone)
+  res.json({ ok: true, ...gone })
+})
+
+// Everyone reacts; tapping the same reaction again takes it back.
+router.post('/messages/:id/reactions', requireAuth, async (req, res) => {
+  const id = readId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'That message is no longer here.' })
+
+  const emoji = String(req.body?.emoji ?? '')
+  if (!REACTIONS.includes(emoji)) {
+    return res.status(400).json({ error: 'That is not one of the reactions.' })
+  }
+  if (req.user.muted_until && new Date(req.user.muted_until) > new Date()) {
+    return res.status(403).json({ error: 'You are muted right now.' })
+  }
+  if (!take(`react:${req.user.id}`, 20, 10_000).ok) {
+    return res.status(429).json({ error: 'Easy on the reactions — try again in a moment.' })
+  }
+
+  const found = await q('SELECT system FROM messages WHERE id = $1', [id])
+  if (!found.rows.length || found.rows[0].system) {
+    return res.status(404).json({ error: 'That message is no longer here.' })
+  }
+
+  const mine = await q(
+    'SELECT 1 FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3',
+    [id, req.user.id, emoji],
+  )
+  if (mine.rows.length) {
+    await q('DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3', [
+      id,
+      req.user.id,
+      emoji,
+    ])
+  } else {
+    await q('INSERT INTO message_reactions (message_id, user_id, emoji) VALUES ($1, $2, $3)', [
+      id,
+      req.user.id,
+      emoji,
+    ])
+  }
+
+  const message = await hydrateMessage(id)
+  broadcastMessage('message:update', message)
   res.json({ message })
 })
 
@@ -256,7 +587,9 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   ])
   if (!member.rows.length) return res.status(403).json({ error: 'That conversation is not yours.' })
 
-  const read = readContent(req.body?.content)
+  const picture = readImage(req.body?.imageUrl)
+  if (picture.error) return res.status(400).json({ error: picture.error })
+  const read = readContent(req.body?.content, Boolean(picture.imageUrl))
   if (read.error) return res.status(400).json({ error: read.error })
   const content = read.content
 
@@ -265,13 +598,25 @@ router.post('/dm/:threadId/messages', requireAuth, async (req, res) => {
   const blocked = await checkCanSpeak(req.user, null)
   if (blocked) return res.status(blocked.status).json({ error: blocked.error })
 
+  const reply = await readReply(req.body, 'thread_id', threadId)
+  if (reply.error) return res.status(400).json({ error: reply.error })
+
   const { rows: inserted } = await q(
-    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [threadId, req.user.id, req.user.display_name, req.user.role, content],
+    `INSERT INTO messages (thread_id, author_id, author_name, author_role, content, reply_to_id, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [
+      threadId,
+      req.user.id,
+      req.user.display_name,
+      req.user.role,
+      content,
+      reply.replyToId,
+      picture.imageUrl,
+    ],
   )
   const message = await hydrateMessage(inserted[0].id)
   emitTo(`thread:${threadId}`, 'message:new', message)
+  await notifyMentions(message, req.user, { kind: 'dm', id: threadId, label: 'a direct message' })
   res.json({ message })
 })
 

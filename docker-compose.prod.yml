@@ -5,6 +5,10 @@
 #
 # Add automatic HTTPS (needs a domain pointing at this machine):
 #   docker compose -f docker-compose.prod.yml --profile https up -d
+#
+# A public https:// URL with no account, no card and no domain (Cloudflare quick tunnel):
+#   docker compose -f docker-compose.prod.yml --profile public up -d
+#   docker compose -f docker-compose.prod.yml logs tunnel | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
 
 name: only-chatz-prod
 
@@ -53,6 +57,18 @@ services:
     depends_on:
       - app
     restart: unless-stopped
+
+  # No account, no card, no domain: Cloudflare's quick tunnel hands this machine a
+  # random https://<words>.trycloudflare.com URL. It lasts as long as this container
+  # keeps running and the URL changes on every start, so it is for sharing now, not
+  # for a permanent home. The host needs no open port — the tunnel dials out.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["public"]
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on:
+      - app
+    restart: on-failure
 
 volumes:
   chatz-prod-db:

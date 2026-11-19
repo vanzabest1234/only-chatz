@@ -23,7 +23,9 @@ Non-obvious things worth knowing before changing something:
   (`server/auth.js` and the `io.use` middleware in `server/realtime.js`).
 - **Schema + seed run inside API boot** (`server/index.js` → `migrate()` → `seed()`), not as a
   separate one-shot compose service. `schema.sql` is idempotent (`CREATE … IF NOT EXISTS`), and the
-  seed bails out as soon as any user exists, so `node --watch` restarts are harmless.
+  seed re-asserts the fixed room list on every boot, updating `position` from `server/seed.js` — that is
+  how an older database picks up `#announcements` and a changed room order — so `node --watch`
+  restarts are harmless.
 - **Demo data only appears on a virgin database.** If you ever need the seed back without destroying
   messages, promote an account by hand rather than wiping the data volume.
 - **Roles are enforced server-side only.** `owner > co-owner > admin > mod > member`; you may never
@@ -32,38 +34,383 @@ Non-obvious things worth knowing before changing something:
   every later signup is a plain member until the Owner promotes them.
   The UI merely filters the command list it is given (`GET /api/me` → `commands`).
 - **Muting blocks channel and DM posting**; bans revoke sessions and refuse future logins.
+- **Chatting needs the 10 rules accepted.** `users.rules_accepted_at` stays NULL until the account
+  agrees on the gate (`web/src/components/RulesGate.jsx`, which also owns the rule text); until then
+  `checkCanSpeak` refuses every channel and DM post (slash commands included), while reading stays
+  open. `POST /api/rules/accept` stamps the column and returns the fresh `user`, which is what flips
+  `rulesAccepted` in `GET /api/me`. Declining only closes the gate for that session — the banner
+  above the composer reopens it, so a refusal can be taken back without a new account.
+- **`#announcements` is read-only for everyone but the Owner.** The room carries
+  `channels.announce = TRUE`; `checkCanSpeak` refuses every message (slash commands included)
+  from a non-owner, and the client disables the composer for them. Everyone still sees the room
+  and its messages — the flag only gates writing. Adding another announcement room means setting
+  the same column, not adding a second rule.
+- **The scrollback is the Owner's.** `GET /api/channels/:id/messages` answers a non-owner with
+  `{ messages: [], historyRestricted: true }`, so a member opens a room empty and only sees the
+  lines that arrive while they are in it (`message:new`); the Owner reads the last 80 as before.
+  The client keeps that live list on a refresh (`loadMessages` in `App.jsx` does not overwrite it
+  when the room is restricted) and `MessageList.jsx` prints the reason instead of the usual empty
+  line. DM history is untouched — it is already private to the two members of the thread.
+- **Messages can be edited, replied to and reacted to.** `messages.edited_at` and
+  `messages.reply_to_id` plus the `message_reactions` table carry it.
+  `PATCH /api/messages/:id` only touches your own message and always stamps `edited_at`, which the
+  UI renders as "(edited)"; a reply must point at a message in the *same* room (`readReply`
+  compares the room column) and the client shows the quoted line above the text; reactions come
+  from a fixed six-emoji palette (`REACTIONS` in `routes/chat.js`) and tapping your own again
+  removes it. Both changes are broadcast as `message:update` to the message's room, so every open
+  client re-renders from that one payload — the client never patches optimistic state itself.
+  The action buttons live in `MessageList.jsx` and reveal on hover, and stay visible on
+  `(hover: none)` touch screens; "edit" only appears on your own messages.
+- **Deleting a message follows the same split: your own, or anyone's if you are the Owner.**
+  `DELETE /api/messages/:id` refuses a non-owner acting on someone else's message (403) and
+  removes the row otherwise; `reply_to_id` is `ON DELETE SET NULL` and `message_reactions`
+  cascades, so quotes and reactions go with it. The room is told `message:delete` with just
+  `{id, channelId, threadId}` and every client drops it from its list, so nothing re-renders from a
+  stale payload. Unlike an edit, a delete is also audited (`message-deleted`) when the Owner removes
+  someone else's message.
+- **Flairs, the wheel, and the season pass are cosmetics only.** `server/flairs.js` owns the wheel
+  weights (the roll happens there, never in the browser) and `MAX_EQUIPPED = 3` — owning a flair
+  never expires, but only three can be worn at once, so `POST /api/flairs/equip` refuses a fourth.
+  `bread` is off the wheel (`/bread`, Owner only); `custom` is the 0.01% slice that unlocks a
+  user-written tag in settings. One turn of the wheel every 24 hours (`users.flair_spun_at`), and a
+  banked pass spin token skips the wait — the client shows the countdown and only enables the button
+  once the turn is back or a token is banked.
+  `server/pass.js` turns one minute of an open socket into 2 XP (`pass_xp`/`pass_minutes`, reset by
+  `pass_season` = `YYYY-MM`), and tier rewards are derived from the tier, never stored: frames
+  (`frame-ember|frost|void|aurora` in `console.css`) come from `frameFor(tier)` in the serializers,
+  and extra tokens are granted idempotently from `pass_spin_awarded`. Owners hold the whole wheel
+  (`grantOwnerWheel`) and start every season finished — `ensureOwnerSeason` completes the track at
+  999 hours (`completePass`) the first time an owner's snapshot is loaded. Handing either out mirrors
+  `/role`: `/flair <flair> @user` and `/pass @user` are Owner-only (alongside `/bread @user`), and
+  the flair word is whichever argument is a known flair key, so `@user` may come first.
+  Nothing here grants permissions — never wire a flair to a role check.
+- **Two rooms are fenced behind a flair, not a role.** `channels.flair` names the flair that opens
+  a room (`vip` → `#vip`, `mvp` → `#mvp`, NULL = open). Holding it — worn or not — is what shows
+  the room: `loadSnapshot` filters the channel list, `GET`/`POST /api/channels/:id/messages` refuse
+  with a 403 naming the flair (`canEnterChannel` / `flairLabel` in `server/flairs.js`), and a socket
+  joins only the open rooms at connect. A fenced room is joined when the client reports
+  `presence:where` for it, which is also where the gate is re-checked, so winning the flair makes
+  the room appear on its own — the flair grant already emits `profile:update`, which refetches
+  `/api/me`. `CHANNEL_ACCESS_SQL` is the one place the rule is written in SQL; keep the four call
+  sites (snapshot, read, post, socket) on it.
+  The custom tag itself takes any characters up to 20 — only control/invisible ones are stripped.
+- **Names are painted by what you hold** (`web/src/components/PlayerName.jsx`, styles at the end of
+  `console.css`): the owner is red with a 🔱, a co-owner is purple, an MVP wears an animated rainbow
+  with a 👑, a VIP is gold. A role outranks a flair, so a co-owner holding MVP still reads purple.
+  Every place a display name renders goes through that component — messages (channel and DM),
+  the members panel, the who's-online board, the profile banner, and the sidebar's friends, DMs and
+  me-card. **The owner check comes first on purpose:** owners hold the whole wheel, so without it
+  every owner would wear the MVP rainbow instead of their trident. Purely cosmetic — never read a
+  name class for a permission.
+- **A mention is a ping, delivered over sockets.** Channel/DM posts parse `@username` in
+  `notifyMentions` (`routes/chat.js`), record it in `message_mentions` and emit `ping:new` to
+  `user:<id>`; `App.jsx` answers with a chime and a toast whose room label comes from the payload,
+  so tapping it can switch the view. Mentions are matched against `@username`, never display names.
+- **Royal Coins are the currency, and the clock is the wallet.** `server/coins.js` owns it:
+  `COIN_PER_TICK` (100) per `TICK_MINUTES` (10) is worked out from `users.coins_claimed_at`, so
+  nothing is paid by a timer alone — `accrueCoins` collects every whole window that has passed and
+  only advances the window it read (compared as `::text`, because a JS `Date` loses the microseconds
+  and would never match). A long absence collects at most an hour (six ticks); the 10s
+  `startCoinClock` in `realtime.js` pays open sockets and emits `coins:update` to `user:<id>`,
+  which `App.jsx` folds into `me.user.coins`. Spend through `spendCoins` / `settleBet` only: both
+  check the balance in the same statement that moves it, so two tabs cannot spend one coin twice.
+  `users.royal_coins` is `NUMERIC`: a purse can be handed a fortune past what `BIGINT` holds, and a
+  balance too large for a JS number travels to the client as a digit string (`walletValue` /
+  `coinText` in `coins.js`, `money` in `web/src/lib/format.js`) so nothing is rounded on the way out.
+  **The Owner holds the house purse: it is never counted and never spent down.** `coinState` marks
+  an owner row `unlimited`, `walletText` in `web/src/lib/format.js` paints that as `∞`, and every
+  spend (`spendCoins`, `settleBet`, `transferCoins`, a wheel turn, a flair purchase) leaves an
+  owner's `royal_coins` untouched while still succeeding — so an owner gambles, spins and buys
+  without a balance. Everyone else earns 100 per 10-minute window and only spends what they hold.
+  **Gaining mod or admin pays 10,000 coins once per role** (`ROLE_BONUS` in `server/commands.js`,
+  applied by `/role`): the paid role is stamped in `users.role_bonus_paid`, so re-running the same
+  promotion, or demoting and promoting again, cannot collect the same bonus twice, while a later
+  step up to admin pays its own 10,000. Co-owner and member pay nothing.
+- **Coins travel between people with `POST /api/coins/send`** (`server/routes/coins.js`).
+  `transferCoins` in `server/coins.js` takes from the sender and pays the receiver inside one
+  transaction, and the sender's balance is checked by the statement that takes it, so a send
+  either moves the whole amount or changes nothing. The amount is a digits-only digit string
+  (a purse can outgrow a JS number), the target must exist and not be banned, and both accounts
+  get `coins:update`. The top bar's coin icon (the balance chip) opens `SendCoins.jsx`, which
+  picks any member and posts the amount; it is the member-facing counterpart to the Owner-only
+  `/give` mint.
+- **Flairs can be bought with coins, from the daily wheel** (`server/ranks.js` + `routes/ranks.js`,
+  rendered by `RankOffers.jsx` at the bottom of `FlairWheel.jsx` — there is no separate rank shop
+  entry in the sidebar or the quick bar). The shop sells the wheel's own **flairs**
+  (`RANK_LADDER` = `WHEEL` keys), never a staff role: a purchase grants the flair
+  (`user_flairs`, worn when a slot is free) and touches no `users.role`. Every flair costs 10,000
+  royal coins and each purchase raises the next price by another 10,000, so the first is 10,000, the
+  second 20,000, the third 30,000 — `users.ranks_bought` is that counter. The ladder is bought one
+  rung at a time: a flair you already hold (won or bought) is skipped, only the first one you do not
+  hold is for sale (`buyable`), and everything above it is `locked` (with a "buy X first" note) until
+  the one before is bought; the endpoint refuses a locked rung with the same reason. The coins, the
+  purchase counter and the flair claim move in one `UPDATE ... WHERE royal_coins >= $price AND
+  ranks_bought = $seen AND NOT EXISTS (row already owned)`, so two tabs cannot both buy at the old
+  price and a purse cannot go negative; the buyer's wallet and everyone's member list are refreshed
+  over sockets afterwards.
+- **Four coin commands everyone can run** (`server/commands.js`, all `minRank: 0`):
+  `/steal @user` takes a quarter of the target's purse on a 50/50 roll and pays the same amount
+  when it fails; `/punch @user` silences them for 60 seconds but is refused while the target holds
+  more coins than you; `/crush` names a random other account and rolls a chemistry score;
+  `/gamble <amount>` stakes between `MIN_BET` and `MAX_BET` through `settleBet` and returns one of
+  four weighted outcomes (`GAMBLE_OUTCOMES` in `server/casino.js`, ~90.5% returned). Owners are
+  immune to both `/steal` and `/punch`, and every balance change pushes `coins:update` to the
+  affected accounts. `/give @user <amount>` is the Owner-only mint: `minRank: 4` plus an
+  `actor.role === 'owner'` re-check (like `/role` and `/flair`), digits only, handed to `grantCoins`
+  as a digit string so an amount past `Number.MAX_SAFE_INTEGER` is not rounded.
+- **Eight member commands hang off the same table** (`server/commands.js`, all `minRank: 0`):
+  `/8ball <question>`, `/flip`, `/roll [sides]` (2-1000, default d6) and `/quote` pick their line
+  server-side from `EIGHT_BALL` / `QUOTES`; `/whois @user`, `/stats` and `/rank [@user]` read the
+  database (purse, equipped flairs, message count, ladder position by `royal_coins`, banned accounts
+  left out) and change nothing; `/ask <command>` forwards to `answerAi` in `server/ai.js`, so the
+  Royal Aide answers in the room itself and `/ask` posts no line of its own. Every other command's
+  reply goes through `postSystem`, which is a system message — permanent, like the coin commands.
+- **The coin ladder is one query, two surfaces.** `topWallets` in `server/coins.js` reads the ten
+  richest purses (`LEADERBOARD_SIZE`, highest first, banned accounts left off). `GET /api/leaderboard`
+  feeds the panel (`LeaderboardPanel.jsx`, opened from the sidebar) and `/leaderboard` (minRank 0)
+  posts the same rows as a system message, so the two cannot drift.
+- **A paid turn of the wheel is one per 24 hours.** `users.flair_spun_at` holds the last turn; a
+  paid second turn inside the same day is refused with the remaining time. A banked pass token
+  (`spin_tokens`) is never held back by the day — extras can be spun one after another at any time —
+  and it is spent first while it lasts. Every turn stamps the day, so once the tokens are gone the
+  24 hour wait starts from the last spin.
+- **The vault (`server/casino.js` + `routes/casino.js`) is the gambling table.** Four stakes,
+  each with a house edge: steady 75% ×1.25, even 50% ×1.9, bold 25% ×3.6, royal 10% ×8.5. The d100
+  roll happens server-side with `randomInt`, the stake and payout move in one `settleBet` statement,
+  and every roll lands in `coin_bets` so the panel can show the last few. Bets are rate-limited
+  (20 / 10s per account) and capped at `MAX_BET`; `wager` must be a whole number ≥ `MIN_BET`.
+  Never trust a roll, wager or result sent by the client.
+- **The Royal Aide answers `!ask …` (`server/ai.js` + `server/aide-voice.js`).** It is a local
+  command table with a conversational front, not a model: no external service is called and it
+  costs nothing to run. `routes/chat.js` answers a channel message matching `^!ask` (6 per minute
+  per account) with a system message from `author_name` `Royal Aide`, broadcast as `message:new`.
+  When the first word after `!ask` names a command the command runs; anything else goes to
+  `converse` in `aide-voice.js`, which answers plain questions in the Aide's voice from live data
+  (purse, ladder leaders, presence) and recognises greetings, thanks, "how are you", identity,
+  coins, wheel, pass and rules, plus arithmetic when the text is a sum — with a polite fallback for
+  anything past its line. Adding a command is one `{ name, usage, description,
+  run({ actor, channel, args }) }` entry in `AI_COMMANDS`; `run` returns the sentence to say or
+  `{ error }`. The table is help/balance/stats/top/online/who/summarize/count, the fun ones (joke,
+  fact, riddle, compliment, roast, coin, dice, choose) and math/time. `!ask help [topic]` prints it.
+  System messages cannot be edited or deleted.
 - **Presence is in-memory only.** `server/realtime.js` keeps a socket count per user for
   `presence:update` and a `where` map (`{kind: 'channel'|'dm', id}`) that clients push over the
   `presence:where` socket event whenever their view changes; the snapshot rides along in
   `GET /api/me`. Both maps are cleared by an API restart, and the rooms are re-learned as clients
   reconnect. The "Who's online" board (`web/src/components/OnlineBoard.jsx`) renders from that data.
+- **Typing indicators are in-memory too, and never persisted.** `Composer.jsx` pings
+  `socket.emit('typing', {kind, id})` at most once every 2s while the box has text; `realtime.js`
+  checks the room belongs to the sender, stores the display name in a `typing` map with a 4s expiry
+  and relays `typing:update` (`{kind, id, names}`) to everyone else in that room. A 1s sweep drops
+  expired names and re-broadcasts, and the names are dropped on disconnect, so a closed tab cannot
+  leave a ghost. The line above the composer renders from `App.jsx`'s `typing` state
+  (`typingLabel` in `ChatPane.jsx`): one name, "a and b are typing", or "more than 7 people are
+  typing" once eight or more are going at once. Nothing is stored, so a restart only loses the
+  current notes.
+- **Tapping an avatar or a name opens a profile banner.** `web/src/components/ProfileCard.jsx`
+  renders name, `@username`, the account's serial as `member #<id>` (`publicUser` → `number`, the
+  registration order), role, pronouns, online state and bio from the `me.members` entry (nothing is
+  fetched); the message-list avatars (`ProfileAvatar` in `MessageList.jsx`), the message author names
+  (`PlayerName` with an `onClick`) and the members panel's separate avatar button open it. Pronouns
+  live in `users.pronouns` (max 24 chars, edited in `SettingsModal.jsx`, saved through
+  `PATCH /api/me/profile`); bio comes from the existing column.
+  **The strip across the top of that card is the profile banner** — `users.banner` holds one of
+  `BANNERS` in `server/roles.js` (member/mod/admin/co-owner/owner), picked from the swatch row in
+  settings and validated in `routes/profile.js`. Everyone may pick any theme; NULL means the
+  account's own role's theme, which is also the fallback `ProfileCard.jsx` uses. Purely decorative
+  (`banner-<theme>` gradients at the end of `console.css`) — never read it as a role.
+- **An emoji palette sits by the send box.** `EmojiPicker.jsx` (mounted from `Composer.jsx`, right
+  before the send button) is one flat grid of 48 characters reusing the `.attach` button and the
+  `.cmd-menu` panel, so it matches the composer without new chrome. Picking one calls `addEmoji`,
+  which inserts it at the caret and puts the caret back after it — a plain character in the message
+  text, nothing rendered specially on the way out. It closes on pick, on Escape and on any tap
+  outside. The smiley glyph is the `smile` path in `Icon.jsx`.
 - **Avatars are data URLs in `users.avatar_url`**, cropped to 256px by the browser in
-  `SettingsModal.jsx`; `express.json` is limited to 1mb for that payload. No file storage involved.
-- **Sandbox-specific config is gated on `BASE44_PREVIEW_MODE === "1"`**: `web/vite.config.js` adds
-  `.<BASE44_SANDBOX_HOST_DOMAIN>` to Vite's `allowedHosts` (the preview host rotates). With the flag
-  unset the allowlist is untouched. `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` is passed through from
-  the platform. Never hardcode resolved `BASE44_*` hostnames anywhere.
+  `SettingsModal.jsx`; no file storage involved.
+- **Pictures can be sent with a message.** `messages.image_url` holds a data URL that
+  `web/src/lib/image.js` produced: the browser shrinks the picked file to a 1280px max edge and
+  re-encodes it as JPEG before it ever reaches the API. `routes/chat.js` runs it through
+  `readImage` (500k-ish character cap plus the shared `isRealImage` byte check from
+  `server/images.js`, so no fake `data:` prefix gets through), and a message may carry a picture
+  with no text at all — `readContent(raw, hasImage)` only insists on words when there is no
+  picture. `express.json` is 3mb for both payload kinds. The composer attaches with the button
+  beside the box (`Composer.jsx` → `onSend(text, imageUrl)`), and the picture renders above the
+  text in both channel rows and DM bubbles (`MessageImage` in `MessageList.jsx`). Edits still only
+  change the text; there is no way to edit or swap the picture after sending.
+- **The dev server accepts any host name**, so the room opens from whatever address reaches it:
+  the preview proxy, a phone on the LAN (IP or machine name), a tunnel, a custom domain.
+  `web/vite.config.js` sets `server.allowedHosts: true`, because Vite's default allowlist answers
+  every non-localhost *host name* with "Blocked request. This host ... is not allowed" — that is
+  what made the app look like it only worked on one network. Releases are served by Express, which
+  has no host check, so nothing there needs changing. Never hardcode a resolved `BASE44_*` hostname.
+  It also sets `server.cors: false`: Vite's own CORS middleware answers an `OPTIONS` preflight
+  itself with a 204 that carries no `Access-Control-Allow-Origin` for an unexpected origin, which
+  swallowed the downloaded copy's `Authorization` preflight before it ever reached the API — that
+  endpoint echoes the caller's `Origin` itself (`server/index.js`), so turning Vite's off costs
+  nothing and is what lets a copy opened on another site sign in.
+- **Filtered networks (school/office wifi) never leave a dead feed.** `web/src/socket.js` lists
+  both transports and sets `tryAllTransports: true`, so a proxy that drops the websocket upgrade
+  still connects over HTTPS polling, and one that refuses the poll handshake retries over the
+  websocket; `App.jsx` additionally refreshes the open room over `/api` every 5s while
+  `!socket.connected`, because posting is a plain HTTP call anyway. Keep both — the second one is
+  what keeps a room readable where the proxy blocks `/socket.io` outright. The same loop also
+  re-reads `/api/me` every 20s (and at once when the tab becomes visible or the network returns),
+  so a room or a command added on the server appears in the lists without a reload. No asset may be
+  loaded from another origin (no CDN fonts/scripts): school filters block those and the room renders
+  broken.
+- **A dropped socket is a network change, and the client catches up on it.** `web/src/socket.js`
+  reconnects on `online` and on the tab becoming visible (only when a token exists — an anonymous
+  handshake would just be refused), closes the socket on `pagehide`, and the `connect` handler in
+  `App.jsx` (`resync`) re-reads `/api/me` and the open room's messages before re-sharing
+  `presence:where`. So a wifi switch, a tunnel hiccup or a phone waking up shows the messages sent
+  during the gap instead of a stale room. Don't narrow `connect` back to only `shareRoom`.
+  Vite's log is routed through `roomLogger()` in `web/vite.config.js`: it drops the
+  `ws proxy socket error … read ECONNRESET` line a torn-down socket produces on every reload, and
+  folds an `http proxy error` carrying a restart code (`ECONNREFUSED` while `node --watch` closes
+  the port, `ECONNRESET`/`ENOTFOUND` while the container is recreated) into one "api restarting, …
+  retries on the next poll" notice — every other proxy error still prints.
+- **The room refreshes itself when new code lands.** `server/build.js` fingerprints the files the
+  process serves — the `server/` sources, plus `web/dist` in a release and `web/src` when that
+  directory is mounted — and `GET /api/version` (`server/routes/version.js`, public) hands it to the
+  browser. `AutoUpdate` is mounted in `web/src/main.jsx` beside `App` (so the sign-in screen gets it
+  too) and polls through `web/src/lib/version.js` every 6s (and immediately when a backgrounded tab
+  becomes visible again); a value different from the one the page loaded with shows "new version —
+  reloading…" for 1.2s and reloads. A failed poll (the API restarting under `node --watch`) is
+  ignored — never treated as a new build — so a restart alone does not trip a reload. In the sandbox
+  this is what carries a server-side change to every open tab, and in a release it is the only path,
+  since Vite's HMR is not running there. The sandbox compose mounts `./web` into the API at `/web`
+  as well as `./server` at `/app`; without that second mount `sourceBuild()` cannot see `web/src`,
+  so a client edit would never move the fingerprint.
 - **There is no client router.** Every path (`/chat` included) renders the same SPA because Vite and
   the release server both fall back to `index.html`; `/api` and `/socket.io` are excluded in
   `server/index.js`. Do not add a router just to give the room a URL.
-- **The launcher is the landing page and is part of the built site.** `web/public/launcher.html` is
-  served statically at `/launcher.html` (Vite `publicDir` in dev, `web/dist` in releases) and is
-  mapped to `/` by the `launcherAtRoot` plugin in `web/vite.config.js` and by the fallback in
-  `server/index.js`. Do not move it back to the repo root: nothing outside `web/` is served, so `/`
-  and `/launcher.html` would silently fall through to the chat app. It is deliberately dependency-free:
-  both buttons are plain `<a href="/chat">` anchors, so the room opens even where scripted
-  `window.open` / iframe handling is blocked (the old embedded-iframe and `APP_URL`-detection versions
-  left the buttons dead inside the preview pane). The only script copies the current query string — a
-  hosted preview's access token — onto those hrefs; with the script gone the plain `/chat` href still
-  works. Never hardcode a sandbox host: `/chat` is relative to whatever site serves the file.
-  The page is a static monospace "spec sheet" console (phosphor on void, inline CSS only); its one
-  remote asset is the hosted hero image in `media.base44.com`, so the rest works with no network.
-- **The chat's console look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
-  after `base.css` and `app.css`. It overrides only the old glass theme — palette, radii, blur, type —
-  and matches the launcher's phosphor-on-void console, so `app.css` still owns all layout. Restyle there
-  instead of editing component CSS, and keep its `border-radius: 0` rules after the media-query radius
-  rules in `app.css` (later import order is what lets them win).
-- **Icons are `web/public/favicon.svg`,** linked from both `index.html` and the launcher; without the
+- **The room is the front door; no path stops at a splash.** `/`, `/chat`,
+  `/royal-angel.html` and `/royal-angel` all render the app in place: the `frontDoorToChat` plugin in
+  `web/vite.config.js` rewrites them to `index.html` in dev, and the `SERVE_WEB` block in
+  `server/index.js` answers them with the built `index.html` registered before `express.static` (so
+  the file on disk never wins). Both read the same `ENTRY_PATHS` list. **Do not make this a 302** —
+  a preview host treats a redirect on the root document as a routing failure and shows a "not found"
+  page instead. In a release build the address bar gets to `/chat` from `web/src/main.jsx`, which runs
+  `history.replaceState` on load with the query string kept, so a token survives. **The dev server
+  skips that rewrite** (`!import.meta.env.DEV`): the preview host only answers documents on the path
+  it served, so a rewritten `/chat` comes back as a "not found" pane even though `curl /chat` is
+  200. Keep `/chat` servable, but never move the preview's own address bar off the path it loaded.
+  **`web/public/launcher.html` is an index page behind the room, never in front of it.** `/` still
+  serves the room itself, so a visitor lands in the chat with nothing to click first — do not route
+  `/` through the launcher and do not put a card, splash or two-choice page in front of the room.
+  The launcher is a plain public page at `/launcher.html` (linked from the rooms drawer as **What's
+  inside**), listing the rooms, people, roles, message tools, flairs and the wheel, royal coins, the
+  vault, the season pass, the Royal Aide and every command, with buttons into the room and to the
+  one-file download. It carries **its own copy of the build poll** — `/api/version` every 6s, a
+  "new version — reloading…" note then a reload, failed polls ignored — so a page left open follows
+  the room onto a new build; editing the file moves `server/build.js`'s fingerprint, which is what
+  makes open room tabs reload too. It lives in `web/public`, so Vite serves it in dev and copies it
+  into `web/dist` for a release (Express's static handler answers it before the SPA fallback).
+  Its links keep the query string (`data-room`), so a hosted preview's access token survives.
+- **`web/public/only-chatz.html` is the whole room in one file.** `web/scripts/single-file.mjs`
+  builds it — `vite.single.config.js` emits one iife bundle (a module script is blocked when a file
+  is opened from disk) plus one stylesheet, and the script folds both into the document with the
+  favicon as a data URI. `npm run dev` runs it through `predev`, so **every boot of the web server
+  regenerates it from current source**; `npm run single` does it on demand, and a failure only warns
+  so the dev server still starts. The build writes to a temp dir outside `web/` because anything
+  written inside the project makes Vite reload the room. The bundle is inlined at the end of
+  `<body>` (a classic script runs as it is parsed, so `#root` must already exist) — through a
+  **function** replacement (`replace('</body>', () => …)`), never a string one: the minified
+  bundle is full of `$&` / `$'` sequences, and `String.replace` would expand them, pasting the
+  matched tag into the middle of the script and breaking the whole file with "Unexpected token
+  '<'" — the room then renders blank everywhere, served and downloaded alike.
+  `main.jsx` also skips its `/chat` address-bar rewrite for this build via
+  `import.meta.env.VITE_SINGLE_FILE`.
+  **A copy saved to disk updates itself.** `single-file.mjs` stamps the finished document with
+  `data-build` (a sha256 prefix of what it built, written *before* the stamp so identical source
+  always yields the same value), and `web/src/lib/selfUpdate.js` compares that stamp with the
+  `/only-chatz.html` the room serves — when the copy opens, and again whenever the build poll sees
+  the room move. When the room is newer the copy fetches the room's file and replaces its own
+  document in place with `document.write`, keeping the address and the saved session and showing
+  "new version — updating…" first, so a file downloaded a month ago renders today's chat without
+  being saved again. It only runs for the one-file build that carries a stamp and names a room
+  (`standaloneCopy()`); the copy the room serves itself keeps the plain reload, because there a
+  reload already fetches the new build. A failed fetch (offline, room down) leaves the copy running
+  its own bundle, and the swap dispatches `pagehide` first so the old socket closes the way a
+  reload closes it. A copy downloaded before the stamp existed cannot tell it is behind — one fresh
+  download fixes that for good. That fetch is cross-origin (a `file:` copy, or one on another
+  site), so `stampRoomAddress()` in `web/vite.config.js` echoes the caller's `Origin` on this one
+  route — the same echo `server/index.js` already does for every path — or the update would be
+  blocked in the preview while working in a release.
+  Served as `/only-chatz.html` in dev and in a release, where the relative `/api` paths reach the
+  same origin. **The chat's own top bar carries it as `a.topbar-save`** (next to the purse chip:
+  an icon alone at ≤560px, "save" beside it above that), and **the rooms drawer
+  (`a.download-link` in `Sidebar.jsx`) links to it as well, both with
+  `download`**, so the browser saves the file instead of opening it; every href goes through
+  `baseUrl()` so a copy opened elsewhere fetches it from its room.
+  **A copy downloaded from the room carries that room's address, so it never asks for one.**
+  `single-file.mjs` emits `<html data-room="__CHATZ_ROOM__">` and whichever server hands the file
+  out swaps that one attribute for its own browser-reachable origin as the file leaves
+  (`stampRoomAddress()` in `web/vite.config.js`, the `SERVE_WEB` block in `server/index.js`) — from
+  the page's `referer` when there is one, because a proxy in front rewrites `Host` to an internal
+  name and forwards no `X-Forwarded-Proto` (the preview host does exactly that). `bakedRoom()` in
+  `web/src/api.js` reads the attribute and is `getServer()`'s fallback, so a file on disk signs in
+  directly; it returns '' when the stamp equals the page's own origin, which keeps the served room
+  single-origin. The untouched placeholder — a copy taken straight from the repo, e.g. the one Pages
+  publishes — falls through to the old behaviour: **the copy asks for the room address** on the
+  sign-in screen (`AuthScreen.jsx` hides the field whenever `bakedRoom()` is set), and a copy that is
+  not from disk probes the relative `/api/version` once — a missing endpoint means no room stands
+  behind that address, which is what makes the github.io copy ask:
+  `web/src/api.js` saves it (`onlychatz_server`) and prefixes every call with it,
+  `web/src/lib/version.js` polls the same base, and `pointAtRoom()` in `web/src/socket.js` moves
+  the connection there before it opens. Nothing is stored and no field appears when the page is
+  served by the room, so the single-origin default is untouched — do not turn `baseUrl()` into a
+  build-time URL. For that copy to sign in, the API echoes the caller's `Origin` (bearer tokens,
+  never cookies, so no `Access-Control-Allow-Credentials`) and Socket.IO accepts any origin
+  (`server/index.js`, `server/realtime.js`).
+  **A copy opened from disk has to connect live, not just sign in.** socket.io reads both the
+  address *and the namespace* from the page's own URL the moment `io()` runs, and a `file://` page
+  gives it `//file://` — the room answers "Invalid namespace", so the copy silently rendered only
+  what its REST loads brought in and every new line needed a refresh. `web/src/socket.js` starts
+  from an explicit `http://localhost` placeholder on a non-web page (which keeps the namespace
+  `/`) and `pointAtRoom()` swaps in the room's real address before the first connect; on an
+  http(s) page the relative default is untouched. Changing the manager's `uri` alone is not
+  enough — that only fixes the address, never the namespace.
+- **The signed-in app sits under a brand bar.** `App.jsx` wraps the `.shell` in `.app`
+  with a `.topbar`: a `.topbar-left` group holding the three-line `.topbar-menu` button and the
+  wordmark, and a live "N online" chip on the right that opens the who's-online board. The button
+  opens the rooms drawer at every width, so the drawer keeps its own `.brand` header and
+  `.drawer-close` everywhere (the old `min-width: 661px` rule that hid `.sidebar .brand` is gone).
+  `.app .shell { flex: 1; height: auto }` is what keeps the panels filling the space under the bar —
+  drop it and the shell overflows the bottom of the viewport.
+- **The rooms panel is a drop-down; the room and the people list stay docked.** `.sidebar` is
+  `position: fixed` at every width, hanging under the bar at `top: calc(var(--topbar-h) + 4px)`
+  (`--topbar-h` is 55px, 51px at ≤900px — the bar's padding plus the 32px icon button), clamped by
+  `max-height: calc(100dvh - var(--topbar-h) - 22px)` so its own `.sidebar-scroll` scrolls instead
+  of the page. It is hidden with `opacity: 0; pointer-events: none; translateY(-6px) scale(0.97)`
+  and opened by `.sidebar.open { opacity: 1; pointer-events: auto; transform: none }` — a 140ms drop,
+  not a slide. It reads as a menu, not a docked column: 276px wide, capped at 640px tall so the sheet
+  scrolls rather than filling the viewport, rounded 14px with a drop shadow, and a `.sidebar::before`
+  caret pointing at the three-line button (`.app .sidebar` sets `overflow: visible` and the matching
+  radius on `.me-card` so that caret is not clipped). Sections are separated by a hairline.
+  The top bar's three-line button (and the chat header's `.hamburger` at ≤660px) set `sidebarOpen`,
+  and `openChannel` / `openDm` / every sidebar shortcut set it back to false, so picking a room
+  shuts the panel; the scrim behind it closes it too. Because it is out of flow the shell is a
+  two-column grid: `minmax(0, 1fr) 280px`, `… 232px` to 1000px, `… 168px` to 900px (the people list
+  drops its second line there — `.dm-time`, `.chip`, `.member-meta`). Only at ≤660px does the people
+  list also become a drawer (`membersOpen`, sliding in from the right) and the `QuickBar` appears
+  above the chat.
+- **The room's vertical edges carry the seam.** `app.css` ends with `--seam`
+  (`rgba(116, 240, 166, 0.45)`) applied to `.shell .chat`'s left and right border at ≥661px; the
+  `.shell` prefix is only there to beat the card border in `console.css`, which is imported last.
+- **Sign-in is a centred welcome stack.** `AuthScreen.jsx` renders a hero (glyph, wordmark,
+  "welcome to the room", one line of copy), then the card with the sign-in/join tabs and form, then
+  a "new here? join the room" toggle. `.auth-stack { margin: auto }` is what keeps the top of the
+  stack reachable when it is taller than the viewport.
+- **The chat's look is one file: `web/src/styles/console.css`,** imported last in `main.jsx`
+  after `base.css` and `app.css`. It owns the palette, radii, blur and type; `app.css` still owns all
+  layout, so restyle there instead of editing component CSS. Its root tokens are a slate room
+  (`--void #2e3339`, panels `#373d44`) with phosphor green kept as the accent, and the trailing
+  "blended front door" block rounds the surfaces, fills the send button and turns `.auth-card` into
+  a light card — that block sits last on purpose so it wins over the older flat-console
+  rules above it. Keep any `border-radius: 0` leftovers after the media-query radius rules in
+  `app.css` (later import order is what lets them win).
+- **Icons are `web/public/favicon.svg`,** linked from `index.html`; without the
   link the browser asks for `/favicon.ico`, which the dev server 404s.
 - **Healthchecks use existing routes**: the API answers `/api/me` with 401 for anonymous requests, so
   the check treats anything under 500 as alive; the web check fetches `/` plus the proxied `/api/me`
@@ -92,12 +439,20 @@ Things not to undo:
 
 - **Session tokens are stored hashed (sha256).** `sessionUser` still accepts a row stored in
   the clear and rewrites it on use, so rotating this never signs anyone out; new sessions are
-  written hashed. `createSession` prunes expired rows on every login.
+  written hashed. **A session lasts until it is signed out or revoked** — logout, kick and ban are
+  the only things that end one. `SESSION_LOOKUP` deliberately has no `expires_at` filter (the
+  column is still stamped a century out), so a row written under the old 7-day rule keeps working.
+  On the client a failed boot only drops the saved token on 401/403: a blip such as the API
+  restarting keeps it and retries once, so a reload never signs anyone out.
 - **Passwords are 8-128 characters, hashed with async scrypt.** A sign-in for a username that
   does not exist still pays for one scrypt round (`DUMMY_HASH`), so response timing cannot be
   used to enumerate accounts.
-- **Exactly one owner**: `users_single_owner` is a partial unique index, so two simultaneous
-  first signups cannot both become owner — the loser registers as a member.
+- **First signup claims ownership, and ownership can be shared.** Several accounts may hold
+  `owner` (currently `shadow` and `vanzabest123`); there is no longer a partial unique index on
+  the role. The first-signup decision in `routes/auth.js` runs under a transaction advisory lock
+  (`pg_advisory_xact_lock`), so two simultaneous first signups still produce exactly one owner —
+  the loser registers as a member. `/role` still refuses to hand out a role at or above your own,
+  so sharing ownership is a deliberate database change, not a command.
 - **Kick and ban disconnect the person's sockets** (`disconnectUser`), not just their sessions.
 - **Presence only reports rooms you belong to**, so `presence:where` cannot be used to claim a
   DM thread id you are not part of.
@@ -128,7 +483,9 @@ JSX with `/@vite/client` in the page shell. If it looks minified, the compose fi
 production build instead of the dev server.
 
 There is no test suite; verification is done by driving the UI (sign in, post, run a slash command,
-open a DM) and checking `docker compose logs api`.
+open a DM) and checking `docker compose logs api`. Note that `Composer.jsx` holds every send for one
+second before it posts, so a message lands about a second after Enter — that gap is deliberate, not a
+slow request.
 
 ## Releasing it
 
@@ -150,6 +507,45 @@ free Postgres, with `DATABASE_URL` injected by `fromDatabase`. Render supplies `
 blueprint sets no port. Free plan sleeps when idle and the free database expires 30 days after
 creation — say so whenever a URL is handed out.
 
+**Deploy on push is `main` only.** `render.yaml` pins `branch: main` and
+`autoDeployTrigger: commit`, so Render releases every merge by itself. Hosts without a native Git
+connection are covered by `.github/workflows/deploy.yml`, which `POST`s the `DEPLOY_HOOK_URL`
+repository secret on a push to `main` (and on manual dispatch); without that secret the job exits
+0, so it is safe to leave enabled next to Render's own integration. Work arrives on a working
+branch through a pull request, so nothing deploys from a feature branch. `vercel.json` is the
+third path (Vercel's own git integration, no workflow involved) — it is not exercised here.
+
+**The github.io address is a front door, not the app.** GitHub Pages only serves static files, so
+`site/index.html` is published there by `.github/workflows/pages.yml` on every push to `main`.
+**It does not ask for a click:** the page ends with `location.replace('__CHAT_URL__')`, so opening
+the github.io address lands in the room itself; the card is only what a browser without the script
+sees, and its one link is the one-file room. **The same job copies `web/public/only-chatz.html`
+into the published site**, so that link opens the whole room in a file — that copy is served from
+another origin, so it asks for the room address before signing in. The redirect target is the
+`CHAT_URL` repository variable, substituted into the page's `__CHAT_URL__` placeholder at build
+time, falling back to the Render blueprint address from `render.yaml`. Keep that placeholder in the
+file — the workflow fails loudly without it. Keep that placeholder in the file — the
+workflow fails loudly without it. Two things are set in the repository, not in code: Pages must use
+source "GitHub Actions", and no custom domain may be configured (a domain that does not resolve
+301s every github.io request away from the site, whatever is deployed).
+
+**`--profile public` is the zero-account public URL.** That profile adds a `cloudflare/cloudflared`
+quick tunnel (`tunnel --no-autoupdate --url http://app:3000`), so the release stack gets a random
+`https://<words>.trycloudflare.com` address with no Cloudflare account, no domain and no inbound port.
+Read it with `docker compose -f docker-compose.prod.yml logs tunnel | grep -o
+'https://[a-z0-9-]*\.trycloudflare\.com'`. Verified in the sandbox: `/` and `/chat` answer 200,
+`/api/me` answers 401, and an engine.io WebSocket connects through the tunnel (`0{"sid":…}`) — so
+realtime survives the proxy. It is a forwarding hop, so the app's `trust proxy` count of 1 still
+matches. The address is ephemeral by design: random per start, dead when the container stops, so never
+hand it out as the app's permanent home — for that, the `https` profile (Caddy + Let's Encrypt) or
+Render.
+
+**`POSTGRES_PASSWORD` is fixed when the volume is first created.** Change it in `.env` later and the
+db container keeps the old credentials while the app tries the new ones, which surfaces as
+`database never became reachable` from `waitForDb` (`server/db.js`) — the real cause is the
+`password authentication failed` line in `logs db`. Keep the original value, or `down -v` the prod
+stack to start over (that wipes the accounts and messages).
+
 Release and sandbox wiring differ on purpose: the sandbox runs a Vite dev server proxying to a
 separate API on :8000, a release serves both from Express on one port. Keep `SERVE_WEB` unset in
 `docker-compose.base44.yml` so the preview keeps serving live source, and never point the preview at
@@ -157,8 +553,12 @@ a production image — edits would stop showing.
 
 ## Accounts and seed data
 
-There are no demo accounts and no pre-made conversations. The seed creates only the empty channels
-(`#general`, `#design`, `#random`) and only when the `channels` table is empty.
+There are no demo accounts and no pre-made conversations. The seed keeps five empty channels, in
+this order: `#general`, `#announcements` (owner-only posting, `announce = TRUE`), `#random`, and the
+two fenced rooms `#vip` and `#mvp` (`flair = 'vip'` / `'mvp'`, visible only to accounts holding that
+flair). Room order comes from `channels.position`, which the seed re-asserts on every boot, along
+with `channels.flair`, so an older database picks both up. `#design` was removed at the owner's
+request; there is no room-creation command, so the seed list is the whole set.
 
 The **first account to register becomes the owner** (`server/routes/auth.js`); every later signup is
 a member and has to be promoted with `/role`. Consequence for testing: if you delete the last owner,

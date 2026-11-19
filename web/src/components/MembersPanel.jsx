@@ -1,6 +1,8 @@
 import Avatar from './Avatar'
 import Icon from './Icon'
 import RoleBadge from './RoleBadge'
+import FlairBadges from './FlairBadges'
+import PlayerName from './PlayerName'
 
 const GROUPS = [
   { role: 'owner', label: 'Owner' },
@@ -10,8 +12,11 @@ const GROUPS = [
   { role: 'member', label: 'Members' },
 ]
 
-export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFriend }) {
+export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFriend, onOpenProfile }) {
   const isOnline = id => me.online.includes(id)
+  // Presence only: offline accounts stay out, and the groups keep GROUPS order so the
+  // Owner always sits at the top.
+  const online = me.members.filter(member => isOnline(member.id))
 
   return (
     <>
@@ -19,8 +24,8 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
       <aside className={`members glass ${open ? 'open' : ''}`}>
         <div className="members-head">
           <div>
-            <h2>Members</h2>
-            <p>{me.members.length} people floating</p>
+            <h2>Who&apos;s online</h2>
+            <p>{online.length} floating right now</p>
           </div>
           <button className="icon-btn members-close" onClick={onClose} aria-label="Close members">
             <Icon name="close" />
@@ -28,8 +33,9 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
         </div>
 
         <div className="members-list">
+          {!online.length && <p className="side-hint members-empty">nobody is floating right now.</p>}
           {GROUPS.map(group => {
-            const people = me.members.filter(member => member.role === group.role)
+            const people = online.filter(member => member.role === group.role)
             if (!people.length) return null
             return (
               <div className="member-group" key={group.role}>
@@ -41,9 +47,11 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                   return (
                     <div className="member-row" key={member.id}>
                       <button
-                        className="member-open"
-                        onClick={() => onOpenDm(member.id)}
-                        title={`Message ${member.displayName}`}
+                        type="button"
+                        className="member-avatar"
+                        onClick={() => onOpenProfile(member.id)}
+                        aria-label={`View ${member.displayName}'s profile`}
+                        title="View profile"
                       >
                         <Avatar
                           name={member.displayName}
@@ -52,11 +60,27 @@ export default function MembersPanel({ me, open, onClose, onOpenDm, onToggleFrie
                           online={isOnline(member.id)}
                           src={member.avatarUrl}
                         />
-                        <span className="member-text">
-                          <span className="member-name">{member.displayName}</span>
+                      </button>
+                      <button
+                        className="member-open"
+                        onClick={() => onOpenDm(member.id)}
+                        title={`Message ${member.displayName}`}
+                      >
+                        <PlayerName
+                          className="member-name"
+                          name={member.displayName}
+                          role={member.role}
+                          flairs={member.flairs}
+                        />
+                        <span className="member-meta">
                           <span className="member-handle">@{member.username}</span>
+                          <RoleBadge role={member.role} />
+                          <FlairBadges
+                            flairs={member.flairs}
+                            customTag={member.customTag}
+                            compact
+                          />
                         </span>
-                        <RoleBadge role={member.role} />
                       </button>
                       {member.id !== me.user.id && (
                         <button
